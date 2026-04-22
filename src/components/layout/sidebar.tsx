@@ -129,20 +129,23 @@ export default function Sidebar() {
                         <span className="badge">{target?.name}</span>
                       </div>
                       <span className={styles["rel-info"]}>{rel.sourceColumn} → {rel.targetColumn} ({rel.cardinality})</span>
-                      <button 
-                        className="btn btn-ghost btn-icon btn-sm" 
-                        style={{ position: "absolute", top: "8px", right: "8px", height: "20px", width: "20px", color: "var(--color-error)" }}
-                        onClick={async (e) => {
-                          e.stopPropagation();
-                          if (confirm(`Delete relationship between ${source?.name} and ${target?.name}?`)) {
-                            removeRelationship(rel.id);
-                            addToast("Relationship deleted", "success");
-                            await saveProject();
-                          }
-                        }}
-                      >
-                        <Trash2 size={14} style={{ display: "block" }} />
-                      </button>
+                      <div className="tooltip-wrapper" style={{ position: "absolute", top: "8px", right: "8px" }}>
+                        <button 
+                          className="btn btn-ghost btn-icon btn-sm" 
+                          style={{ height: "24px", width: "24px", color: "var(--color-danger)", background: "rgba(239, 68, 68, 0.1)" }}
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            if (confirm(`Delete relationship between ${source?.name} and ${target?.name}?`)) {
+                              removeRelationship(rel.id);
+                              addToast("Relationship deleted", "success");
+                              await saveProject();
+                            }
+                          }}
+                        >
+                          <Trash2 size={12} strokeWidth={2} style={{ display: "block" }} />
+                        </button>
+                        <div className="tooltip" style={{ right: "100%", left: "auto", transform: "translateX(-8px)" }}>Delete Relationship</div>
+                      </div>
                     </div>
                   );
                 })
@@ -167,32 +170,38 @@ export default function Sidebar() {
                     <div key={m.id} className={styles["measure-item"]}>
                       <div className={styles["measure-header"]} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
                         <span className={styles["measure-name"]} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
-                        <div style={{ display: "flex", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
-                          <button 
-                            className="btn btn-ghost btn-icon btn-sm" 
-                            style={{ height: "24px", width: "24px", background: "var(--color-bg-tertiary)" }}
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setEditingMeasureId(m.id);
-                              setMeasureModalOpen(true);
-                            }}
-                          >
-                            <Pencil size={12} style={{ display: "block" }} />
-                          </button>
-                          <button 
-                            className="btn btn-ghost btn-icon btn-sm" 
-                            style={{ height: "24px", width: "24px", color: "var(--color-error)", background: "var(--color-bg-tertiary)" }}
-                            onClick={async (e) => {
-                              e.stopPropagation();
-                              if (confirm(`Delete measure "${m.name}"?`)) {
-                                removeMeasure(m.id);
-                                addToast("Measure deleted", "success");
-                                await saveProject();
-                              }
-                            }}
-                          >
-                            <Trash2 size={12} style={{ display: "block" }} />
-                          </button>
+                        <div style={{ display: "flex", gap: "6px", flexShrink: 0, marginLeft: "8px" }}>
+                          <div className="tooltip-wrapper">
+                            <button 
+                              className="btn btn-ghost btn-icon btn-sm" 
+                              style={{ height: "24px", width: "24px", color: "var(--color-primary)", background: "rgba(65, 105, 225, 0.1)" }}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setEditingMeasureId(m.id);
+                                setMeasureModalOpen(true);
+                              }}
+                            >
+                              <Pencil size={12} strokeWidth={2} style={{ display: "block" }} />
+                            </button>
+                            <div className="tooltip" style={{ right: "0", left: "auto", transform: "translateY(0)" }}>Edit Measure</div>
+                          </div>
+                          <div className="tooltip-wrapper">
+                            <button 
+                              className="btn btn-ghost btn-icon btn-sm" 
+                              style={{ height: "24px", width: "24px", color: "var(--color-danger)", background: "rgba(239, 68, 68, 0.1)" }}
+                              onClick={async (e) => {
+                                e.stopPropagation();
+                                if (confirm(`Delete measure "${m.name}"?`)) {
+                                  removeMeasure(m.id);
+                                  addToast("Measure deleted", "success");
+                                  await saveProject();
+                                }
+                              }}
+                            >
+                              <Trash2 size={12} strokeWidth={2} style={{ display: "block" }} />
+                            </button>
+                            <div className="tooltip" style={{ right: "0", left: "auto", transform: "translateY(0)" }}>Delete Measure</div>
+                          </div>
                         </div>
                       </div>
                       <span className={styles["measure-meta"]}>{table?.name} · {m.resultType}</span>
