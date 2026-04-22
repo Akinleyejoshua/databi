@@ -20,7 +20,14 @@ import {
   Target, 
   Filter, 
   Bot,
-  Settings
+  Settings,
+  Pencil,
+  Trash2,
+  ChevronRight,
+  Database,
+  Link2,
+  Wand2,
+  Calculator
 } from "lucide-react";
 import styles from "./sidebar.module.css";
 import AiFormattedText from "../shared/ai-formatted-text";
@@ -43,14 +50,22 @@ export default function Sidebar() {
         </div>
 
         <div className={styles["panel-tabs"]}>
-          {(["tables", "transform", "relationships", "measures"] as const).map((p) => (
-            <button
-              key={p}
-              className={`${styles["panel-tab"]} ${dataPanel === p ? styles["panel-tab--active"] : ""}`}
-              onClick={() => setDataPanel(p)}
-            >
-              {p.charAt(0).toUpperCase() + p.slice(1)}
-            </button>
+          {[
+            { id: "tables", icon: <Database size={16} />, label: "Tables" },
+            { id: "transform", icon: <Wand2 size={16} />, label: "Transform" },
+            { id: "relationships", icon: <Link2 size={16} />, label: "Relationships" },
+            { id: "measures", icon: <Calculator size={16} />, label: "Measures" },
+          ].map((tab) => (
+            <div key={tab.id} className="tooltip-wrapper">
+              <button
+                className={`${styles["panel-tab"]} ${dataPanel === tab.id ? styles["panel-tab--active"] : ""}`}
+                onClick={() => setDataPanel(tab.id as any)}
+                style={{ padding: "8px", borderRadius: "8px" }}
+              >
+                {tab.icon}
+              </button>
+              <div className="tooltip">{tab.label}</div>
+            </div>
           ))}
         </div>
 
@@ -109,9 +124,9 @@ export default function Sidebar() {
                   const target = project.tables.find((t) => t.id === rel.targetTableId);
                   return (
                     <div key={rel.id} className={styles["rel-item"]} style={{ position: "relative" }}>
-                      <div className={styles["rel-tables"]}>
+                      <div className={styles["rel-tables"]} style={{ paddingRight: "30px" }}>
                         <span className="badge">{source?.name}</span>
-                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" style={{ flexShrink: 0 }}><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         <span className="badge">{target?.name}</span>
                       </div>
                       <span className={styles["rel-info"]}>{rel.sourceColumn} → {rel.targetColumn} ({rel.cardinality})</span>
@@ -127,7 +142,7 @@ export default function Sidebar() {
                           }
                         }}
                       >
-                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                        <Trash2 size={14} />
                       </button>
                     </div>
                   );
@@ -152,22 +167,22 @@ export default function Sidebar() {
                   return (
                     <div key={m.id} className={styles["measure-item"]}>
                       <div className={styles["measure-header"]} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
-                        <span className={styles["measure-name"]}>{m.name}</span>
-                        <div style={{ display: "flex", gap: "4px" }}>
+                        <span className={styles["measure-name"]} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
+                        <div style={{ display: "flex", gap: "4px", flexShrink: 0, marginLeft: "8px" }}>
                           <button 
                             className="btn btn-ghost btn-icon btn-sm" 
-                            style={{ height: "24px", width: "24px" }}
+                            style={{ height: "24px", width: "24px", background: "var(--color-bg-tertiary)" }}
                             onClick={(e) => {
                               e.stopPropagation();
                               setEditingMeasureId(m.id);
                               setMeasureModalOpen(true);
                             }}
                           >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                            <Pencil size={12} />
                           </button>
                           <button 
                             className="btn btn-ghost btn-icon btn-sm" 
-                            style={{ height: "24px", width: "24px", color: "var(--color-error)" }}
+                            style={{ height: "24px", width: "24px", color: "var(--color-error)", background: "var(--color-bg-tertiary)" }}
                             onClick={async (e) => {
                               e.stopPropagation();
                               if (confirm(`Delete measure "${m.name}"?`)) {
@@ -177,7 +192,7 @@ export default function Sidebar() {
                               }
                             }}
                           >
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                            <Trash2 size={12} />
                           </button>
                         </div>
                       </div>
