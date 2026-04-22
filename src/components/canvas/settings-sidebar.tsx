@@ -213,6 +213,66 @@ export default function SettingsModal() {
               </>
             )}
 
+            {/* Slicer config */}
+            {widget.type === "slicer" && widget.slicerConfig && (
+              <>
+                <div className={styles.field}>
+                  <label className="label">Filter Table</label>
+                  <select className="select" value={widget.slicerConfig.tableId} onChange={(e) =>
+                    updateWidget(widget.id, { slicerConfig: { ...widget.slicerConfig!, tableId: e.target.value } })
+                  }>
+                    <option value="">Select table...</option>
+                    {project?.tables.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label className="label">Filter Column</label>
+                  <select className="select" value={widget.slicerConfig.columnName} onChange={(e) =>
+                    updateWidget(widget.id, { slicerConfig: { ...widget.slicerConfig!, columnName: e.target.value } })
+                  }>
+                    <option value="">Select column...</option>
+                    {project?.tables.find((t) => t.id === widget.slicerConfig?.tableId)?.columns.map((c) => (
+                      <option key={c.name} value={c.name}>{c.name}</option>
+                    ))}
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label className="label" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
+                    <input type="checkbox" checked={widget.slicerConfig.multiSelect} onChange={(e) =>
+                      updateWidget(widget.id, { slicerConfig: { ...widget.slicerConfig!, multiSelect: e.target.checked } })
+                    } style={{ accentColor: "var(--color-primary)" }} />
+                    Allow Multi-Select
+                  </label>
+                </div>
+              </>
+            )}
+
+            {/* AI Summary config */}
+            {widget.type === "ai-summary" && widget.aiSummaryConfig && (
+              <>
+                <div className={styles.field}>
+                  <label className="label">Analysis Mode</label>
+                  <select className="select" value={widget.aiSummaryConfig.analysisMode || "data"} onChange={(e) =>
+                    updateWidget(widget.id, { aiSummaryConfig: { ...widget.aiSummaryConfig!, analysisMode: e.target.value as any } })
+                  }>
+                    <option value="data">Analyze Raw Data</option>
+                    <option value="schema">Analyze Structure</option>
+                    <option value="charts">Analyze Visuals</option>
+                  </select>
+                </div>
+                <div className={styles.field}>
+                  <label className="label">Custom Prompt</label>
+                  <textarea 
+                    className="textarea" 
+                    value={widget.aiSummaryConfig.prompt} 
+                    onChange={(e) => updateWidget(widget.id, { aiSummaryConfig: { ...widget.aiSummaryConfig!, prompt: e.target.value } })}
+                    placeholder="e.g. Focus on sales trends..."
+                    rows={3}
+                  />
+                </div>
+              </>
+            )}
+
             {/* Text config */}
             {widget.type === "text" && widget.textConfig && (
               <div className={styles.field}>
