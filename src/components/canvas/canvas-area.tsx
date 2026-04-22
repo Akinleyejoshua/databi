@@ -15,7 +15,11 @@ import AiSummaryWidget from "@/components/widgets/ai-summary-widget";
 import { Settings, GripHorizontal, BarChart3, Target, Filter, Bot, Type, MousePointer2, Hand } from "lucide-react";
 import styles from "./canvas-area.module.css";
 
-export default function CanvasArea() {
+interface Props {
+  isSharePage?: boolean;
+}
+
+export default function CanvasArea({ isSharePage }: Props) {
   const { project, selectedWidgetId, setSelectedWidget, updateLayouts } = useProjectStore();
   const { isPreviewMode, setSettingsModalOpen, cursorMode, setCursorMode } = useUiStore();
   const [hasMounted, setHasMounted] = useState(false);
@@ -93,10 +97,13 @@ export default function CanvasArea() {
     const viewportHeight = window.innerHeight;
     const rowHeight = project.canvasSettings.rowHeight || 30;
     const cols = project.canvasSettings.cols || 24;
-    const colWidth = containerWidth / cols;
+    
+    // Use a minimum width for calculation to prevent compression on mobile
+    const baseWidthForCalc = Math.max(containerWidth, project.canvasSettings.width || 1200);
+    const colWidth = baseWidthForCalc / cols;
 
     const calculatedHeight = Math.max(viewportHeight - 100, (maxBottom + 25) * rowHeight);
-    const calculatedWidth = Math.max(containerWidth, (maxRight + 10) * colWidth);
+    const calculatedWidth = Math.max(baseWidthForCalc, (maxRight + 10) * colWidth);
     
     if (isFinite(calculatedHeight)) setCanvasHeight(calculatedHeight);
     if (isFinite(calculatedWidth)) setCanvasWidth(calculatedWidth);
@@ -106,7 +113,8 @@ export default function CanvasArea() {
 
   const cols = project.canvasSettings.cols || 24;
   const rowHeight = project.canvasSettings.rowHeight || 30;
-  const colWidth = containerWidth / cols;
+  const baseWidth = Math.max(containerWidth, project.canvasSettings.width || 1200);
+  const colWidth = baseWidth / cols;
 
   const handleDrag = (e: any) => {
     if (isPreviewMode) return;
@@ -244,8 +252,8 @@ export default function CanvasArea() {
                   onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(widget.id, ref, position)}
                   dragGrid={[colWidth, rowHeight]}
                   resizeGrid={[colWidth, rowHeight]}
-                  disableDragging={isPreviewMode || cursorMode === "pan"}
-                  enableResizing={!isPreviewMode && cursorMode === "select"}
+                  disableDragging={(isPreviewMode && !isSharePage) || cursorMode === "pan"}
+                  enableResizing={(!isPreviewMode || isSharePage) && cursorMode === "select"}
                   dragHandleClassName={styles["drag-handle"]}
                   minWidth={colWidth * (widget.layout.minW || 1)}
                   minHeight={rowHeight * (widget.layout.minH || 1)}
@@ -274,22 +282,24 @@ export default function CanvasArea() {
                       flexDirection: "column"
                     }}
                   >
-                    {!isPreviewMode && cursorMode === "select" && (
+                    {(!isPreviewMode || isSharePage) && cursorMode === "select" && (
                       <div className={styles["drag-handle"]}>
                         <div className={styles["widget-label"]}>
                           <GripHorizontal size={14} opacity={0.5} />
                           <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.7 }}>{widget.title}</span>
                         </div>
-                        <button 
-                          className={styles["settings-btn"]} 
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setSelectedWidget(widget.id);
-                            setSettingsModalOpen(true);
-                          }}
-                        >
-                          <Settings size={14} />
-                        </button>
+                        {!isSharePage && (
+                          <button 
+                            className={styles["settings-btn"]} 
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedWidget(widget.id);
+                              setSettingsModalOpen(true);
+                            }}
+                          >
+                            <Settings size={14} />
+                          </button>
+                        )}
                       </div>
                     )}
                     <div className={styles["widget-content"]} style={{ paddingTop: cursorMode === "select" ? "32px" : "6px" }}>
@@ -313,7 +323,7 @@ export default function CanvasArea() {
       </div>
 
       {/* Figma-style Floating Toolbar */}
-      {!isPreviewMode && (
+      {(!isPreviewMode || isSharePage) && (
         <div className={styles["canvas-toolbar"]} onMouseDown={(e) => e.stopPropagation()}>
           <div className="tooltip-wrapper">
             <button 

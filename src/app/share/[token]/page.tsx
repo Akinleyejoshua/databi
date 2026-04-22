@@ -163,7 +163,7 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
       backgroundColor: "var(--color-bg)",
       overflow: "hidden"
     }}>
-      {projectInStore && <CanvasArea />}
+      {projectInStore && <CanvasArea isSharePage={true} />}
     </div>
   );
 }
