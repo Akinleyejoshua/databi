@@ -52,4 +52,28 @@
   flex: 1;
   overflow: hidden;
   min-height: 0;
+  pointer-events: all;
+}
+
+/* Ensure the RGL resize handle is visible and on top */
+:global(.react-resizable-handle) {
+  z-index: 20 !important;
+  opacity: 0.5;
+  transition: opacity 200ms;
+}
+
+.widget-wrapper:hover :global(.react-resizable-handle) {
+  opacity: 1;
+}
+
+/* Custom styling for the handle to make it premium */
+:global(.react-resizable-handle)::after {
+  content: "";
+  position: absolute;
+  right: 4px;
+  bottom: 4px;
+  width: 8px;
+  height: 8px;
+  border-right: 2px solid var(--color-primary);
+  border-bottom: 2px solid var(--color-primary);
 }

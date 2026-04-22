@@ -3,9 +3,10 @@
    ============================================================ */
 "use client";
 
-import { useMemo, useCallback } from "react";
-import { ResponsiveGridLayout as RGL } from "react-grid-layout";
-const ResponsiveGridLayout: any = RGL;
+import { useState, useEffect, useMemo, useCallback } from "react";
+import * as RGL from "react-grid-layout";
+const { Responsive, WidthProvider } = RGL as any;
+const ResponsiveGridLayout: any = WidthProvider(Responsive);
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useProjectStore } from "@/store/use-project-store";
@@ -20,32 +21,43 @@ import styles from "./canvas-area.module.css";
 export default function CanvasArea() {
   const { project, selectedWidgetId, setSelectedWidget, updateLayouts } = useProjectStore();
   const { isPreviewMode } = useUiStore();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
 
   const layouts = useMemo(() => {
-    if (!project) return { lg: [] };
-    return {
-      lg: project.widgets.map((w) => ({
-        i: w.id,
-        x: w.layout.x,
-        y: w.layout.y,
-        w: w.layout.w,
-        h: w.layout.h,
-        minW: w.layout.minW || 2,
-        minH: w.layout.minH || 2,
-        static: isPreviewMode,
-      })),
-    };
-  }, [project, isPreviewMode]);
+    if (!project) return { lg: [], md: [], sm: [], xs: [], xxs: [] };
+    const lg = project.widgets.map((w) => ({
+      i: w.id,
+      x: w.layout.x,
+      y: w.layout.y,
+      w: w.layout.w,
+      h: w.layout.h,
+      minW: w.layout.minW || 4,
+      minH: w.layout.minH || 4,
+    }));
+    // Provide a stable layout object for all breakpoints
+    return { lg, md: lg, sm: lg, xs: lg, xxs: lg };
+  }, [project?.widgets]); // Only recompute if widgets change
 
   const handleLayoutChange = useCallback(
-    (layout: readonly { i: string; x: number; y: number; w: number; h: number }[]) => {
-      const mapped = layout.map((l) => ({ id: l.i, x: l.x, y: l.y, w: l.w, h: l.h }));
+    (currentLayout: any) => {
+      if (isPreviewMode) return;
+      const mapped = currentLayout.map((l: any) => ({
+        id: l.i,
+        x: l.x,
+        y: l.y,
+        w: l.w,
+        h: l.h,
+      }));
       updateLayouts(mapped);
     },
-    [updateLayouts]
+    [updateLayouts, isPreviewMode]
   );
 
-  if (!project) return null;
+  if (!project || !hasMounted) return null;
 
   const renderWidget = (widget: typeof project.widgets[0]) => {
     switch (widget.type) {
@@ -77,12 +89,13 @@ export default function CanvasArea() {
       ) : (
         <ResponsiveGridLayout
           className="layout"
+          layouts={layouts}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
           cols={{ lg: project.canvasSettings.cols, md: 18, sm: 12, xs: 8, xxs: 4 }}
           rowHeight={project.canvasSettings.rowHeight}
           onLayoutChange={handleLayoutChange}
-          isDraggable={true}
-          isResizable={true}
+          isDraggable={!isPreviewMode}
+          isResizable={!isPreviewMode}
           compactType="vertical"
           preventCollision={false}
           margin={[8, 8] as [number, number]}
@@ -103,8 +116,11 @@ export default function CanvasArea() {
               className={`${styles["widget-wrapper"]} ${
                 selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
               } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
-              onClick={() => {
-                if (!isPreviewMode) setSelectedWidget(widget.id);
+              onClickCapture={(e) => {
+                if (!isPreviewMode) {
+                  e.stopPropagation();
+                  setSelectedWidget(widget.id);
+                }
               }}
               style={{
                 backgroundColor: widget.style.backgroundColor,
@@ -113,7 +129,6 @@ export default function CanvasArea() {
                 border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
                 padding: `${widget.style.padding}px`,
                 opacity: widget.style.opacity,
-                overflow: "hidden",
               }}
             >
               {!isPreviewMode && (
