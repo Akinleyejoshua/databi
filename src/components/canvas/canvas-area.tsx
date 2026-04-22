@@ -42,11 +42,18 @@ export default function CanvasArea() {
   const rowHeight = project.canvasSettings.rowHeight || 30;
   const colWidth = containerWidth / cols;
 
+  const [canvasHeight, setCanvasHeight] = useState<number | string>("calc(100vh - 100px)");
+
   // Calculate "infinite" canvas height based on widget positions
-  const canvasHeight = useMemo(() => {
-    if (!project.widgets.length) return "calc(100vh - 100px)";
+  useEffect(() => {
+    if (!project.widgets.length) {
+      setCanvasHeight("calc(100vh - 100px)");
+      return;
+    }
     const maxBottom = Math.max(...project.widgets.map(w => w.layout.y + w.layout.h));
-    return Math.max(window.innerHeight - 100, (maxBottom + 10) * rowHeight);
+    const viewportHeight = window.innerHeight;
+    const calculatedHeight = Math.max(viewportHeight - 100, (maxBottom + 10) * rowHeight);
+    setCanvasHeight(calculatedHeight);
   }, [project.widgets, rowHeight]);
 
   const renderWidget = (widget: typeof project.widgets[0]) => {
