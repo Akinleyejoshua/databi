@@ -51,21 +51,20 @@ export default function Sidebar() {
 
         <div className={styles["panel-tabs"]}>
           {[
-            { id: "tables", icon: <Database size={16} />, label: "Tables" },
-            { id: "transform", icon: <Wand2 size={16} />, label: "Transform" },
-            { id: "relationships", icon: <Link2 size={16} />, label: "Relationships" },
-            { id: "measures", icon: <Calculator size={16} />, label: "Measures" },
+            { id: "tables", icon: <Database size={18} style={{ display: "block", color: dataPanel === "tables" ? "var(--color-primary)" : "inherit" }} />, label: "Tables" },
+            { id: "transform", icon: <Wand2 size={18} style={{ display: "block", color: dataPanel === "transform" ? "var(--color-primary)" : "inherit" }} />, label: "Transform" },
+            { id: "relationships", icon: <Link2 size={18} style={{ display: "block", color: dataPanel === "relationships" ? "var(--color-primary)" : "inherit" }} />, label: "Relationships" },
+            { id: "measures", icon: <Calculator size={18} style={{ display: "block", color: dataPanel === "measures" ? "var(--color-primary)" : "inherit" }} />, label: "Measures" },
           ].map((tab) => (
-            <div key={tab.id} className="tooltip-wrapper">
-              <button
-                className={`${styles["panel-tab"]} ${dataPanel === tab.id ? styles["panel-tab--active"] : ""}`}
-                onClick={() => setDataPanel(tab.id as any)}
-                style={{ padding: "8px", borderRadius: "8px" }}
-              >
-                {tab.icon}
-              </button>
-              <div className="tooltip">{tab.label}</div>
-            </div>
+            <button
+              key={tab.id}
+              className={`${styles["panel-tab"]} ${dataPanel === tab.id ? styles["panel-tab--active"] : ""}`}
+              onClick={() => setDataPanel(tab.id as any)}
+              title={tab.label}
+              style={{ display: "flex", alignItems: "center", justifyContent: "center", width: "36px", height: "36px" }}
+            >
+              {tab.icon}
+            </button>
           ))}
         </div>
 
@@ -142,7 +141,7 @@ export default function Sidebar() {
                           }
                         }}
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={14} style={{ display: "block" }} />
                       </button>
                     </div>
                   );
@@ -178,7 +177,7 @@ export default function Sidebar() {
                               setMeasureModalOpen(true);
                             }}
                           >
-                            <Pencil size={12} />
+                            <Pencil size={12} style={{ display: "block" }} />
                           </button>
                           <button 
                             className="btn btn-ghost btn-icon btn-sm" 
@@ -192,7 +191,7 @@ export default function Sidebar() {
                               }
                             }}
                           >
-                            <Trash2 size={12} />
+                            <Trash2 size={12} style={{ display: "block" }} />
                           </button>
                         </div>
                       </div>
