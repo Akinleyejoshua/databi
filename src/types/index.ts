@@ -83,6 +83,8 @@ export interface ChartConfig {
   showLegend: boolean;
   showTooltip: boolean;
   title: string;
+  xAxisLabel: string;
+  yAxisLabel: string;
   colorScheme: string[];
 }
 

@@ -71,7 +71,21 @@ export default function SettingsModal() {
             {/* Title */}
             <div className={styles.field}>
               <label className="label">Widget Title</label>
-              <input className="input" value={widget.title} onChange={(e) => updateWidget(widget.id, { title: e.target.value })} />
+              <input 
+                className="input" 
+                value={widget.title} 
+                onChange={(e) => {
+                  const newTitle = e.target.value;
+                  if (widget.type === "chart" && widget.chartConfig) {
+                    updateWidget(widget.id, { 
+                      title: newTitle,
+                      chartConfig: { ...widget.chartConfig, title: newTitle }
+                    });
+                  } else {
+                    updateWidget(widget.id, { title: newTitle });
+                  }
+                }} 
+              />
             </div>
 
             {/* Chart-specific config */}
@@ -96,10 +110,14 @@ export default function SettingsModal() {
                       : ""
                   } onChange={(e) => {
                     const [tableId, columnName, type] = e.target.value.split(":::");
+                    const fieldLabel = type === "measure" 
+                      ? (project?.measures.find(m => m.id === columnName)?.name || columnName)
+                      : columnName;
                     updateWidget(widget.id, { 
                       chartConfig: { 
                         ...widget.chartConfig!, 
-                        fields: [{ tableId, columnName, aggregation: type === "measure" ? "measure" : "none" }] 
+                        fields: [{ tableId, columnName, aggregation: type === "measure" ? "measure" : "none" }],
+                        xAxisLabel: fieldLabel
                       } 
                     });
                   }}>
@@ -130,6 +148,9 @@ export default function SettingsModal() {
                   } onChange={(e) => {
                     if (!e.target.value) return;
                     const [tableId, columnName, type] = e.target.value.split(":::");
+                    const valueLabel = type === "measure" 
+                      ? (project?.measures.find(m => m.id === columnName)?.name || columnName)
+                      : columnName;
                     updateWidget(widget.id, {
                       chartConfig: { 
                         ...widget.chartConfig!, 
@@ -137,7 +158,8 @@ export default function SettingsModal() {
                           tableId, 
                           columnName, 
                           aggregation: type === "measure" ? "measure" : (widget.chartConfig!.values[0]?.aggregation !== "measure" && widget.chartConfig!.values[0]?.aggregation ? widget.chartConfig!.values[0].aggregation : "sum") 
-                        }] 
+                        }],
+                        yAxisLabel: valueLabel
                       },
                     });
                   }}>
@@ -170,6 +192,24 @@ export default function SettingsModal() {
                       {["sum","average","count","min","max"].map((a) => <option key={a} value={a}>{a}</option>)}
                     </select>
                   </div>
+                )}
+
+                {widget.chartConfig.chartType !== "pie" && widget.chartConfig.chartType !== "donut" && (
+                  <>
+                    <div className={styles.field}>
+                      <label className="label">X-Axis Label (Optional)</label>
+                      <input className="input" value={widget.chartConfig.xAxisLabel || ""} onChange={(e) =>
+                        updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, xAxisLabel: e.target.value } })
+                      } placeholder={widget.chartConfig.fields[0]?.columnName || "Auto from field"} />
+                    </div>
+
+                    <div className={styles.field}>
+                      <label className="label">Y-Axis Label (Optional)</label>
+                      <input className="input" value={widget.chartConfig.yAxisLabel || ""} onChange={(e) =>
+                        updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, yAxisLabel: e.target.value } })
+                      } placeholder={widget.chartConfig.values[0]?.columnName || "Auto from field"} />
+                    </div>
+                  </>
                 )}
 
                 <div className={styles.field}>

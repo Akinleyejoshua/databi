@@ -379,6 +379,8 @@ export default function Sidebar() {
                               showLegend: true,
                               showTooltip: true,
                               title: w.label,
+                              xAxisLabel: "",
+                              yAxisLabel: "",
                               colorScheme: ["#4169E1", "#6C8EF2", "#2F52C7", "#8BA4F5", "#1A3A9E"],
                             },
                           });

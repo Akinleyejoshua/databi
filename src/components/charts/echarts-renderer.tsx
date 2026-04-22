@@ -173,15 +173,17 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         legend: config.showLegend ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
         grid: isPie ? undefined : { left: "4%", right: "4%", top: 45, bottom: config.showLegend ? 45 : 30, containLabel: true },
         xAxis: isPie ? undefined : (isHorizontalBar
-          ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v) } }
+          ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v) }, axisName: config.xAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
           : { 
               type: showAsValueAxis ? "value" : "category", 
               data: showAsValueAxis ? undefined : categories, 
-              axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: "var(--color-text-secondary)" } 
+              axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: "var(--color-text-secondary)" },
+              axisName: config.xAxisLabel || undefined,
+              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 }
             }),
         yAxis: isPie ? undefined : (isHorizontalBar
-          ? { type: "category", data: categories, axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" } }
-          : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v), color: "var(--color-text-secondary)" } }),
+          ? { type: "category", data: categories, axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
+          : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v), color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }),
         series,
         animation: true,
         animationDuration: 1000,

@@ -273,9 +273,9 @@ export default function HomePage() {
                   <button className="btn btn-primary btn-sm" onClick={() => router.push(`/editor/${p._id}`)}>
                     Open Editor
                   </button>
-                  <button className="btn btn-secondary btn-sm" onClick={() => router.push(`/preview/${p._id}`)}>
+                  {/* <button className="btn btn-secondary btn-sm" onClick={() => router.push(`/preview/${p._id}`)}>
                     Preview
-                  </button>
+                  </button> */}
                 </div>
               </div>
             ))}
