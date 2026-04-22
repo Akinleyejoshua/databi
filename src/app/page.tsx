@@ -44,7 +44,7 @@ export default function HomePage() {
   const fetchProjects = async () => {
     setProjectsLoading(true);
     try {
-      const res = await fetch("/api/projects");
+      const res = await fetch("/api/projects", { cache: "no-store" });
       const data = await res.json();
       setProjects(data);
     } catch {

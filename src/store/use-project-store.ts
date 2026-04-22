@@ -370,7 +370,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
     set({ isLoading: true });
 
     try {
-      const res = await fetch(`/api/projects/${id}`);
+      const res = await fetch(`/api/projects/${id}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to load project");
 
       const project = await res.json();

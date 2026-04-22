@@ -7,6 +7,8 @@ import { connectDB } from "@/lib/mongodb";
 import { ProjectModel } from "@/lib/models/project";
 import { v4 as uuidv4 } from "uuid";
 
+export const dynamic = "force-dynamic";
+
 export async function GET(
   _req: NextRequest,
   { params }: { params: Promise<{ id: string }> }
