@@ -18,37 +18,42 @@ export interface SuggestedKPI {
 export function convertToJs(formula: string): string {
   let js = formula;
 
-  // 1. Handle Aggregations
-  // SUM([Column]) -> rows.reduce((s, r) => s + (Number(r["Column"]) || 0), 0)
-  js = js.replace(/SUM\(\s*\[?(.*?)\]?\s*\)/gi, (_, col) => {
-    return `rows.reduce((s, r) => s + (Number(r["${col}"]) || 0), 0)`;
+  // Helper to replace [Col] with r["Col"] inside a string
+  const replaceCols = (str: string, rowVar: string = "r") => {
+    return str.replace(/\[(.*?)\]/g, (_, col) => `(Number(${rowVar}["${col}"]) || 0)`);
+  };
+
+  // 1. Handle Aggregations with complex expressions
+  // SUM([Price] * [Qty]) -> rows.reduce((s, r) => s + ((Number(r["Price"])||0) * (Number(r["Qty"])||0)), 0)
+  js = js.replace(/SUM\(\s*(.*?)\s*\)/gi, (_, inner) => {
+    return `rows.reduce((s, r) => s + ${replaceCols(inner, "r")}, 0)`;
   });
 
-  // AVG([Column]) -> rows.length ? rows.reduce((s, r) => s + (Number(r["Column"]) || 0), 0) / rows.length : 0
-  js = js.replace(/AVG\(\s*\[?(.*?)\]?\s*\)/gi, (_, col) => {
-    return `(rows.length ? rows.reduce((s, r) => s + (Number(r["${col}"]) || 0), 0) / rows.length : 0)`;
+  // AVG([Col])
+  js = js.replace(/AVG\(\s*(.*?)\s*\)/gi, (_, inner) => {
+    return `(rows.length ? rows.reduce((s, r) => s + ${replaceCols(inner, "r")}, 0) / rows.length : 0)`;
   });
 
-  // COUNT([Column]) -> rows.length
-  js = js.replace(/COUNT\(\s*\[?(.*?)\]?\s*\)/gi, "rows.length");
+  // COUNT([Col])
+  js = js.replace(/COUNT\(\s*(.*?)\s*\)/gi, "rows.length");
 
-  // DISTINCTCOUNT([Column]) -> new Set(rows.map(r => r["Column"])).size
+  // DISTINCTCOUNT([Col])
   js = js.replace(/DISTINCTCOUNT\(\s*\[?(.*?)\]?\s*\)/gi, (_, col) => {
     return `new Set(rows.map(r => r["${col}"])).size`;
   });
 
-  // MIN([Column]) -> Math.min(...rows.map(r => Number(r["Column"]) || 0))
-  js = js.replace(/MIN\(\s*\[?(.*?)\]?\s*\)/gi, (_, col) => {
-    return `Math.min(...rows.map(r => Number(r["${col}"]) || 0))`;
+  // MIN([Col])
+  js = js.replace(/MIN\(\s*(.*?)\s*\)/gi, (_, inner) => {
+    return `Math.min(...rows.map(r => ${replaceCols(inner, "r")}))`;
   });
 
-  // MAX([Column]) -> Math.max(...rows.map(r => Number(r["Column"]) || 0))
-  js = js.replace(/MAX\(\s*\[?(.*?)\]?\s*\)/gi, (_, col) => {
-    return `Math.max(...rows.map(r => Number(r["${col}"]) || 0))`;
+  // MAX([Col])
+  js = js.replace(/MAX\(\s*(.*?)\s*\)/gi, (_, inner) => {
+    return `Math.max(...rows.map(r => ${replaceCols(inner, "r")}))`;
   });
 
-  // 2. Handle simple column references [Col] -> (Number(row["Col"]) || 0)
-  // Only if not already handled by aggregations
+  // 2. Handle standalone column references [Col] -> (Number(row["Col"]) || 0)
+  // This is used for row-level expressions or outside aggregations
   js = js.replace(/\[(.*?)\]/g, (_, col) => {
     return `(Number(row["${col}"]) || 0)`;
   });
@@ -74,15 +79,92 @@ export function convertToDAX(formula: string, tableName: string = "Table"): stri
 }
 
 /**
- * Generates suggested KPIs based on table schema
+ * Generates suggested KPIs based on table schema with business logic detection
  */
 export function generateKPIs(table: DataTable): SuggestedKPI[] {
   const kpis: SuggestedKPI[] = [];
   const numericCols = table.columns.filter(c => c.type === "number");
   const allCols = table.columns;
+  const colNames = allCols.map(c => c.name.toLowerCase());
 
-  // 1. Total for each numeric column
+  // --- 1. Business Logic Detection (Revenue, COGS, Profit, etc.) ---
+
+  // REVENUE
+  const salesCol = allCols.find(c => /sales|revenue|amount|turnover|total_price|price_total/i.test(c.name));
+  const priceCol = allCols.find(c => /unit_price|price|rate|selling_price/i.test(c.name));
+  const qtyCol = allCols.find(c => /qty|quantity|count|volume|units_sold|units/i.test(c.name));
+
+  if (salesCol) {
+    kpis.push({
+      name: "Total Revenue",
+      formula: `SUM([${salesCol.name}])`,
+      dax: `SUM('${table.name}'[${salesCol.name}])`,
+      type: "number",
+      description: "Total revenue from sales"
+    });
+  } else if (priceCol && qtyCol) {
+    kpis.push({
+      name: "Total Revenue",
+      formula: `SUM([${priceCol.name}] * [${qtyCol.name}])`,
+      dax: `SUMX('${table.name}', [${priceCol.name}] * [${qtyCol.name}])`,
+      type: "number",
+      description: "Total Revenue calculated as Price * Quantity"
+    });
+  }
+
+  // COGS & TOTAL COST
+  const costCol = allCols.find(c => /unit_cost|cost_per_unit|purchase_price|buy_price/i.test(c.name));
+  const totalCostCol = allCols.find(c => /total_cost|cogs|total_expense|cost_total/i.test(c.name));
+
+  if (totalCostCol) {
+    kpis.push({
+      name: "COGS",
+      formula: `SUM([${totalCostCol.name}])`,
+      dax: `SUM('${table.name}'[${totalCostCol.name}])`,
+      type: "number",
+      description: "Total Cost of Goods Sold"
+    });
+  } else if (costCol && qtyCol) {
+    kpis.push({
+      name: "Total Cost",
+      formula: `SUM([${costCol.name}] * [${qtyCol.name}])`,
+      dax: `SUMX('${table.name}', [${costCol.name}] * [${qtyCol.name}])`,
+      type: "number",
+      description: "Total Cost calculated as Unit Cost * Quantity"
+    });
+  }
+
+  // PROFIT (Calculated if Revenue and Cost are available)
+  const revenueRef = salesCol ? `SUM([${salesCol.name}])` : (priceCol && qtyCol ? `SUM([${priceCol.name}] * [${qtyCol.name}])` : null);
+  const costRef = totalCostCol ? `SUM([${totalCostCol.name}])` : (costCol && qtyCol ? `SUM([${costCol.name}] * [${qtyCol.name}])` : null);
+
+  if (revenueRef && costRef) {
+    kpis.push({
+      name: "Gross Profit",
+      formula: `${revenueRef} - ${costRef}`,
+      dax: `[Total Revenue] - [Total Cost]`,
+      type: "number",
+      description: "Total Revenue minus Total Cost"
+    });
+  }
+
+  // TOTAL CUSTOMERS
+  const customerCol = allCols.find(c => /customer|client|user_id|buyer|email/i.test(c.name));
+  if (customerCol) {
+    kpis.push({
+      name: "Total Customers",
+      formula: `DISTINCTCOUNT([${customerCol.name}])`,
+      dax: `DISTINCTCOUNT('${table.name}'[${customerCol.name}])`,
+      type: "number",
+      description: "Count of unique customers"
+    });
+  }
+
+  // --- 2. Generic Numeric Aggregations ---
   numericCols.forEach(col => {
+    // Only add if not already covered by business logic
+    if (kpis.some(k => k.formula.includes(`[${col.name}]`) && k.formula.length < 20)) return;
+
     kpis.push({
       name: `Total ${col.name}`,
       formula: `SUM([${col.name}])`,
@@ -90,27 +172,10 @@ export function generateKPIs(table: DataTable): SuggestedKPI[] {
       type: "number",
       description: `Sum of all values in ${col.name}`
     });
-
-    kpis.push({
-      name: `Average ${col.name}`,
-      formula: `AVG([${col.name}])`,
-      dax: `AVERAGE('${table.name}'[${col.name}])`,
-      type: "number",
-      description: `Average value of ${col.name}`
-    });
   });
 
-  // 2. Count for all columns
-  kpis.push({
-    name: `Total Records`,
-    formula: `COUNT([${allCols[0]?.name || "ID"}])`,
-    dax: `COUNT('${table.name}'[${allCols[0]?.name || "ID"}])`,
-    type: "number",
-    description: "Total number of rows"
-  });
-
-  // 3. Distinct counts for non-numeric or categorical columns
-  allCols.filter(c => c.type !== "number").slice(0, 3).forEach(col => {
+  // --- 3. Distinct counts for Categorical columns (limited) ---
+  allCols.filter(c => c.type === "string" && !kpis.some(k => k.formula.includes(`[${c.name}]`))).slice(0, 2).forEach(col => {
     kpis.push({
       name: `Unique ${col.name}s`,
       formula: `DISTINCTCOUNT([${col.name}])`,
