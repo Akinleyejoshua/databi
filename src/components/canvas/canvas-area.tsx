@@ -12,11 +12,12 @@ import TextWidget from "@/components/widgets/text-widget";
 import KpiWidget from "@/components/widgets/kpi-widget";
 import SlicerWidget from "@/components/widgets/slicer-widget";
 import AiSummaryWidget from "@/components/widgets/ai-summary-widget";
+import { Settings, GripHorizontal, BarChart3, Target, Filter, Bot, Type } from "lucide-react";
 import styles from "./canvas-area.module.css";
 
 export default function CanvasArea() {
   const { project, selectedWidgetId, setSelectedWidget, updateLayouts } = useProjectStore();
-  const { isPreviewMode } = useUiStore();
+  const { isPreviewMode, setSettingsModalOpen } = useUiStore();
   const [hasMounted, setHasMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
@@ -40,6 +41,13 @@ export default function CanvasArea() {
   const cols = project.canvasSettings.cols || 24;
   const rowHeight = project.canvasSettings.rowHeight || 30;
   const colWidth = containerWidth / cols;
+
+  // Calculate "infinite" canvas height based on widget positions
+  const canvasHeight = useMemo(() => {
+    if (!project.widgets.length) return "calc(100vh - 100px)";
+    const maxBottom = Math.max(...project.widgets.map(w => w.layout.y + w.layout.h));
+    return Math.max(window.innerHeight - 100, (maxBottom + 10) * rowHeight);
+  }, [project.widgets, rowHeight]);
 
   const renderWidget = (widget: typeof project.widgets[0]) => {
     switch (widget.type) {
@@ -89,7 +97,7 @@ export default function CanvasArea() {
       className={styles.canvas}
       style={{ 
         backgroundColor: project.canvasSettings.backgroundColor,
-        minHeight: "calc(100vh - 100px)",
+        minHeight: canvasHeight,
         position: "relative",
         /* @ts-ignore */
         "--col-width": `${colWidth}px`,
@@ -159,8 +167,20 @@ export default function CanvasArea() {
                 {!isPreviewMode && (
                   <div className={styles["drag-handle"]}>
                     <div className={styles["widget-label"]}>
-                      {widget.type === "chart" ? "📊" : widget.type === "kpi" ? "🎯" : widget.type === "slicer" ? "🔽" : widget.type === "ai-summary" ? "🤖" : "📝"}
+                      <GripHorizontal size={14} opacity={0.5} />
+                      {widget.type === "chart" ? <BarChart3 size={12} /> : widget.type === "kpi" ? <Target size={12} /> : widget.type === "slicer" ? <Filter size={12} /> : widget.type === "ai-summary" ? <Bot size={12} /> : <Type size={12} />}
+                      <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.7 }}>{widget.title}</span>
                     </div>
+                    <button 
+                      className={styles["settings-btn"]} 
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        setSelectedWidget(widget.id);
+                        setSettingsModalOpen(true);
+                      }}
+                    >
+                      <Settings size={14} />
+                    </button>
                   </div>
                 )}
                 <div className={styles["widget-content"]}>

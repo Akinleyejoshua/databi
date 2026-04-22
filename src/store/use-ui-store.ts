@@ -39,6 +39,9 @@ interface UiStore {
   isMeasureModalOpen: boolean;
   setMeasureModalOpen: (open: boolean) => void;
 
+  isSettingsModalOpen: boolean;
+  setSettingsModalOpen: (open: boolean) => void;
+
   /* --- Data View --- */
   selectedTableId: string | null;
   setSelectedTableId: (id: string | null) => void;
@@ -97,6 +100,9 @@ export const useUiStore = create<UiStore>((set) => ({
 
   isMeasureModalOpen: false,
   setMeasureModalOpen: (open) => set({ isMeasureModalOpen: open }),
+
+  isSettingsModalOpen: false,
+  setSettingsModalOpen: (open) => set({ isSettingsModalOpen: open }),
 
   /* --- Data View --- */
   selectedTableId: null,

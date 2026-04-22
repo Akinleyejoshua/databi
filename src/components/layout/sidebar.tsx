@@ -7,6 +7,21 @@ import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import type { WidgetType, ChartType } from "@/types";
 import { generateId, getDefaultWidgetStyle } from "@/lib/utils";
+import { 
+  BarChart3, 
+  Columns, 
+  LineChart, 
+  AreaChart, 
+  PieChart, 
+  CircleDot, 
+  ScatterChart, 
+  History, 
+  Type, 
+  Target, 
+  Filter, 
+  Bot,
+  Settings
+} from "lucide-react";
 import styles from "./sidebar.module.css";
 
 export default function Sidebar() {
@@ -233,6 +248,16 @@ export default function Sidebar() {
       <aside className={styles.sidebar}>
         <div className={styles["sidebar-header"]}>
           <h3 className={styles["sidebar-title"]}>Components</h3>
+          <button 
+            className="btn btn-ghost btn-icon" 
+            onClick={() => {
+              useProjectStore.getState().setSelectedWidget(null);
+              useUiStore.getState().setSettingsModalOpen(true);
+            }}
+            title="Canvas Settings"
+          >
+            <Settings size={18} />
+          </button>
         </div>
 
         <div className={styles["panel-tabs"]}>
@@ -257,14 +282,14 @@ export default function Sidebar() {
                 <span className={styles["widget-group-label"]}>Charts</span>
                 <div className={styles["widget-grid"]}>
                   {([
-                    { type: "chart" as WidgetType, chart: "bar" as ChartType, label: "Bar Chart", icon: "📊" },
-                    { type: "chart" as WidgetType, chart: "column" as ChartType, label: "Column Chart", icon: "📶" },
-                    { type: "chart" as WidgetType, chart: "line" as ChartType, label: "Line Chart", icon: "📈" },
-                    { type: "chart" as WidgetType, chart: "area" as ChartType, label: "Area Chart", icon: "📉" },
-                    { type: "chart" as WidgetType, chart: "pie" as ChartType, label: "Pie Chart", icon: "🥧" },
-                    { type: "chart" as WidgetType, chart: "donut" as ChartType, label: "Donut Chart", icon: "🍩" },
-                    { type: "chart" as WidgetType, chart: "scatter" as ChartType, label: "Scatter Chart", icon: "✨" },
-                    { type: "chart" as WidgetType, chart: "time-series" as ChartType, label: "Time Series", icon: "⏱️" },
+                    { type: "chart" as WidgetType, chart: "bar" as ChartType, label: "Bar Chart", icon: <BarChart3 size={18} /> },
+                    { type: "chart" as WidgetType, chart: "column" as ChartType, label: "Column Chart", icon: <Columns size={18} /> },
+                    { type: "chart" as WidgetType, chart: "line" as ChartType, label: "Line Chart", icon: <LineChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "area" as ChartType, label: "Area Chart", icon: <AreaChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "pie" as ChartType, label: "Pie Chart", icon: <PieChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "donut" as ChartType, label: "Donut Chart", icon: <CircleDot size={18} /> },
+                    { type: "chart" as WidgetType, chart: "scatter" as ChartType, label: "Scatter Chart", icon: <ScatterChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "time-series" as ChartType, label: "Time Series", icon: <History size={18} /> },
                   ]).map((w) => (
                     <div key={w.chart} className="tooltip-wrapper">
                       <button
@@ -311,7 +336,7 @@ export default function Sidebar() {
                         textConfig: { content: "Click to edit title", align: "left" },
                       });
                     }}>
-                      <span className={styles["widget-icon"]}>📝</span>
+                      <span className={styles["widget-icon"]}><Type size={18} /></span>
                       <span>Text</span>
                     </button>
                     <div className="tooltip">Text Box</div>
@@ -328,7 +353,7 @@ export default function Sidebar() {
                         kpiConfig: { tableId: "", valueColumn: "", aggregation: "sum", label: "Metric", prefix: "", suffix: "" },
                       });
                     }}>
-                      <span className={styles["widget-icon"]}>🎯</span>
+                      <span className={styles["widget-icon"]}><Target size={18} /></span>
                       <span>KPI Card</span>
                     </button>
                     <div className="tooltip">KPI Card</div>
@@ -345,7 +370,7 @@ export default function Sidebar() {
                         slicerConfig: { tableId: "", columnName: "", selectedValues: [], multiSelect: true },
                       });
                     }}>
-                      <span className={styles["widget-icon"]}>🔽</span>
+                      <span className={styles["widget-icon"]}><Filter size={18} /></span>
                       <span>Slicer</span>
                     </button>
                     <div className="tooltip">Slicer / Filter</div>
@@ -362,7 +387,7 @@ export default function Sidebar() {
                         aiSummaryConfig: { prompt: "", generatedText: "", isLoading: false, tableIds: [], analysisMode: "data" },
                       });
                     }}>
-                      <span className={styles["widget-icon"]}>🤖</span>
+                      <span className={styles["widget-icon"]}><Bot size={18} /></span>
                       <span>AI Summary</span>
                     </button>
                     <div className="tooltip">AI Insights</div>

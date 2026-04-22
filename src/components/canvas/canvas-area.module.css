@@ -46,7 +46,19 @@
   z-index: 10;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 8px;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border-light);
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+}
+
+.widget-wrapper:hover .drag-handle,
+.widget-wrapper--selected .drag-handle {
+  opacity: 1;
 }
 
 .drag-handle:active {
@@ -58,13 +70,29 @@
 .widget-wrapper--preview { cursor: default; }
 
 .widget-label {
-  font-size: 14px;
-  opacity: 0.6;
-  transition: opacity 150ms;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--color-text-secondary);
   pointer-events: none;
 }
 
-.widget-wrapper:hover .widget-label { opacity: 0.6; }
+.settings-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  color: var(--color-text-tertiary);
+  transition: all var(--transition-fast);
+}
+
+.settings-btn:hover {
+  background: var(--color-surface-hover);
+  color: var(--color-primary);
+}
 
 /* Ensure the RGL resize handle is visible and on top */
 :global(.react-resizable-handle) {

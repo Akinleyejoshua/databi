@@ -10,7 +10,7 @@ import { useAuthStore } from "@/store/use-auth-store";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
 import CanvasArea from "@/components/canvas/canvas-area";
-import SettingsSidebar from "@/components/canvas/settings-sidebar";
+import SettingsModal from "@/components/canvas/settings-sidebar";
 import DataTableView from "@/components/data/data-table";
 import UploadModal from "@/components/data/upload-modal";
 import RelationshipsModal from "@/components/data/relationships-modal";
@@ -66,11 +66,10 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
           {activeTab === "data" && <DataTableView />}
           {(activeTab === "canvas" || activeTab === "preview") && <CanvasArea />}
         </div>
-
-        {activeTab === "canvas" && !isPreviewMode && <SettingsSidebar />}
       </div>
 
       {/* Modals & Overlays */}
+      <SettingsModal />
       <UploadModal />
       <RelationshipsModal />
       <MeasuresModal />
