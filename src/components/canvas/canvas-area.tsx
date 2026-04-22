@@ -47,7 +47,12 @@ export default function CanvasArea() {
     const viewportHeight = window.innerHeight;
     const rowHeight = project.canvasSettings.rowHeight || 30;
     const calculatedHeight = Math.max(viewportHeight - 100, (maxBottom + 10) * rowHeight);
-    setCanvasHeight(calculatedHeight);
+    
+    if (isFinite(calculatedHeight)) {
+      setCanvasHeight(calculatedHeight);
+    } else {
+      setCanvasHeight("calc(100vh - 100px)");
+    }
   }, [project?.widgets, project?.canvasSettings.rowHeight]);
 
   if (!project || !hasMounted) return null;

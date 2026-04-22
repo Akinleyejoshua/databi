@@ -299,7 +299,7 @@ export default function Sidebar() {
                             id: generateId(),
                             type: w.type,
                             title: w.label,
-                            layout: { x: 0, y: Infinity, w: 12, h: 10, minW: 4, minH: 4 },
+                            layout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 4 },
                             style: getDefaultWidgetStyle(),
                             chartConfig: {
                               chartType: w.chart,
@@ -331,7 +331,7 @@ export default function Sidebar() {
                         id: generateId(),
                         type: "text",
                         title: "Text",
-                        layout: { x: 0, y: Infinity, w: 8, h: 2, minW: 3, minH: 1 },
+                        layout: { x: 0, y: 0, w: 8, h: 2, minW: 3, minH: 1 },
                         style: { ...getDefaultWidgetStyle(), backgroundColor: "transparent", borderWidth: 0 },
                         textConfig: { content: "Click to edit title", align: "left" },
                       });
@@ -348,7 +348,7 @@ export default function Sidebar() {
                         id: generateId(),
                         type: "kpi",
                         title: "KPI Card",
-                        layout: { x: 0, y: Infinity, w: 6, h: 4, minW: 3, minH: 3 },
+                        layout: { x: 0, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
                         style: getDefaultWidgetStyle(),
                         kpiConfig: { tableId: "", valueColumn: "", aggregation: "sum", label: "Metric", prefix: "", suffix: "" },
                       });
@@ -365,7 +365,7 @@ export default function Sidebar() {
                         id: generateId(),
                         type: "slicer",
                         title: "Slicer",
-                        layout: { x: 0, y: Infinity, w: 6, h: 6, minW: 3, minH: 3 },
+                        layout: { x: 0, y: 0, w: 6, h: 6, minW: 3, minH: 3 },
                         style: getDefaultWidgetStyle(),
                         slicerConfig: { tableId: "", columnName: "", selectedValues: [], multiSelect: true },
                       });
@@ -382,7 +382,7 @@ export default function Sidebar() {
                         id: generateId(),
                         type: "ai-summary",
                         title: "AI Insights",
-                        layout: { x: 0, y: Infinity, w: 12, h: 8, minW: 6, minH: 4 },
+                        layout: { x: 0, y: 0, w: 12, h: 8, minW: 6, minH: 4 },
                         style: getDefaultWidgetStyle(),
                         aiSummaryConfig: { prompt: "", generatedText: "", isLoading: false, tableIds: [], analysisMode: "data" },
                       });
