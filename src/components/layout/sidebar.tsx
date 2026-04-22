@@ -423,7 +423,7 @@ export default function Sidebar() {
                         title: "KPI Card",
                         layout: { x: 0, y: 0, w: 6, h: 4, minW: 3, minH: 3 },
                         style: getDefaultWidgetStyle(),
-                        kpiConfig: { tableId: "", valueColumn: "", aggregation: "sum", label: "Metric", prefix: "", suffix: "" },
+                        kpiConfig: { tableId: "", valueColumn: "", aggregation: "sum", label: "Metric", prefix: "", suffix: "", currency: undefined, decimalPlaces: 2 },
                       });
                     }}>
                       <span className={styles["widget-icon"]}><Target size={18} /></span>

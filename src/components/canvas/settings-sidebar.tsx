@@ -236,13 +236,16 @@ export default function SettingsModal() {
                   </select>
                 </div>
                 <div className={styles.field}>
-                  <label className="label">Value Column</label>
+                  <label className="label">Value Column / Measure</label>
                   <select className="select" value={widget.kpiConfig.valueColumn} onChange={(e) =>
                     updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, valueColumn: e.target.value } })
                   }>
-                    <option value="">Select column...</option>
+                    <option value="">Select column or measure...</option>
                     {project?.tables.find((t) => t.id === widget.kpiConfig?.tableId)?.columns.filter((c) => c.type === "number").map((c) => (
                       <option key={c.name} value={c.name}>{c.name}</option>
+                    ))}
+                    {project?.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).map((m) => (
+                      <option key={m.id} value={m.id}>{m.name} (Measure)</option>
                     ))}
                   </select>
                 </div>
@@ -250,6 +253,51 @@ export default function SettingsModal() {
                   <label className="label">Label</label>
                   <input className="input" value={widget.kpiConfig.label} onChange={(e) => updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, label: e.target.value } })} />
                 </div>
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                  <div className={styles.field}>
+                    <label className="label">Prefix</label>
+                    <input className="input" value={widget.kpiConfig.prefix} onChange={(e) => updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, prefix: e.target.value } })} placeholder="e.g. $" />
+                  </div>
+                  <div className={styles.field}>
+                    <label className="label">Suffix</label>
+                    <input className="input" value={widget.kpiConfig.suffix} onChange={(e) => updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, suffix: e.target.value } })} placeholder="e.g. K" />
+                  </div>
+                </div>
+                <div className={styles.field}>
+                  <label className="label">Currency (Optional)</label>
+                  <select className="select" value={widget.kpiConfig.currency || ""} onChange={(e) =>
+                    updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, currency: e.target.value || undefined } })
+                  }>
+                    <option value="">No Currency</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="JPY">JPY (¥)</option>
+                    <option value="CNY">CNY (¥)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="AUD">AUD ($)</option>
+                    <option value="CAD">CAD ($)</option>
+                    <option value="CHF">CHF (CHF)</option>
+                    <option value="SEK">SEK (kr)</option>
+                    <option value="NZD">NZD ($)</option>
+                    <option value="MXN">MXN ($)</option>
+                    <option value="SGD">SGD ($)</option>
+                    <option value="HKD">HKD ($)</option>
+                  </select>
+                </div>
+                {widget.kpiConfig.currency && (
+                  <div className={styles.field}>
+                    <label className="label">Decimal Places</label>
+                    <input 
+                      type="number" 
+                      className="input" 
+                      min="0" 
+                      max="10" 
+                      value={widget.kpiConfig.decimalPlaces ?? 2} 
+                      onChange={(e) => updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, decimalPlaces: parseInt(e.target.value) || 2 } })} 
+                    />
+                  </div>
+                )}
               </>
             )}
 

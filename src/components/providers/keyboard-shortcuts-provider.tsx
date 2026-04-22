@@ -5,11 +5,10 @@
 
 "use client";
 
-import { useEffect } from "react";
 import { useHistoryShortcuts } from "@/store/use-project-history";
 
 export function KeyboardShortcutsProvider({ children }: { children: React.ReactNode }) {
-  // Initialize keyboard shortcuts
+  // Initialize keyboard shortcuts globally
   useHistoryShortcuts();
 
   return <>{children}</>;

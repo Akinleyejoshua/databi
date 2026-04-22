@@ -102,6 +102,8 @@ export interface KpiConfig {
   label: string;
   prefix: string;
   suffix: string;
+  currency?: string; // e.g., "USD", "EUR", "GBP", etc.
+  decimalPlaces?: number; // Number of decimal places to display
   comparisonColumn?: string;
   comparisonAggregation?: "sum" | "average" | "count" | "min" | "max";
 }

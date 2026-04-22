@@ -30,8 +30,10 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
   pushHistory: (project) =>
     set((state) => {
       // When new action is performed, clear future history
+      const newPast = [...state.past, project].slice(-DEFAULT_HISTORY_SIZE);
+      console.log("📝 History pushed - new size:", newPast.length);
       return {
-        past: [...state.past, project].slice(-DEFAULT_HISTORY_SIZE),
+        past: newPast,
         future: [],
       };
     }),

@@ -7,8 +7,7 @@ import { useEffect, use } from "react";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import { useAuthStore } from "@/store/use-auth-store";
-import { useProjectHistory } from "@/store/use-project-history";
-import { KeyboardShortcutsProvider } from "@/components/providers/keyboard-shortcuts-provider";
+import { useProjectHistory, useHistoryShortcuts } from "@/store/use-project-history";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
 import CanvasArea from "@/components/canvas/canvas-area";
@@ -20,6 +19,7 @@ import MeasuresModal from "@/components/data/measures-modal";
 import ShareModal from "@/components/projects/share-modal";
 import ToastContainer from "@/components/layout/toast-container";
 import MobileWarning from "@/components/layout/mobile-warning";
+import { HistoryDebugInfo } from "@/components/debug/history-debug-info";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
@@ -32,6 +32,9 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
 
   // Initialize history tracking
   useProjectHistory();
+  
+  // Initialize keyboard shortcuts (Ctrl+Z, Ctrl+Shift+Z, etc.)
+  useHistoryShortcuts();
 
   useEffect(() => {
     checkAuth();
@@ -81,6 +84,9 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
       <ShareModal />
       <ToastContainer />
       <MobileWarning />
+      
+      {/* Debug Info */}
+      <HistoryDebugInfo />
     </div>
   );
 }

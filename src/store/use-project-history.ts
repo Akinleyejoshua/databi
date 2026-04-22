@@ -87,48 +87,110 @@ export const useProjectHistory = () => {
 };
 
 export const useHistoryShortcuts = () => {
-  const { undo, redo, canUndo, canRedo } = useProjectHistory();
+  const project = useProjectStore((s) => s.project);
+  const setProject = useProjectStore((s) => s.setProject);
+  const { past, future } = useHistoryStore();
+
+  const lastSavedStateRef = useRef<string>("");
+
+  // Initialize on first load
+  useEffect(() => {
+    if (project && lastSavedStateRef.current === "") {
+      lastSavedStateRef.current = JSON.stringify(project);
+      console.log("✓ History shortcuts initialized");
+    }
+  }, [project]);
+
+  const undo = useCallback(() => {
+    const historyState = useHistoryStore.getState();
+    if (historyState.past.length === 0) {
+      console.log("✗ Cannot undo - no history");
+      return;
+    }
+
+    const previousState = historyState.past[historyState.past.length - 1];
+    const currentState = project;
+
+    console.log("↶ Undo - restoring state");
+
+    // Update history: move current to future, remove from past
+    useHistoryStore.setState((state) => ({
+      past: state.past.slice(0, -1),
+      future: currentState ? [currentState, ...state.future] : state.future,
+    }));
+
+    // Restore previous state
+    lastSavedStateRef.current = JSON.stringify(previousState);
+    setProject(previousState);
+  }, [project, setProject]);
+
+  const redo = useCallback(() => {
+    const historyState = useHistoryStore.getState();
+    if (historyState.future.length === 0) {
+      console.log("✗ Cannot redo - no future");
+      return;
+    }
+
+    const nextState = historyState.future[0];
+    const currentState = project;
+
+    console.log("↷ Redo - restoring state");
+
+    // Update history: move next to past, remove from future
+    useHistoryStore.setState((state) => ({
+      past: currentState ? [...state.past, currentState] : state.past,
+      future: state.future.slice(1),
+    }));
+
+    // Restore next state
+    lastSavedStateRef.current = JSON.stringify(nextState);
+    setProject(nextState);
+  }, [project, setProject]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if typing in input or textarea, but allow contentEditable elements
+      // Skip if typing in input or textarea
       const target = e.target as HTMLElement;
-      if (
+      const isInput =
         target instanceof HTMLInputElement ||
         target instanceof HTMLTextAreaElement ||
-        (target && target.getAttribute("contenteditable") === "true")
-      ) {
+        target?.getAttribute?.("contenteditable") === "true";
+
+      if (isInput) return;
+
+      const key = e.key.toLowerCase();
+      const isCtrlOrCmd = e.ctrlKey || e.metaKey;
+
+      // Undo: Ctrl+Z or Cmd+Z
+      if (isCtrlOrCmd && key === "z" && !e.shiftKey) {
+        e.preventDefault();
+        console.log("Keyboard: Ctrl+Z pressed");
+        undo();
         return;
       }
 
-      // Make key lowercase for consistent comparison
-      const key = e.key.toLowerCase();
-
-      // Ctrl+Z or Cmd+Z for undo (case-insensitive)
-      if ((e.ctrlKey || e.metaKey) && key === "z" && !e.shiftKey) {
+      // Redo: Ctrl+Shift+Z or Cmd+Shift+Z or Ctrl+Y
+      if ((isCtrlOrCmd && key === "z" && e.shiftKey) || (isCtrlOrCmd && key === "y" && !e.shiftKey)) {
         e.preventDefault();
-        console.log("Undo triggered - canUndo:", canUndo);
-        if (canUndo) {
-          undo();
-        }
-      }
-
-      // Ctrl+Shift+Z or Ctrl+Y or Cmd+Shift+Z for redo (case-insensitive)
-      if (
-        ((e.ctrlKey || e.metaKey) && key === "z" && e.shiftKey) ||
-        ((e.ctrlKey || e.metaKey) && key === "y" && !e.shiftKey)
-      ) {
-        e.preventDefault();
-        console.log("Redo triggered - canRedo:", canRedo);
-        if (canRedo) {
-          redo();
-        }
+        console.log("Keyboard: Redo shortcut pressed");
+        redo();
+        return;
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [undo, redo, canUndo, canRedo]);
+    console.log("✓ Keyboard shortcuts listener attached");
 
-  return { undo, redo, canUndo, canRedo };
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      console.log("✓ Keyboard shortcuts listener removed");
+    };
+  }, [undo, redo]);
+
+  return {
+    undo,
+    redo,
+    canUndo: past.length > 0,
+    canRedo: future.length > 0,
+  };
 };
