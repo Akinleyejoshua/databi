@@ -1,5 +1,5 @@
 /* ============================================================
-   AI Summary Widget
+   AI Summary Widget — Robust Version
    ============================================================ */
 "use client";
 
@@ -14,7 +14,9 @@ interface Props { widget: Widget; }
 export default function AiSummaryWidget({ widget }: Props) {
   const { project, updateWidget } = useProjectStore();
   const { addToast } = useUiStore();
-  const [isLoading, setIsLoading] = useState(false);
+  
+  // Use local state for immediate feedback, but sync with widget config
+  const [localLoading, setLocalLoading] = useState(false);
   const aiConfig = widget.aiSummaryConfig;
 
   const handleGenerate = async () => {
@@ -23,7 +25,7 @@ export default function AiSummaryWidget({ widget }: Props) {
       return;
     }
     
-    setIsLoading(true);
+    setLocalLoading(true);
     addToast("Starting AI analysis...", "info");
 
     try {
@@ -41,67 +43,81 @@ export default function AiSummaryWidget({ widget }: Props) {
       const res = await fetch("/api/ai/insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ tables: tablesForAI, prompt: aiConfig?.prompt || "" }),
+        body: JSON.stringify({ 
+          tables: tablesForAI, 
+          prompt: aiConfig?.prompt || "" 
+        }),
       });
 
-      if (!res.ok) {
-        throw new Error(`API error: ${res.status}`);
-      }
+      if (!res.ok) throw new Error(`API error: ${res.status}`);
 
       const data = await res.json();
-      
-      if (data.error) {
-        throw new Error(data.error);
-      }
+      if (data.error) throw new Error(data.error);
 
+      // Save result to store
       updateWidget(widget.id, {
         aiSummaryConfig: { 
-          ...aiConfig!, 
-          generatedText: data.summary, 
+          ...(aiConfig || { prompt: "", tableIds: [] }), 
+          generatedText: data.summary || "Analysis returned no content.", 
           isLoading: false 
         },
       });
       
-      addToast("Analysis generated successfully", "success");
+      addToast("Analysis generated!", "success");
     } catch (error: any) {
       console.error("AI Insight Error:", error);
-      addToast(error.message || "Failed to generate AI insights", "error");
+      addToast(error.message || "Failed to generate insights", "error");
       
       updateWidget(widget.id, {
         aiSummaryConfig: { 
-          ...aiConfig!, 
-          generatedText: "Error: " + (error.message || "Failed to generate insights."), 
+          ...(aiConfig || { prompt: "", tableIds: [] }), 
+          generatedText: `Failed to generate insights: ${error.message}`, 
           isLoading: false 
         },
       });
     } finally {
-      setIsLoading(false);
+      setLocalLoading(false);
     }
   };
 
+  const hasAnalysis = aiConfig?.generatedText && aiConfig.generatedText.trim().length > 0;
+
   return (
-    <div className={styles["ai-widget"]}>
+    <div className={styles["ai-widget"]} style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div className={styles["ai-header"]}>
-        <span className={styles["ai-badge"]}>🤖 AI Insights</span>
+        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
+          <span className={styles["ai-badge"]}>🤖 AI Insight</span>
+          {localLoading && <div className={styles["ai-pulse"]} style={{ width: "8px", height: "8px" }} />}
+        </div>
         <button
           className="btn btn-primary btn-sm"
           onClick={handleGenerate}
-          disabled={isLoading || !project?.tables.length}
+          disabled={localLoading || !project?.tables.length}
+          style={{ height: "28px", padding: "0 12px" }}
         >
-          {isLoading ? "Analyzing..." : "Generate"}
+          {localLoading ? "Analyzing..." : hasAnalysis ? "Regenerate" : "Generate"}
         </button>
       </div>
-      <div className={styles["ai-content"]}>
-        {isLoading ? (
+
+      <div className={styles["ai-content"]} style={{ flex: 1, overflowY: "auto", minHeight: "100px" }}>
+        {localLoading ? (
           <div className={styles["ai-loading"]}>
             <div className={styles["ai-pulse"]} />
-            <span>Analyzing your data...</span>
+            <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
+              Scanning tables and detecting patterns...
+            </span>
           </div>
-        ) : aiConfig?.generatedText ? (
-          <div className={styles["ai-text"]}>{aiConfig.generatedText}</div>
+        ) : hasAnalysis ? (
+          <div className={styles["ai-text"]} style={{ padding: "8px 0" }}>
+            {aiConfig.generatedText}
+          </div>
         ) : (
           <div className={styles["ai-placeholder"]}>
-            Click &quot;Generate&quot; to get AI-powered insights about your data
+            <div style={{ fontSize: "24px", marginBottom: "12px" }}>💡</div>
+            <p>Click <strong>Generate</strong> to analyze your dataset with AI.</p>
+            <p style={{ fontSize: "11px", marginTop: "8px", opacity: 0.7 }}>
+              AI will look for trends, outliers, and key summaries across your tables.
+            </p>
           </div>
         )}
       </div>
