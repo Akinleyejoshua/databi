@@ -119,7 +119,7 @@ export function parseSafeNumber(value: any): number {
   if (!value) return 0;
   
   // Remove non-numeric characters except for decimal point and minus sign
-  const cleaned = String(value).replace(/[^-0.9.]/g, "");
+  const cleaned = String(value).replace(/[^-0-9.]/g, "");
   const num = parseFloat(cleaned);
   return isNaN(num) ? 0 : num;
 }
