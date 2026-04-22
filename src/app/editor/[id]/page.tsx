@@ -86,7 +86,7 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
       <MobileWarning />
       
       {/* Debug Info */}
-      <HistoryDebugInfo />
+      {/* <HistoryDebugInfo /> */}
     </div>
   );
 }
