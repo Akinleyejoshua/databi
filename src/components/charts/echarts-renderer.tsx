@@ -6,7 +6,7 @@
 import { useMemo, useEffect, useRef } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter, Measure, Relationship } from "@/types";
-import { applyFilters, CHART_COLORS, parseSafeNumber, joinTables } from "@/lib/utils";
+import { applyFilters, CHART_COLORS, parseSafeNumber, joinTables, abbreviateNumber } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
@@ -48,88 +48,85 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
     if (rows.length === 0) return { option: null, hasData: false };
 
-    // Calculate Categories
-    let categories: string[] = [];
-    if (fieldDef.aggregation === "measure") {
-      const measure = measures.find(m => m.id === fieldDef.columnName);
-      if (measure) {
-        try {
-          const evalFn = new Function("row", "rows", `return ${measure.formula}`);
-          categories = [...new Set(rows.map(r => String(evalFn(r, rows))))];
-        } catch (e) {
-          console.error("Error evaluating field measure", e);
-          categories = ["Error"];
-        }
-      } else {
-        categories = ["Unknown Measure"];
-      }
-    } else {
-      categories = [...new Set(rows.map((r) => String(r[fieldDef.columnName])))];
-    }
+    // Calculate Categories with optimized grouping
+    const categoriesSet = new Set<string>();
+    const groups = new Map<string, Record<string, unknown>[]>();
 
-    const colors = config.colorScheme?.length ? config.colorScheme : CHART_COLORS;
-
-    const series = config.values.map((v, i) => {
-      // Check if it's a measure
-      if (v.aggregation === "measure") {
-        const measure = measures.find((m) => m.id === v.columnName);
-        
-        let evalFn: Function | null = null;
+    // Prepare groups
+    rows.forEach(row => {
+      let val: string;
+      if (fieldDef.aggregation === "measure") {
+        const measure = measures.find(m => m.id === fieldDef.columnName);
         if (measure) {
           try {
-            evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            val = String(evalFn(row, rows));
           } catch (e) {
-            console.error("Invalid measure formula", e);
+            val = "Error";
           }
+        } else {
+          val = "Unknown Measure";
         }
+      } else {
+        val = String(row[fieldDef.columnName] ?? "Blank");
+      }
+      
+      categoriesSet.add(val);
+      if (!groups.has(val)) groups.set(val, []);
+      groups.get(val)!.push(row);
+    });
 
-        const data = categories.map((cat) => {
-          const matching = rows.filter((r) => {
-            if (fieldDef.aggregation === "measure") {
-               // Re-evaluate measure for matching if needed, but we already have categories from results
-               // This is slightly inefficient but correct for grouping
-               const measureF = measures.find(m => m.id === fieldDef.columnName);
-               if (!measureF) return false;
-               const f = new Function("row", "rows", `return ${measureF.formula}`);
-               return String(f(r, rows)) === cat;
-            }
-            return String(r[fieldDef.columnName]) === cat;
-          });
-          
-          if (!evalFn || matching.length === 0) return 0;
+    const categories = Array.from(categoriesSet);
+    const colors = config.colorScheme?.length ? config.colorScheme : CHART_COLORS;
+
+    // Determine Axis Types (PowerBI style)
+    // If the field is numeric, we might want a value axis, but for Bar/Column we usually want categories.
+    // For Line/Scatter, if the X field is numeric, we use 'value'.
+    const xIsNumeric = rows.length > 0 && !isNaN(Number(rows[0][fieldDef.columnName])) && fieldDef.aggregation !== "measure";
+    const isScatter = config.chartType === "scatter";
+    const isPie = config.chartType === "pie" || config.chartType === "donut";
+    const isHorizontalBar = config.chartType === "bar";
+
+    const series = config.values.map((v, i) => {
+      // Logic for raw data (Scatter plots with raw values)
+      if (isScatter && !v.aggregation || v.aggregation === "none") {
+        const data = rows.map(r => {
+          const x = parseSafeNumber(r[fieldDef.columnName]);
+          const y = parseSafeNumber(r[v.columnName]);
+          return [x, y];
+        });
+        return {
+          name: v.columnName,
+          type: "scatter",
+          data,
+          itemStyle: { color: colors[i % colors.length] }
+        };
+      }
+
+      // Logic for Aggregated Data
+      const data = categories.map((cat) => {
+        const matching = groups.get(cat) || [];
+        
+        if (v.aggregation === "measure") {
+          const measure = measures.find((m) => m.id === v.columnName);
+          if (!measure || matching.length === 0) return 0;
           try {
-            // For a value measure, we usually evaluate it against the subset (matching)
-            const res = evalFn(matching[0], matching);
-            return Number(res) || 0;
+            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            return Number(evalFn(matching[0], matching)) || 0;
           } catch (e) {
             return 0;
           }
-        });
+        }
 
-        const base: Record<string, unknown> = {
-          name: measure ? measure.name : "Unknown Measure",
-          data,
-          itemStyle: { color: colors[i % colors.length] },
-        };
+        // Standard Aggregation
+        const vals = matching.map((r) => parseSafeNumber(r[v.columnName]));
         
-        return buildSeriesObject(base, config.chartType, categories, data, colors, i);
-      }
+        // Smart Default: If column is text, default to 'count' even if 'sum' was picked
+        const sampleVal = matching[0]?.[v.columnName];
+        const isActuallyNumeric = typeof sampleVal === "number" || (!isNaN(parseFloat(String(sampleVal))) && String(sampleVal).length > 0);
+        const agg = (!isActuallyNumeric && (v.aggregation === "sum" || v.aggregation === "average")) ? "count" : (v.aggregation || "sum");
 
-      // Standard Column Aggregation
-      const data = categories.map((cat) => {
-        const matching = rows.filter((r) => {
-          if (fieldDef.aggregation === "measure") {
-             const measureF = measures.find(m => m.id === fieldDef.columnName);
-             if (!measureF) return false;
-             const f = new Function("row", "rows", `return ${measureF.formula}`);
-             return String(f(r, rows)) === cat;
-          }
-          return String(r[fieldDef.columnName]) === cat;
-        });
-
-        const vals = matching.map((r) => parseSafeNumber(r[v.columnName])).filter((n) => !isNaN(n));
-
-        switch (v.aggregation) {
+        switch (agg) {
           case "sum": return vals.reduce((a, b) => a + b, 0);
           case "average": return vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0;
           case "count": return matching.length;
@@ -148,33 +145,48 @@ export default function EChartsRenderer({ config, tables, filters, relationships
       return buildSeriesObject(base, config.chartType, categories, data, colors, i);
     });
 
-    const isPie = config.chartType === "pie" || config.chartType === "donut";
-    const isHorizontalBar = config.chartType === "bar";
+    const showAsValueAxis = (config.chartType === "line" || config.chartType === "area" || config.chartType === "scatter") && xIsNumeric;
 
     return {
       hasData: true,
       option: {
-        title: { text: config.title, left: "center", top: 8, textStyle: { fontSize: 14, fontFamily: "Bricolage Grotesque", fontWeight: 600 } },
-        tooltip: config.showTooltip ? { trigger: isPie ? "item" : "axis" } : undefined,
-        legend: config.showLegend ? { bottom: 4, textStyle: { fontSize: 11 } } : undefined,
-        grid: isPie ? undefined : { left: "8%", right: "4%", top: 40, bottom: config.showLegend ? 40 : 24, containLabel: true },
+        title: { 
+          text: config.title, 
+          left: "center", 
+          top: 8, 
+          textStyle: { fontSize: 13, fontFamily: "inherit", fontWeight: 600, color: "var(--color-text)" } 
+        },
+        tooltip: config.showTooltip ? { 
+          trigger: isPie ? "item" : "axis",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          borderColor: "var(--color-border)",
+          textStyle: { color: "var(--color-text)", fontSize: 11 }
+        } : undefined,
+        legend: config.showLegend ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
+        grid: isPie ? undefined : { left: "4%", right: "4%", top: 45, bottom: config.showLegend ? 45 : 30, containLabel: true },
         xAxis: isPie ? undefined : (isHorizontalBar
-          ? { type: "value" as const }
-          : { type: "category" as const, data: categories, axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 11 } }),
+          ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v) } }
+          : { 
+              type: showAsValueAxis ? "value" : "category", 
+              data: showAsValueAxis ? undefined : categories, 
+              axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: "var(--color-text-secondary)" } 
+            }),
         yAxis: isPie ? undefined : (isHorizontalBar
-          ? { type: "category" as const, data: categories }
-          : { type: "value" as const }),
+          ? { type: "category", data: categories, axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" } }
+          : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v), color: "var(--color-text-secondary)" } }),
         series,
-        color: colors,
+        animation: true,
+        animationDuration: 1000,
       }
     };
   }, [config, tables, filters, measures, relationships]);
 
   if (!hasData) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "13px", flexDirection: "column", gap: "8px" }}>
-        <span style={{ fontSize: "24px" }}>🔍</span>
-        <span>{(!config.fields.length || !config.values.length) ? "Configure Fields & Values" : "No data found for current filters"}</span>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "12px", flexDirection: "column", gap: "10px", textAlign: "center", padding: "20px" }}>
+        <div style={{ fontSize: "32px", opacity: 0.5 }}>📊</div>
+        <div style={{ fontWeight: 500 }}>{(!config.fields.length || !config.values.length) ? "Configure Chart Fields" : "No data available"}</div>
+        <div style={{ fontSize: "11px", opacity: 0.7 }}>Add dimensions to Fields and metrics to Values</div>
       </div>
     );
   }
@@ -183,7 +195,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     <ReactECharts 
       ref={chartRef}
       option={option} 
-      style={{ height: "100%", width: "100%", minHeight: "150px" }} 
+      style={{ height: "100%", width: "100%" }} 
       opts={{ renderer: "svg" }} 
       notMerge={true}
       lazyUpdate={true}
@@ -193,18 +205,21 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
 function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number) {
   switch (chartType) {
-    case "bar": return { ...base, type: "bar" };
-    case "column": return { ...base, type: "bar" };
-    case "line": case "time-series": return { ...base, type: "line", smooth: true };
-    case "area": return { ...base, type: "line", smooth: true, areaStyle: { opacity: 0.3 } };
-    case "scatter": return { ...base, type: "scatter", symbolSize: 10 };
+    case "bar": return { ...base, type: "bar", borderRadius: [0, 4, 4, 0] };
+    case "column": return { ...base, type: "bar", borderRadius: [4, 4, 0, 0] };
+    case "line": case "time-series": return { ...base, type: "line", smooth: true, symbol: "circle", symbolSize: 6 };
+    case "area": return { ...base, type: "line", smooth: true, areaStyle: { opacity: 0.2 }, symbol: "circle", symbolSize: 4 };
+    case "scatter": return { ...base, type: "scatter", symbolSize: 10, itemStyle: { ...base.itemStyle, opacity: 0.7 } };
     case "pie": case "donut":
       return {
         type: "pie",
         name: base.name,
-        radius: chartType === "donut" ? ["40%", "70%"] : "70%",
+        radius: chartType === "donut" ? ["45%", "75%"] : "75%",
+        avoidLabelOverlap: true,
+        itemStyle: { borderRadius: 6, borderColor: "#fff", borderWidth: 2 },
         data: categories.map((cat, j) => ({ name: cat, value: data[j], itemStyle: { color: colors[j % colors.length] } })),
-        label: { show: true, fontSize: 11 },
+        label: { show: true, fontSize: 10, formatter: "{b}: {d}%" },
+        emphasis: { label: { show: true, fontSize: 12, fontWeight: "bold" } }
       };
     default: return { ...base, type: "bar" };
   }

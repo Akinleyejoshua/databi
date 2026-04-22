@@ -68,7 +68,11 @@ export default function SlicerWidget({ widget }: Props) {
       </div>
       <div className={styles["slicer-list"]}>
         {uniqueValues.slice(0, 100).map((val, i) => (
-          <label key={i} className={`${styles["slicer-item"]} ${selected.has(String(val)) ? styles["slicer-item--selected"] : ""}`}>
+          <label 
+            key={i} 
+            className={`${styles["slicer-item"]} ${selected.has(String(val)) ? styles["slicer-item--selected"] : ""}`}
+            onClick={(e) => e.stopPropagation()}
+          >
             <input type="checkbox" checked={selected.has(String(val))} onChange={() => toggle(val)} style={{ display: "none" }} />
             <span className={styles["slicer-check"]}>{selected.has(String(val)) ? "✓" : ""}</span>
             <span>{String(val)}</span>

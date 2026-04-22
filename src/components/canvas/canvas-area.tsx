@@ -93,6 +93,12 @@ export default function CanvasArea() {
           cols={{ lg: project.canvasSettings.cols, md: 18, sm: 12, xs: 8, xxs: 4 }}
           rowHeight={project.canvasSettings.rowHeight}
           onLayoutChange={handleLayoutChange}
+          onDragStart={(layout, oldItem, newItem) => {
+            if (!isPreviewMode && newItem) setSelectedWidget(newItem.i);
+          }}
+          onResizeStart={(layout, oldItem, newItem) => {
+            if (!isPreviewMode && newItem) setSelectedWidget(newItem.i);
+          }}
           isDraggable={!isPreviewMode}
           isResizable={!isPreviewMode}
           compactType={null}
@@ -116,16 +122,11 @@ export default function CanvasArea() {
               className={`${styles["widget-wrapper"]} ${
                 selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
               } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
-              onClickCapture={(e) => {
+              onClick={(e) => {
+                // Keep selection for clicks that don't involve dragging
                 if (!isPreviewMode) {
-                  // Only intercept if we're not clicking an interactive element
-                  const target = e.target as HTMLElement;
-                  const isInteractive = target.closest("button, input, select, textarea, [role='button']");
-                  
-                  if (!isInteractive) {
-                    e.stopPropagation();
-                    setSelectedWidget(widget.id);
-                  }
+                  e.stopPropagation();
+                  setSelectedWidget(widget.id);
                 }
               }}
               style={{

@@ -7,33 +7,43 @@ import { NextRequest, NextResponse } from "next/server";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { tables, prompt } = body;
+    const { tables, charts, mode, prompt } = body;
 
     const apiKey = process.env.GROQ_API_KEY;
 
-    if (!apiKey || apiKey === "your_groq_api_key_here") {
-      // Fallback: generate a basic summary without AI
-      const summary = generateBasicSummary(tables);
-      return NextResponse.json({ summary });
-    }
+    // Base prompts for different modes
+    const modePrompts = {
+      data: `Analyze the provided dataset(s) rows and values. Focus on:
+        1. Key Summaries (trends, totals)
+        2. Notable Outliers or Anomalies
+        3. Strategic Recommendations based on the actual numbers.`,
+      schema: `Analyze the Table Structure and Schema. Focus on:
+        1. Data Quality and Completeness
+        2. Suggested Relationships or Joins
+        3. Observations about the data model (types, naming, structure).`,
+      charts: `Analyze the Visualizations currently on the dashboard. Focus on:
+        1. The business story told by these charts
+        2. Redundancies or Gaps in the current visuals
+        3. How these specific charts interact to show performance.`
+    };
 
-    // Build context from tables
-    const dataContext = tables
-      .map(
-        (t: { name: string; rowCount: number; columns: { name: string; type: string }[]; rows: Record<string, unknown>[] }) =>
-          `Table "${t.name}" (${t.rowCount} rows):\nColumns: ${t.columns
-            .map((c: { name: string; type: string }) => `${c.name} (${c.type})`)
-            .join(", ")}\nSample data (first 5 rows): ${JSON.stringify(
-            t.rows.slice(0, 5)
-          )}`
-      )
-      .join("\n\n");
+    const dataContext = mode === "charts" 
+      ? `Dashboard Visuals:\n${JSON.stringify(charts, null, 2)}`
+      : tables.map((t: any) => 
+          `Table "${t.name}" (${t.rowCount} rows):\nColumns: ${t.columns.map((c: any) => `${c.name} (${c.type})`).join(", ")}\n` +
+          (mode === "data" ? `Sample data: ${JSON.stringify(t.rows)}` : "")
+        ).join("\n\n");
 
-    const systemPrompt = `You are a Business Intelligence analyst. Analyze the following dataset(s) and provide key insights, trends, and recommendations for stakeholders. Be concise but thorough. Use bullet points for clarity. Include specific numbers and percentages where possible.`;
+    const systemPrompt = `You are a Senior Business Intelligence analyst. ${modePrompts[mode as keyof typeof modePrompts] || modePrompts.data} Be professional, concise, and thorough. Use bullet points.`;
 
     const userPrompt = prompt
-      ? `${prompt}\n\nData:\n${dataContext}`
-      : `Analyze this data and provide:\n1. Key Summaries (3-5 bullet points)\n2. Notable Trends\n3. Outliers or Anomalies\n4. Recommendations\n\nData:\n${dataContext}`;
+      ? `${prompt}\n\nContext Data:\n${dataContext}`
+      : `Analyze this context and provide a thorough report.\n\nContext Data:\n${dataContext}`;
+
+    if (!apiKey || apiKey === "your_groq_api_key_here") {
+      const summary = generateBasicSummary(tables || []);
+      return NextResponse.json({ summary: summary + "\n\n*Configure API key for full mode-specific analysis.*" });
+    }
 
     const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",

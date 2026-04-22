@@ -218,28 +218,27 @@ export default function SettingsSidebar() {
           </>
         )}
 
-        {/* Slicer config */}
-        {widget.type === "slicer" && widget.slicerConfig && (
+        {/* AI Summary config */}
+        {widget.type === "ai-summary" && widget.aiSummaryConfig && (
           <>
             <div className={styles.field}>
-              <label className="label">Table</label>
-              <select className="select" value={widget.slicerConfig.tableId} onChange={(e) =>
-                updateWidget(widget.id, { slicerConfig: { ...widget.slicerConfig!, tableId: e.target.value, columnName: "" } })
+              <label className="label">Analysis Mode</label>
+              <select className="select" value={widget.aiSummaryConfig.analysisMode || "data"} onChange={(e) =>
+                updateWidget(widget.id, { aiSummaryConfig: { ...widget.aiSummaryConfig!, analysisMode: e.target.value as any } })
               }>
-                <option value="">Select table...</option>
-                {project?.tables.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                <option value="data">Analyze Raw Data (Sample Rows)</option>
+                <option value="schema">Analyze Table Schema (Structure)</option>
+                <option value="charts">Analyze Visuals (All Charts)</option>
               </select>
             </div>
             <div className={styles.field}>
-              <label className="label">Column</label>
-              <select className="select" value={widget.slicerConfig.columnName} onChange={(e) =>
-                updateWidget(widget.id, { slicerConfig: { ...widget.slicerConfig!, columnName: e.target.value, selectedValues: [] } })
-              }>
-                <option value="">Select column...</option>
-                {project?.tables.find((t) => t.id === widget.slicerConfig?.tableId)?.columns.map((c) => (
-                  <option key={c.name} value={c.name}>{c.name}</option>
-                ))}
-              </select>
+              <label className="label">Custom Prompt (Optional)</label>
+              <textarea 
+                className="textarea" 
+                value={widget.aiSummaryConfig.prompt} 
+                onChange={(e) => updateWidget(widget.id, { aiSummaryConfig: { ...widget.aiSummaryConfig!, prompt: e.target.value } })}
+                placeholder="e.g. Focus on sales trends for the last month..."
+              />
             </div>
           </>
         )}

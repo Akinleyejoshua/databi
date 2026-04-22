@@ -347,7 +347,7 @@ export default function Sidebar() {
                       title: "AI Insights",
                       layout: { x: 0, y: Infinity, w: 12, h: 8, minW: 6, minH: 4 },
                       style: getDefaultWidgetStyle(),
-                      aiSummaryConfig: { prompt: "", generatedText: "", isLoading: false, tableIds: [] },
+                      aiSummaryConfig: { prompt: "", generatedText: "", isLoading: false, tableIds: [], analysisMode: "data" },
                     });
                   }}>
                     <span className={styles["widget-icon"]}>🤖</span>

@@ -29,24 +29,37 @@ export default function AiSummaryWidget({ widget }: Props) {
     addToast("Starting AI analysis...", "info");
 
     try {
-      const tablesToSend = aiConfig?.tableIds?.length
-        ? project.tables.filter((t) => aiConfig.tableIds.includes(t.id))
-        : project.tables;
+      const mode = aiConfig?.analysisMode || "data";
+      let payload: any = { mode, prompt: aiConfig?.prompt || "" };
 
-      const tablesForAI = tablesToSend.map((t) => ({
-        name: t.name,
-        rowCount: t.rowCount,
-        columns: t.columns,
-        rows: t.rows.slice(0, 50),
-      }));
+      if (mode === "charts") {
+        // Gather all chart configs and their definitions
+        payload.charts = project.widgets
+          .filter(w => w.type === "chart" && w.chartConfig)
+          .map(w => ({
+            title: w.title,
+            type: w.chartConfig?.chartType,
+            fields: w.chartConfig?.fields,
+            values: w.chartConfig?.values
+          }));
+      } else {
+        const tablesToSend = aiConfig?.tableIds?.length
+          ? project.tables.filter((t) => aiConfig.tableIds.includes(t.id))
+          : project.tables;
+
+        payload.tables = tablesToSend.map((t) => ({
+          name: t.name,
+          rowCount: t.rowCount,
+          columns: t.columns,
+          // Only send rows if in 'data' mode
+          rows: mode === "data" ? t.rows.slice(0, 50) : [],
+        }));
+      }
 
       const res = await fetch("/api/ai/insights", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ 
-          tables: tablesForAI, 
-          prompt: aiConfig?.prompt || "" 
-        }),
+        body: JSON.stringify(payload),
       });
 
       if (!res.ok) throw new Error(`API error: ${res.status}`);
@@ -57,7 +70,7 @@ export default function AiSummaryWidget({ widget }: Props) {
       // Save result to store
       updateWidget(widget.id, {
         aiSummaryConfig: { 
-          ...(aiConfig || { prompt: "", tableIds: [] }), 
+          ...(aiConfig || { prompt: "", tableIds: [], analysisMode: "data" }), 
           generatedText: data.summary || "Analysis returned no content.", 
           isLoading: false 
         },
@@ -70,7 +83,7 @@ export default function AiSummaryWidget({ widget }: Props) {
       
       updateWidget(widget.id, {
         aiSummaryConfig: { 
-          ...(aiConfig || { prompt: "", tableIds: [] }), 
+          ...(aiConfig || { prompt: "", tableIds: [], analysisMode: "data" }), 
           generatedText: `Failed to generate insights: ${error.message}`, 
           isLoading: false 
         },
@@ -82,41 +95,133 @@ export default function AiSummaryWidget({ widget }: Props) {
 
   const hasAnalysis = aiConfig?.generatedText && aiConfig.generatedText.trim().length > 0;
 
+  // Helper to format AI response into rich UI components
+  const renderFormattedText = (text: string) => {
+    if (!text) return null;
+
+    const lines = text.split("\n");
+    return lines.map((line, idx) => {
+      let content = line.trim();
+      if (!content) return <div key={idx} style={{ height: "12px" }} />;
+
+      // Section Headers (Detecting Markdown or Capitalized labels)
+      const isHeader = content.startsWith("###") || content.startsWith("##") || 
+                       (content.endsWith(":") && content.length < 40 && !content.startsWith("•"));
+      
+      // Bold tags **text**
+      const formattedContent = content
+        .replace(/^#+\s*/, "") // Remove # headers
+        .split(/(\*\*.*?\*\*)/g)
+        .map((part, i) => {
+          if (part.startsWith("**") && part.endsWith("**")) {
+            return <strong key={i} style={{ color: "var(--color-text)", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
+          }
+          return part;
+        });
+
+      if (isHeader) {
+        let icon = "📊";
+        const lower = content.toLowerCase();
+        if (lower.includes("summary")) icon = "📝";
+        if (lower.includes("trend")) icon = "📈";
+        if (lower.includes("anomaly") || lower.includes("outlier")) icon = "🔍";
+        if (lower.includes("recommend")) icon = "🚀";
+        if (lower.includes("insight")) icon = "💡";
+
+        return (
+          <h4 key={idx} style={{ 
+            fontSize: "14px", 
+            fontWeight: 800, 
+            marginTop: "20px", 
+            marginBottom: "10px", 
+            color: "var(--color-primary)",
+            display: "flex",
+            alignItems: "center",
+            gap: "8px",
+            borderBottom: "1px solid var(--color-border-light)",
+            paddingBottom: "4px"
+          }}>
+            <span>{icon}</span>
+            {formattedContent}
+          </h4>
+        );
+      }
+
+      // Bullet points
+      if (content.startsWith("-") || content.startsWith("•") || content.match(/^\d+\./)) {
+        return (
+          <div key={idx} style={{ 
+            display: "flex", 
+            gap: "10px", 
+            marginBottom: "8px", 
+            paddingLeft: "4px",
+            fontSize: "13px",
+            lineHeight: "1.6"
+          }}>
+            <span style={{ color: "var(--color-primary)", fontWeight: "bold" }}>•</span>
+            <div style={{ flex: 1 }}>{formattedContent}</div>
+          </div>
+        );
+      }
+
+      return (
+        <p key={idx} style={{ 
+          marginBottom: "12px", 
+          fontSize: "13px", 
+          lineHeight: "1.7",
+          color: "var(--color-text-secondary)" 
+        }}>
+          {formattedContent}
+        </p>
+      );
+    });
+  };
+
   return (
     <div className={styles["ai-widget"]} style={{ height: "100%", display: "flex", flexDirection: "column" }}>
       <div className={styles["ai-header"]}>
         <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span className={styles["ai-badge"]}>🤖 AI Insight</span>
+          <span className={styles["ai-badge"]}>🤖 AI Data Analyst</span>
           {localLoading && <div className={styles["ai-pulse"]} style={{ width: "8px", height: "8px" }} />}
         </div>
         <button
           className="btn btn-primary btn-sm"
-          onClick={handleGenerate}
+          onClick={(e) => {
+            e.stopPropagation();
+            handleGenerate();
+          }}
           disabled={localLoading || !project?.tables.length}
-          style={{ height: "28px", padding: "0 12px" }}
+          style={{ height: "28px", padding: "0 12px", borderRadius: "14px" }}
         >
-          {localLoading ? "Analyzing..." : hasAnalysis ? "Regenerate" : "Generate"}
+          {localLoading ? "Analyzing..." : hasAnalysis ? "Regenerate" : "Generate Analysis"}
         </button>
       </div>
 
-      <div className={styles["ai-content"]} style={{ flex: 1, overflowY: "auto", minHeight: "100px" }}>
+      <div className={styles["ai-content"]} style={{ 
+        flex: 1, 
+        overflowY: "auto", 
+        minHeight: "100px",
+        padding: "16px 4px"
+      }}>
         {localLoading ? (
           <div className={styles["ai-loading"]}>
             <div className={styles["ai-pulse"]} />
-            <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>
-              Scanning tables and detecting patterns...
+            <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)", fontWeight: 500 }}>
+              Crunching numbers and identifying trends...
             </span>
           </div>
         ) : hasAnalysis ? (
-          <div className={styles["ai-text"]} style={{ padding: "8px 0" }}>
-            {aiConfig.generatedText}
+          <div className={styles["ai-container"]} style={{ paddingRight: "8px" }}>
+            {renderFormattedText(aiConfig.generatedText)}
           </div>
         ) : (
           <div className={styles["ai-placeholder"]}>
-            <div style={{ fontSize: "24px", marginBottom: "12px" }}>💡</div>
-            <p>Click <strong>Generate</strong> to analyze your dataset with AI.</p>
-            <p style={{ fontSize: "11px", marginTop: "8px", opacity: 0.7 }}>
-              AI will look for trends, outliers, and key summaries across your tables.
+            <div style={{ fontSize: "32px", marginBottom: "16px" }}>💡</div>
+            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--color-text)", marginBottom: "8px" }}>
+              Ready to analyze your data?
+            </h3>
+            <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", lineHeight: "1.5" }}>
+              Click the button above to generate AI-powered summaries, detect anomalies, and get strategic recommendations based on your tables.
             </p>
           </div>
         )}

@@ -48,18 +48,14 @@
 
 .widget-wrapper:hover .widget-label { opacity: 0.6; }
 
-.widget-content {
-  flex: 1;
-  overflow: hidden;
-  min-height: 0;
-  pointer-events: all;
-}
-
 /* Ensure the RGL resize handle is visible and on top */
 :global(.react-resizable-handle) {
-  z-index: 20 !important;
-  opacity: 0.5;
+  z-index: 100 !important;
+  opacity: 0.3;
   transition: opacity 200ms;
+  width: 24px !important;
+  height: 24px !important;
+  cursor: nwse-resize !important;
 }
 
 .widget-wrapper:hover :global(.react-resizable-handle) {
@@ -70,10 +66,21 @@
 :global(.react-resizable-handle)::after {
   content: "";
   position: absolute;
-  right: 4px;
-  bottom: 4px;
-  width: 8px;
-  height: 8px;
+  right: 6px;
+  bottom: 6px;
+  width: 10px;
+  height: 10px;
   border-right: 2px solid var(--color-primary);
   border-bottom: 2px solid var(--color-primary);
+  border-bottom-right-radius: 2px;
+}
+
+/* Safe zone to prevent content from overlapping the handle */
+.widget-content {
+  flex: 1;
+  overflow: hidden;
+  min-height: 0;
+  pointer-events: all;
+  padding-bottom: 4px;
+  padding-right: 4px;
 }
