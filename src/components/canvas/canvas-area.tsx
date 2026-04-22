@@ -21,6 +21,7 @@ export default function CanvasArea() {
   const [hasMounted, setHasMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
+  const [canvasHeight, setCanvasHeight] = useState<number | string>("calc(100vh - 100px)");
 
   useEffect(() => {
     setHasMounted(true);
@@ -36,25 +37,24 @@ export default function CanvasArea() {
     return () => observer.disconnect();
   }, []);
 
-  if (!project || !hasMounted) return null;
-
-  const cols = project.canvasSettings.cols || 24;
-  const rowHeight = project.canvasSettings.rowHeight || 30;
-  const colWidth = containerWidth / cols;
-
-  const [canvasHeight, setCanvasHeight] = useState<number | string>("calc(100vh - 100px)");
-
   // Calculate "infinite" canvas height based on widget positions
   useEffect(() => {
-    if (!project.widgets.length) {
+    if (!project?.widgets.length) {
       setCanvasHeight("calc(100vh - 100px)");
       return;
     }
     const maxBottom = Math.max(...project.widgets.map(w => w.layout.y + w.layout.h));
     const viewportHeight = window.innerHeight;
+    const rowHeight = project.canvasSettings.rowHeight || 30;
     const calculatedHeight = Math.max(viewportHeight - 100, (maxBottom + 10) * rowHeight);
     setCanvasHeight(calculatedHeight);
-  }, [project.widgets, rowHeight]);
+  }, [project?.widgets, project?.canvasSettings.rowHeight]);
+
+  if (!project || !hasMounted) return null;
+
+  const cols = project.canvasSettings.cols || 24;
+  const rowHeight = project.canvasSettings.rowHeight || 30;
+  const colWidth = containerWidth / cols;
 
   const renderWidget = (widget: typeof project.widgets[0]) => {
     switch (widget.type) {
