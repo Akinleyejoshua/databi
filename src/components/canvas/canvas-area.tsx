@@ -143,7 +143,10 @@ export default function CanvasArea() {
     if (cursorMode !== "pan") return;
     isPanning.current = true;
     lastPos.current = { x: e.clientX, y: e.clientY };
-    if (containerRef.current) containerRef.current.style.cursor = "grabbing";
+    if (containerRef.current) {
+      containerRef.current.style.cursor = "grabbing";
+      containerRef.current.style.userSelect = "none";
+    }
   };
 
   const onMouseMove = (e: React.MouseEvent) => {
@@ -157,154 +160,184 @@ export default function CanvasArea() {
 
   const onMouseUp = () => {
     isPanning.current = false;
-    if (containerRef.current) containerRef.current.style.cursor = cursorMode === "pan" ? "grab" : "default";
+    if (containerRef.current) {
+      containerRef.current.style.cursor = cursorMode === "pan" ? "grab" : "default";
+      containerRef.current.style.userSelect = "auto";
+    }
   };
 
   return (
-    <div className={styles["canvas-viewport"]} style={{ position: "relative", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
-      
-      {/* Figma-style Floating Toolbar */}
-      {!isPreviewMode && (
-        <div className={styles["canvas-toolbar"]}>
-          <button 
-            className={`${styles["tool-btn"]} ${cursorMode === "select" ? styles["tool-btn--active"] : ""}`}
-            onClick={() => setCursorMode("select")}
-            title="Select (V)"
-          >
-            <MousePointer2 size={18} />
-          </button>
-          <button 
-            className={`${styles["tool-btn"]} ${cursorMode === "pan" ? styles["tool-btn--active"] : ""}`}
-            onClick={() => setCursorMode("pan")}
-            title="Pan (H / Space)"
-          >
-            <Hand size={18} />
-          </button>
-          <div className={styles["tool-divider"]} />
-          <span style={{ fontSize: "11px", fontWeight: 600, opacity: 0.5, padding: "0 8px" }}>
-            {cursorMode === "pan" ? "PAN MODE" : "SELECT"}
-          </span>
-        </div>
-      )}
-
+    <div 
+      className={styles["canvas-viewport"]} 
+      style={{ 
+        position: "relative", 
+        flex: 1, 
+        overflow: "hidden", // Viewport handles layout
+        display: "flex", 
+        flexDirection: "column"
+      }}
+    >
+      {/* Scrollable Container */}
       <div
         ref={containerRef}
-        className={`${styles.canvas} ${cursorMode === "pan" ? styles["canvas--panning"] : ""}`}
+        className={styles["canvas-scroll-container"]}
         onMouseDown={onMouseDown}
         onMouseMove={onMouseMove}
         onMouseUp={onMouseUp}
         onMouseLeave={onMouseUp}
-        style={{ 
-          backgroundColor: project.canvasSettings.backgroundColor,
-          minHeight: canvasHeight,
-          width: canvasWidth,
-          position: "relative",
-          cursor: cursorMode === "pan" ? "grab" : "default",
-          /* @ts-ignore */
-          "--col-width": `${colWidth}px`,
-          "--row-height": `${rowHeight}px`
-        }}
-        onClick={() => {
-          if (cursorMode === "select") setSelectedWidget(null);
+        style={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          bottom: 0,
+          overflow: "auto",
+          cursor: cursorMode === "pan" ? "grab" : "default"
         }}
       >
-        {project.widgets.length === 0 ? (
-          <div className={styles["canvas-empty"]}>
-            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-              <line x1="3" y1="9" x2="21" y2="9" />
-              <line x1="9" y1="21" x2="9" y2="9" />
-            </svg>
-            <h3>Empty Canvas</h3>
-            <p>Add widgets to start building</p>
-          </div>
-        ) : (
-          project.widgets.map((widget) => {
-            const x = widget.layout.x * colWidth;
-            const y = widget.layout.y * rowHeight;
-            const w = widget.layout.w * colWidth;
-            const h = widget.layout.h * rowHeight;
+        <div
+          className={`${styles.canvas} ${cursorMode === "pan" ? styles["canvas--panning"] : ""}`}
+          style={{ 
+            backgroundColor: project.canvasSettings.backgroundColor,
+            minHeight: canvasHeight,
+            width: canvasWidth,
+            position: "relative",
+            /* @ts-ignore */
+            "--col-width": `${colWidth}px`,
+            "--row-height": `${rowHeight}px`
+          }}
+          onClick={() => {
+            if (cursorMode === "select") setSelectedWidget(null);
+          }}
+        >
+          {project.widgets.length === 0 ? (
+            <div className={styles["canvas-empty"]}>
+              <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+                <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+                <line x1="3" y1="9" x2="21" y2="9" />
+                <line x1="9" y1="21" x2="9" y2="9" />
+              </svg>
+              <h3>Empty Canvas</h3>
+              <p>Add widgets to start building</p>
+            </div>
+          ) : (
+            project.widgets.map((widget) => {
+              const x = widget.layout.x * colWidth;
+              const y = widget.layout.y * rowHeight;
+              const w = widget.layout.w * colWidth;
+              const h = widget.layout.h * rowHeight;
 
-            return (
-              <Rnd
-                key={widget.id}
-                size={{ width: w, height: h }}
-                position={{ x, y }}
-                onDragStart={() => {
-                  if (cursorMode === "select") setSelectedWidget(widget.id);
-                }}
-                onResizeStart={() => setSelectedWidget(widget.id)}
-                onDrag={(e) => handleDrag(e)}
-                onDragStop={(e, d) => handleDragStop(widget.id, d)}
-                onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(widget.id, ref, position)}
-                dragGrid={[colWidth, rowHeight]}
-                resizeGrid={[colWidth, rowHeight]}
-                disableDragging={isPreviewMode || cursorMode === "pan"}
-                enableResizing={!isPreviewMode && cursorMode === "select"}
-                dragHandleClassName={styles["drag-handle"]}
-                minWidth={colWidth * (widget.layout.minW || 1)}
-                minHeight={rowHeight * (widget.layout.minH || 1)}
-                style={{ zIndex: selectedWidgetId === widget.id ? 50 : 1, pointerEvents: cursorMode === "pan" ? "none" : "auto" }}
-              >
-                <div
-                  className={`${styles["widget-wrapper"]} ${
-                    selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
-                  } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
-                  onClick={(e) => {
-                    if (!isPreviewMode && cursorMode === "select") {
-                      e.stopPropagation();
-                      setSelectedWidget(widget.id);
-                    }
+              return (
+                <Rnd
+                  key={widget.id}
+                  size={{ width: w, height: h }}
+                  position={{ x, y }}
+                  onDragStart={() => {
+                    if (cursorMode === "select") setSelectedWidget(widget.id);
                   }}
-                  style={{
-                    backgroundColor: widget.style.backgroundColor,
-                    color: widget.style.textColor,
-                    borderRadius: `${widget.style.borderRadius}px`,
-                    border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
-                    padding: `${widget.style.padding}px`,
-                    opacity: widget.style.opacity,
-                    width: "100%",
-                    height: "100%",
-                    display: "flex",
-                    flexDirection: "column"
-                  }}
+                  onResizeStart={() => setSelectedWidget(widget.id)}
+                  onDrag={(e) => handleDrag(e)}
+                  onDragStop={(e, d) => handleDragStop(widget.id, d)}
+                  onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(widget.id, ref, position)}
+                  dragGrid={[colWidth, rowHeight]}
+                  resizeGrid={[colWidth, rowHeight]}
+                  disableDragging={isPreviewMode || cursorMode === "pan"}
+                  enableResizing={!isPreviewMode && cursorMode === "select"}
+                  dragHandleClassName={styles["drag-handle"]}
+                  minWidth={colWidth * (widget.layout.minW || 1)}
+                  minHeight={rowHeight * (widget.layout.minH || 1)}
+                  style={{ zIndex: selectedWidgetId === widget.id ? 50 : 1, pointerEvents: cursorMode === "pan" ? "none" : "auto" }}
                 >
-                  {!isPreviewMode && cursorMode === "select" && (
-                    <div className={styles["drag-handle"]}>
-                      <div className={styles["widget-label"]}>
-                        <GripHorizontal size={14} opacity={0.5} />
-                        <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.7 }}>{widget.title}</span>
-                      </div>
-                      <button 
-                        className={styles["settings-btn"]} 
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          setSelectedWidget(widget.id);
-                          setSettingsModalOpen(true);
-                        }}
-                      >
-                        <Settings size={14} />
-                      </button>
-                    </div>
-                  )}
-                  <div className={styles["widget-content"]} style={{ paddingTop: cursorMode === "select" ? "32px" : "6px" }}>
-                    {(() => {
-                      switch (widget.type) {
-                        case "chart": return <ChartWidget widget={widget} />;
-                        case "text": return <TextWidget widget={widget} />;
-                        case "kpi": return <KpiWidget widget={widget} />;
-                        case "slicer": return <SlicerWidget widget={widget} />;
-                        case "ai-summary": return <AiSummaryWidget widget={widget} />;
-                        default: return null;
+                  <div
+                    className={`${styles["widget-wrapper"]} ${
+                      selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
+                    } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
+                    onClick={(e) => {
+                      if (!isPreviewMode && cursorMode === "select") {
+                        e.stopPropagation();
+                        setSelectedWidget(widget.id);
                       }
-                    })()}
+                    }}
+                    style={{
+                      backgroundColor: widget.style.backgroundColor,
+                      color: widget.style.textColor,
+                      borderRadius: `${widget.style.borderRadius}px`,
+                      border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
+                      padding: `${widget.style.padding}px`,
+                      opacity: widget.style.opacity,
+                      width: "100%",
+                      height: "100%",
+                      display: "flex",
+                      flexDirection: "column"
+                    }}
+                  >
+                    {!isPreviewMode && cursorMode === "select" && (
+                      <div className={styles["drag-handle"]}>
+                        <div className={styles["widget-label"]}>
+                          <GripHorizontal size={14} opacity={0.5} />
+                          <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.7 }}>{widget.title}</span>
+                        </div>
+                        <button 
+                          className={styles["settings-btn"]} 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setSelectedWidget(widget.id);
+                            setSettingsModalOpen(true);
+                          }}
+                        >
+                          <Settings size={14} />
+                        </button>
+                      </div>
+                    )}
+                    <div className={styles["widget-content"]} style={{ paddingTop: cursorMode === "select" ? "32px" : "6px" }}>
+                      {(() => {
+                        switch (widget.type) {
+                          case "chart": return <ChartWidget widget={widget} />;
+                          case "text": return <TextWidget widget={widget} />;
+                          case "kpi": return <KpiWidget widget={widget} />;
+                          case "slicer": return <SlicerWidget widget={widget} />;
+                          case "ai-summary": return <AiSummaryWidget widget={widget} />;
+                          default: return null;
+                        }
+                      })()}
+                    </div>
                   </div>
-                </div>
-              </Rnd>
-            );
-          })
-        )}
+                </Rnd>
+              );
+            })
+          )}
+        </div>
       </div>
+
+      {/* Figma-style Floating Toolbar */}
+      {!isPreviewMode && (
+        <div className={styles["canvas-toolbar"]} onMouseDown={(e) => e.stopPropagation()}>
+          <div className="tooltip-wrapper">
+            <button 
+              className={`${styles["tool-btn"]} ${cursorMode === "select" ? styles["tool-btn--active"] : ""}`}
+              onClick={() => setCursorMode("select")}
+            >
+              <MousePointer2 size={18} />
+            </button>
+            <div className="tooltip">Select (V)</div>
+          </div>
+          
+          <div className="tooltip-wrapper">
+            <button 
+              className={`${styles["tool-btn"]} ${cursorMode === "pan" ? styles["tool-btn--active"] : ""}`}
+              onClick={() => setCursorMode("pan")}
+            >
+              <Hand size={18} />
+            </button>
+            <div className="tooltip">Pan (H / Space)</div>
+          </div>
+
+          <div className={styles["tool-divider"]} />
+          <span style={{ fontSize: "11px", fontWeight: 600, opacity: 0.5, padding: "0 8px", cursor: "default" }}>
+            {cursorMode === "pan" ? "PAN MODE" : "SELECT"}
+          </span>
+        </div>
+      )}
     </div>
   );
 }

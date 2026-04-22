@@ -1,7 +1,5 @@
 .canvas {
   flex: 1;
-  overflow: auto;
-  min-height: calc(100vh - var(--header-height));
   position: relative;
   background-image: 
     linear-gradient(to right, var(--color-border-light) 1px, transparent 1px),
