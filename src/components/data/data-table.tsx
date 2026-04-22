@@ -142,6 +142,9 @@ export default function DataTableView() {
         </div>
 
         <div className={styles["toolbar-right"]}>
+          <span className={styles["debug-info"]}>
+            Rows in memory: {table.rows.length} / {table.rowCount}
+          </span>
           <button className="btn btn-danger btn-sm" onClick={() => {
             removeTable(table.id);
             setSelectedTableId(null);
@@ -169,20 +172,28 @@ export default function DataTableView() {
             </tr>
           </thead>
           <tbody>
-            {pageRows.map((row, idx) => (
-              <tr key={idx}>
-                <td className={styles["row-num"]}>{page * pageSize + idx + 1}</td>
-                {table.columns.map((col) => (
-                  <td key={col.name}>
-                    {row[col.name] === null || row[col.name] === undefined ? (
-                      <span className={styles["null-cell"]}>null</span>
-                    ) : (
-                      String(row[col.name])
-                    )}
-                  </td>
-                ))}
+            {pageRows.length === 0 ? (
+              <tr>
+                <td colSpan={table.columns.length + 1} style={{ textAlign: "center", padding: "48px", color: "var(--color-text-tertiary)" }}>
+                  {searchTerm ? "No rows match your search" : "This table has no data rows"}
+                </td>
               </tr>
-            ))}
+            ) : (
+              pageRows.map((row, idx) => (
+                <tr key={idx}>
+                  <td className={styles["row-num"]}>{page * pageSize + idx + 1}</td>
+                  {table.columns.map((col) => (
+                    <td key={col.name}>
+                      {row[col.name] === null || row[col.name] === undefined ? (
+                        <span className={styles["null-cell"]}>null</span>
+                      ) : (
+                        String(row[col.name])
+                      )}
+                    </td>
+                  ))}
+                </tr>
+              ))
+            )}
           </tbody>
         </table>
       </div>

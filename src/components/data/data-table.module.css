@@ -69,3 +69,4 @@
 .pagination { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) var(--space-4); border-top: 1px solid var(--color-border); flex-shrink: 0; }
 .page-info { font-size: var(--font-size-xs); color: var(--color-text-tertiary); }
 .page-btns { display: flex; gap: var(--space-2); }
+.debug-info { font-size: 11px; color: var(--color-text-tertiary); background: var(--color-bg-secondary); padding: 2px 8px; border-radius: 4px; border: 1px dashed var(--color-border); margin-right: 12px; }
