@@ -1,115 +1,190 @@
-// Data types
+/* ============================================================
+   DATA BI — TypeScript Type Definitions
+   ============================================================ */
+
+/* ---------- Data Types ---------- */
+
+export type DataType = "string" | "number" | "boolean" | "date";
+
+export interface ColumnSchema {
+  name: string;
+  type: DataType;
+  originalType: string;
+}
+
 export interface DataTable {
   id: string;
   name: string;
-  data: Record<string, any>[];
-  columns: string[];
-  createdAt: string;
+  columns: ColumnSchema[];
+  rows: Record<string, unknown>[];
+  rowCount: number;
 }
 
-export interface TableRelationship {
+export interface Relationship {
   id: string;
-  fromTable: string;
-  toTable: string;
-  fromColumn: string;
-  toColumn: string;
-  cardinality: 'one-to-one' | 'one-to-many' | 'many-to-many';
+  sourceTableId: string;
+  sourceColumn: string;
+  targetTableId: string;
+  targetColumn: string;
+  cardinality: "one-to-one" | "one-to-many" | "many-to-many";
 }
 
-export interface DataTransformation {
+export interface Measure {
   id: string;
+  name: string;
   tableId: string;
-  type: 'remove-nulls' | 'remove-duplicates' | 'aggregate' | 'type-cast';
-  config: Record<string, any>;
+  formula: string;
+  resultType: DataType;
 }
 
-// Canvas types
-export interface CanvasWidget {
-  id: string;
-  type: 'text-bar' | 'slicer' | 'kpi-card' | 'chart' | 'ai-summary';
-  x: number;
-  y: number;
-  width: number;
-  height: number;
-  config: {
-    title?: string;
-    content?: string;
-    style?: WidgetStyle;
-    chartType?: ChartType;
-    dataSource?: string;
-    fields?: string[];
-    values?: string[];
-    filters?: Filter[];
-  };
+/* ---------- Canvas & Widgets ---------- */
+
+export type WidgetType =
+  | "chart"
+  | "text"
+  | "kpi"
+  | "slicer"
+  | "ai-summary";
+
+export type ChartType =
+  | "bar"
+  | "line"
+  | "area"
+  | "pie"
+  | "donut"
+  | "scatter"
+  | "column"
+  | "time-series"
+  | "map";
+
+export interface WidgetField {
+  tableId: string;
+  columnName: string;
+  aggregation?: "sum" | "average" | "count" | "min" | "max" | "none";
 }
 
 export interface WidgetStyle {
-  backgroundColor?: string;
-  fontFamily?: string;
-  fontSize?: number;
-  fontColor?: string;
-  borderRadius?: number;
-  borderColor?: string;
-  borderWidth?: number;
+  backgroundColor: string;
+  textColor: string;
+  fontSize: number;
+  fontWeight: string;
+  borderRadius: number;
+  borderColor: string;
+  borderWidth: number;
+  padding: number;
+  opacity: number;
 }
 
-export type ChartType = 'bar' | 'line' | 'area' | 'pie' | 'donut' | 'scatter' | 'column' | 'time-series' | 'map';
+export interface ChartConfig {
+  chartType: ChartType;
+  fields: WidgetField[];
+  values: WidgetField[];
+  showLegend: boolean;
+  showTooltip: boolean;
+  title: string;
+  colorScheme: string[];
+}
 
-export interface Filter {
+export interface SlicerConfig {
+  tableId: string;
+  columnName: string;
+  selectedValues: unknown[];
+  multiSelect: boolean;
+}
+
+export interface KpiConfig {
+  tableId: string;
+  valueColumn: string;
+  aggregation: "sum" | "average" | "count" | "min" | "max";
+  label: string;
+  prefix: string;
+  suffix: string;
+  comparisonColumn?: string;
+  comparisonAggregation?: "sum" | "average" | "count" | "min" | "max";
+}
+
+export interface TextConfig {
+  content: string;
+  align: "left" | "center" | "right";
+}
+
+export interface AiSummaryConfig {
+  prompt: string;
+  generatedText: string;
+  isLoading: boolean;
+  tableIds: string[];
+}
+
+export interface Widget {
   id: string;
-  column: string;
-  operator: 'equals' | 'contains' | 'greater-than' | 'less-than';
-  value: any;
+  type: WidgetType;
+  title: string;
+  layout: {
+    x: number;
+    y: number;
+    w: number;
+    h: number;
+    minW?: number;
+    minH?: number;
+  };
+  style: WidgetStyle;
+  chartConfig?: ChartConfig;
+  slicerConfig?: SlicerConfig;
+  kpiConfig?: KpiConfig;
+  textConfig?: TextConfig;
+  aiSummaryConfig?: AiSummaryConfig;
 }
 
-// Project types
+export interface CanvasSettings {
+  backgroundColor: string;
+  width: number;
+  cols: number;
+  rowHeight: number;
+}
+
+/* ---------- Project ---------- */
+
 export interface Project {
   _id?: string;
-  id: string;
+  userId?: string;
   name: string;
-  description?: string;
+  description: string;
   tables: DataTable[];
-  relationships: TableRelationship[];
-  canvas: {
-    widgets: CanvasWidget[];
-    backgroundColor?: string;
-    width?: number;
-    height?: number;
-  };
-  shareLink?: string;
-  theme: 'light' | 'dark';
-  createdAt: string;
-  updatedAt: string;
-  owner?: string;
+  relationships: Relationship[];
+  measures: Measure[];
+  widgets: Widget[];
+  canvasSettings: CanvasSettings;
+  filters: Record<string, unknown>;
+  shareToken?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
-export interface MeasureFormula {
-  id: string;
-  name: string;
-  formula: string; // JavaScript expression
+/* ---------- UI State ---------- */
+
+export type EditorTab = "data" | "canvas" | "preview";
+export type DataPanel = "tables" | "transform" | "relationships" | "measures";
+export type SidebarPanel = "widgets" | "fields" | "settings" | "none";
+
+export interface ActiveFilter {
   tableId: string;
+  columnName: string;
+  values: unknown[];
 }
 
-// AI types
-export interface AISummary {
-  id: string;
-  widgetId: string;
-  projectId: string;
-  summary: string;
-  insights: string[];
-  trends: string[];
-  outliers: string[];
-  generatedAt: string;
-}
+/* ---------- Transform ---------- */
 
-// Slicer/Filter types
-export interface SlicerWidget extends CanvasWidget {
-  type: 'slicer';
-  config: {
-    title: string;
-    column: string;
-    tableId: string;
-    style?: WidgetStyle;
-    selectedValues: any[];
-  };
+export type TransformAction =
+  | "remove-nulls"
+  | "remove-duplicates"
+  | "aggregate"
+  | "cast-type";
+
+export interface TransformRequest {
+  tableId: string;
+  action: TransformAction;
+  column?: string;
+  targetType?: DataType;
+  aggregation?: "sum" | "average" | "count";
+  groupByColumns?: string[];
 }

@@ -1,0 +1,9 @@
+.slicer { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+.slicer-header { display: flex; align-items: center; justify-content: space-between; padding: 0 4px 8px; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+.slicer-title { font-size: 12px; font-weight: 600; color: var(--color-text-secondary); text-transform: uppercase; letter-spacing: 0.03em; }
+.slicer-list { flex: 1; overflow-y: auto; display: flex; flex-direction: column; gap: 2px; padding-top: 6px; }
+.slicer-item { display: flex; align-items: center; gap: 8px; padding: 4px 8px; font-size: 13px; border-radius: 6px; cursor: pointer; color: var(--color-text-secondary); transition: all 150ms; }
+.slicer-item:hover { background: var(--color-surface-hover); }
+.slicer-item--selected { background: var(--color-primary-glow); color: var(--color-primary); font-weight: 600; }
+.slicer-check { width: 16px; height: 16px; border: 1.5px solid var(--color-border); border-radius: 4px; display: flex; align-items: center; justify-content: center; font-size: 10px; flex-shrink: 0; }
+.slicer-item--selected .slicer-check { background: var(--color-primary); border-color: var(--color-primary); color: #fff; }

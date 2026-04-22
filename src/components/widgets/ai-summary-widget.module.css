@@ -1,0 +1,8 @@
+.ai-widget { display: flex; flex-direction: column; height: 100%; }
+.ai-header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 8px; border-bottom: 1px solid var(--color-border); flex-shrink: 0; }
+.ai-badge { font-size: 12px; font-weight: 700; color: var(--color-primary); }
+.ai-content { flex: 1; overflow-y: auto; padding-top: 8px; }
+.ai-text { font-size: 13px; line-height: 1.7; color: var(--color-text-secondary); white-space: pre-wrap; }
+.ai-placeholder { font-size: 13px; color: var(--color-text-tertiary); text-align: center; padding: 32px 16px; }
+.ai-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 32px; }
+.ai-pulse { width: 32px; height: 32px; background: var(--color-primary); border-radius: 50%; animation: pulse-glow 1.5s ease-in-out infinite; }
