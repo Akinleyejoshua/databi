@@ -7,6 +7,7 @@ import { useEffect, use } from "react";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import { useAuthStore } from "@/store/use-auth-store";
+import { useProjectHistory } from "@/store/use-project-history";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
 import CanvasArea from "@/components/canvas/canvas-area";
@@ -27,6 +28,9 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
   const { activeTab, isPreviewMode, selectedTableId } = useUiStore();
   const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuthStore();
   const router = useRouter();
+
+  // Initialize history tracking
+  useProjectHistory();
 
   useEffect(() => {
     checkAuth();

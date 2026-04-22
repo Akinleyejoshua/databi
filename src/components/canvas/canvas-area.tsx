@@ -7,12 +7,13 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { Rnd } from "react-rnd";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
+import { useHistoryShortcuts } from "@/store/use-project-history";
 import ChartWidget from "@/components/widgets/chart-widget";
 import TextWidget from "@/components/widgets/text-widget";
 import KpiWidget from "@/components/widgets/kpi-widget";
 import SlicerWidget from "@/components/widgets/slicer-widget";
 import AiSummaryWidget from "@/components/widgets/ai-summary-widget";
-import { Settings, GripHorizontal, BarChart3, Target, Filter, Bot, Type, MousePointer2, Hand } from "lucide-react";
+import { Settings, GripHorizontal, BarChart3, Target, Filter, Bot, Type, MousePointer2, Hand, RotateCcw, RotateCw } from "lucide-react";
 import styles from "./canvas-area.module.css";
 
 interface Props {
@@ -22,6 +23,7 @@ interface Props {
 export default function CanvasArea({ isSharePage }: Props) {
   const { project, selectedWidgetId, setSelectedWidget, updateLayouts } = useProjectStore();
   const { isPreviewMode, setSettingsModalOpen, cursorMode, setCursorMode } = useUiStore();
+  const { undo, redo, canUndo, canRedo } = useHistoryShortcuts();
   const [hasMounted, setHasMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
@@ -343,6 +345,32 @@ export default function CanvasArea({ isSharePage }: Props) {
               <Hand size={18} />
             </button>
             <div className="tooltip">Pan (H / Space)</div>
+          </div>
+
+          <div className={styles["tool-divider"]} />
+
+          <div className="tooltip-wrapper">
+            <button 
+              className={`${styles["tool-btn"]} ${!canUndo ? styles["tool-btn--disabled"] : ""}`}
+              onClick={undo}
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
+            >
+              <RotateCcw size={18} />
+            </button>
+            <div className="tooltip">Undo (Ctrl+Z)</div>
+          </div>
+
+          <div className="tooltip-wrapper">
+            <button 
+              className={`${styles["tool-btn"]} ${!canRedo ? styles["tool-btn--disabled"] : ""}`}
+              onClick={redo}
+              disabled={!canRedo}
+              title="Redo (Ctrl+Shift+Z)"
+            >
+              <RotateCw size={18} />
+            </button>
+            <div className="tooltip">Redo (Ctrl+Shift+Z)</div>
           </div>
 
           <div className={styles["tool-divider"]} />
