@@ -12,20 +12,28 @@ import TextWidget from "@/components/widgets/text-widget";
 import KpiWidget from "@/components/widgets/kpi-widget";
 import SlicerWidget from "@/components/widgets/slicer-widget";
 import AiSummaryWidget from "@/components/widgets/ai-summary-widget";
-import { Settings, GripHorizontal, BarChart3, Target, Filter, Bot, Type } from "lucide-react";
+import { Settings, GripHorizontal, BarChart3, Target, Filter, Bot, Type, MousePointer2, Hand } from "lucide-react";
 import styles from "./canvas-area.module.css";
 
 export default function CanvasArea() {
   const { project, selectedWidgetId, setSelectedWidget, updateLayouts } = useProjectStore();
-  const { isPreviewMode, setSettingsModalOpen } = useUiStore();
+  const { isPreviewMode, setSettingsModalOpen, cursorMode, setCursorMode } = useUiStore();
   const [hasMounted, setHasMounted] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
   const [canvasHeight, setCanvasHeight] = useState<number | string>("calc(100vh - 100px)");
+  const [canvasWidth, setCanvasWidth] = useState<number | string>("100%");
+
+  // Pan state
+  const isPanning = useRef(false);
+  const lastPos = useRef({ x: 0, y: 0 });
 
   useEffect(() => {
     setHasMounted(true);
     if (!containerRef.current) return;
+
+    const width = containerRef.current.offsetWidth;
+    if (width > 0) setContainerWidth(width);
 
     const observer = new ResizeObserver((entries) => {
       for (let entry of entries) {
@@ -37,23 +45,59 @@ export default function CanvasArea() {
     return () => observer.disconnect();
   }, []);
 
-  // Calculate "infinite" canvas height based on widget positions
+  // Keyboard shortcuts for tools
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) return;
+      
+      if (e.code === "Space") {
+        setCursorMode("pan");
+      }
+      if (e.key.toLowerCase() === "v") {
+        setCursorMode("select");
+      }
+      if (e.key.toLowerCase() === "h") {
+        setCursorMode("pan");
+      }
+    };
+
+    const handleKeyUp = (e: KeyboardEvent) => {
+      if (e.code === "Space") {
+        // Option: return to select on space up, or stay in pan
+        // setCursorMode("select"); 
+      }
+    };
+
+    window.addEventListener("keydown", handleKeyDown);
+    window.addEventListener("keyup", handleKeyUp);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+      window.removeEventListener("keyup", handleKeyUp);
+    };
+  }, [setCursorMode]);
+
+  // Calculate infinite canvas size
   useEffect(() => {
     if (!project?.widgets.length) {
       setCanvasHeight("calc(100vh - 100px)");
+      setCanvasWidth("100%");
       return;
     }
+    
     const maxBottom = Math.max(...project.widgets.map(w => w.layout.y + w.layout.h));
+    const maxRight = Math.max(...project.widgets.map(w => w.layout.x + w.layout.w));
+    
     const viewportHeight = window.innerHeight;
     const rowHeight = project.canvasSettings.rowHeight || 30;
-    const calculatedHeight = Math.max(viewportHeight - 100, (maxBottom + 10) * rowHeight);
+    const cols = project.canvasSettings.cols || 24;
+    const colWidth = containerWidth / cols;
+
+    const calculatedHeight = Math.max(viewportHeight - 100, (maxBottom + 25) * rowHeight);
+    const calculatedWidth = Math.max(containerWidth, (maxRight + 10) * colWidth);
     
-    if (isFinite(calculatedHeight)) {
-      setCanvasHeight(calculatedHeight);
-    } else {
-      setCanvasHeight("calc(100vh - 100px)");
-    }
-  }, [project?.widgets, project?.canvasSettings.rowHeight]);
+    if (isFinite(calculatedHeight)) setCanvasHeight(calculatedHeight);
+    if (isFinite(calculatedWidth)) setCanvasWidth(calculatedWidth);
+  }, [project?.widgets, project?.canvasSettings, containerWidth]);
 
   if (!project || !hasMounted) return null;
 
@@ -61,31 +105,29 @@ export default function CanvasArea() {
   const rowHeight = project.canvasSettings.rowHeight || 30;
   const colWidth = containerWidth / cols;
 
-  const renderWidget = (widget: typeof project.widgets[0]) => {
-    switch (widget.type) {
-      case "chart": return <ChartWidget widget={widget} />;
-      case "text": return <TextWidget widget={widget} />;
-      case "kpi": return <KpiWidget widget={widget} />;
-      case "slicer": return <SlicerWidget widget={widget} />;
-      case "ai-summary": return <AiSummaryWidget widget={widget} />;
-      default: return null;
-    }
+  const handleDrag = (e: any) => {
+    if (isPreviewMode) return;
+    
+    // Auto-scroll logic
+    if (!containerRef.current) return;
+    const { clientX, clientY } = e;
+    const { left, top, right, bottom } = containerRef.current.getBoundingClientRect();
+    
+    const threshold = 50;
+    const scrollSpeed = 15;
+
+    if (clientX > right - threshold) containerRef.current.scrollLeft += scrollSpeed;
+    if (clientX < left + threshold) containerRef.current.scrollLeft -= scrollSpeed;
+    if (clientY > bottom - threshold) containerRef.current.scrollTop += scrollSpeed;
+    if (clientY < top + threshold) containerRef.current.scrollTop -= scrollSpeed;
   };
 
   const handleDragStop = (id: string, d: { x: number; y: number }) => {
     const x = Math.round(d.x / colWidth);
     const y = Math.round(d.y / rowHeight);
-    
     const widget = project.widgets.find(w => w.id === id);
     if (!widget) return;
-
-    updateLayouts([{
-      id,
-      x,
-      y,
-      w: widget.layout.w,
-      h: widget.layout.h
-    }]);
+    updateLayouts([{ id, x, y, w: widget.layout.w, h: widget.layout.h }]);
   };
 
   const handleResizeStop = (id: string, ref: HTMLElement, position: { x: number; y: number }) => {
@@ -93,116 +135,176 @@ export default function CanvasArea() {
     const h = Math.round(ref.offsetHeight / rowHeight);
     const x = Math.round(position.x / colWidth);
     const y = Math.round(position.y / rowHeight);
+    updateLayouts([{ id, x, y, w, h }]);
+  };
 
-    updateLayouts([{
-      id,
-      x,
-      y,
-      w,
-      h
-    }]);
+  // Pan Handlers
+  const onMouseDown = (e: React.MouseEvent) => {
+    if (cursorMode !== "pan") return;
+    isPanning.current = true;
+    lastPos.current = { x: e.clientX, y: e.clientY };
+    if (containerRef.current) containerRef.current.style.cursor = "grabbing";
+  };
+
+  const onMouseMove = (e: React.MouseEvent) => {
+    if (!isPanning.current || !containerRef.current) return;
+    const dx = e.clientX - lastPos.current.x;
+    const dy = e.clientY - lastPos.current.y;
+    containerRef.current.scrollLeft -= dx;
+    containerRef.current.scrollTop -= dy;
+    lastPos.current = { x: e.clientX, y: e.clientY };
+  };
+
+  const onMouseUp = () => {
+    isPanning.current = false;
+    if (containerRef.current) containerRef.current.style.cursor = cursorMode === "pan" ? "grab" : "default";
   };
 
   return (
-    <div
-      ref={containerRef}
-      className={styles.canvas}
-      style={{ 
-        backgroundColor: project.canvasSettings.backgroundColor,
-        minHeight: canvasHeight,
-        position: "relative",
-        /* @ts-ignore */
-        "--col-width": `${colWidth}px`,
-        "--row-height": `${rowHeight}px`
-      }}
-      onClick={() => setSelectedWidget(null)}
-    >
-      {project.widgets.length === 0 ? (
-        <div className={styles["canvas-empty"]}>
-          <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
-            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
-            <line x1="3" y1="9" x2="21" y2="9" />
-            <line x1="9" y1="21" x2="9" y2="9" />
-          </svg>
-          <h3>Empty Canvas</h3>
-          <p>Add widgets from the sidebar to start building your dashboard</p>
+    <div className={styles["canvas-viewport"]} style={{ position: "relative", flex: 1, overflow: "hidden", display: "flex", flexDirection: "column" }}>
+      
+      {/* Figma-style Floating Toolbar */}
+      {!isPreviewMode && (
+        <div className={styles["canvas-toolbar"]}>
+          <button 
+            className={`${styles["tool-btn"]} ${cursorMode === "select" ? styles["tool-btn--active"] : ""}`}
+            onClick={() => setCursorMode("select")}
+            title="Select (V)"
+          >
+            <MousePointer2 size={18} />
+          </button>
+          <button 
+            className={`${styles["tool-btn"]} ${cursorMode === "pan" ? styles["tool-btn--active"] : ""}`}
+            onClick={() => setCursorMode("pan")}
+            title="Pan (H / Space)"
+          >
+            <Hand size={18} />
+          </button>
+          <div className={styles["tool-divider"]} />
+          <span style={{ fontSize: "11px", fontWeight: 600, opacity: 0.5, padding: "0 8px" }}>
+            {cursorMode === "pan" ? "PAN MODE" : "SELECT"}
+          </span>
         </div>
-      ) : (
-        project.widgets.map((widget) => {
-          const x = widget.layout.x * colWidth;
-          const y = widget.layout.y * rowHeight;
-          const w = widget.layout.w * colWidth;
-          const h = widget.layout.h * rowHeight;
-
-          return (
-            <Rnd
-              key={widget.id}
-              size={{ width: w, height: h }}
-              position={{ x, y }}
-              onDragStart={() => setSelectedWidget(widget.id)}
-              onResizeStart={() => setSelectedWidget(widget.id)}
-              onDragStop={(e, d) => handleDragStop(widget.id, d)}
-              onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(widget.id, ref, position)}
-              dragGrid={[colWidth, rowHeight]}
-              resizeGrid={[colWidth, rowHeight]}
-              disableDragging={isPreviewMode}
-              enableResizing={!isPreviewMode}
-              dragHandleClassName={styles["drag-handle"]}
-              minWidth={colWidth * (widget.layout.minW || 1)}
-              minHeight={rowHeight * (widget.layout.minH || 1)}
-              bounds="parent"
-              style={{ zIndex: selectedWidgetId === widget.id ? 50 : 1 }}
-            >
-              <div
-                className={`${styles["widget-wrapper"]} ${
-                  selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
-                } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
-                onClick={(e) => {
-                  if (!isPreviewMode) {
-                    e.stopPropagation();
-                    setSelectedWidget(widget.id);
-                  }
-                }}
-                style={{
-                  backgroundColor: widget.style.backgroundColor,
-                  color: widget.style.textColor,
-                  borderRadius: `${widget.style.borderRadius}px`,
-                  border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
-                  padding: `${widget.style.padding}px`,
-                  opacity: widget.style.opacity,
-                  width: "100%",
-                  height: "100%",
-                  display: "flex",
-                  flexDirection: "column"
-                }}
-              >
-                {!isPreviewMode && (
-                  <div className={styles["drag-handle"]}>
-                    <div className={styles["widget-label"]}>
-                      <GripHorizontal size={14} opacity={0.5} />
-                      {widget.type === "chart" ? <BarChart3 size={12} /> : widget.type === "kpi" ? <Target size={12} /> : widget.type === "slicer" ? <Filter size={12} /> : widget.type === "ai-summary" ? <Bot size={12} /> : <Type size={12} />}
-                      <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.7 }}>{widget.title}</span>
-                    </div>
-                    <button 
-                      className={styles["settings-btn"]} 
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setSelectedWidget(widget.id);
-                        setSettingsModalOpen(true);
-                      }}
-                    >
-                      <Settings size={14} />
-                    </button>
-                  </div>
-                )}
-                <div className={styles["widget-content"]}>
-                  {renderWidget(widget)}
-                </div>
-              </div>
-            </Rnd>
-          );
-        })
       )}
+
+      <div
+        ref={containerRef}
+        className={`${styles.canvas} ${cursorMode === "pan" ? styles["canvas--panning"] : ""}`}
+        onMouseDown={onMouseDown}
+        onMouseMove={onMouseMove}
+        onMouseUp={onMouseUp}
+        onMouseLeave={onMouseUp}
+        style={{ 
+          backgroundColor: project.canvasSettings.backgroundColor,
+          minHeight: canvasHeight,
+          width: canvasWidth,
+          position: "relative",
+          cursor: cursorMode === "pan" ? "grab" : "default",
+          /* @ts-ignore */
+          "--col-width": `${colWidth}px`,
+          "--row-height": `${rowHeight}px`
+        }}
+        onClick={() => {
+          if (cursorMode === "select") setSelectedWidget(null);
+        }}
+      >
+        {project.widgets.length === 0 ? (
+          <div className={styles["canvas-empty"]}>
+            <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" opacity="0.3">
+              <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+              <line x1="3" y1="9" x2="21" y2="9" />
+              <line x1="9" y1="21" x2="9" y2="9" />
+            </svg>
+            <h3>Empty Canvas</h3>
+            <p>Add widgets to start building</p>
+          </div>
+        ) : (
+          project.widgets.map((widget) => {
+            const x = widget.layout.x * colWidth;
+            const y = widget.layout.y * rowHeight;
+            const w = widget.layout.w * colWidth;
+            const h = widget.layout.h * rowHeight;
+
+            return (
+              <Rnd
+                key={widget.id}
+                size={{ width: w, height: h }}
+                position={{ x, y }}
+                onDragStart={() => {
+                  if (cursorMode === "select") setSelectedWidget(widget.id);
+                }}
+                onResizeStart={() => setSelectedWidget(widget.id)}
+                onDrag={(e) => handleDrag(e)}
+                onDragStop={(e, d) => handleDragStop(widget.id, d)}
+                onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(widget.id, ref, position)}
+                dragGrid={[colWidth, rowHeight]}
+                resizeGrid={[colWidth, rowHeight]}
+                disableDragging={isPreviewMode || cursorMode === "pan"}
+                enableResizing={!isPreviewMode && cursorMode === "select"}
+                dragHandleClassName={styles["drag-handle"]}
+                minWidth={colWidth * (widget.layout.minW || 1)}
+                minHeight={rowHeight * (widget.layout.minH || 1)}
+                style={{ zIndex: selectedWidgetId === widget.id ? 50 : 1, pointerEvents: cursorMode === "pan" ? "none" : "auto" }}
+              >
+                <div
+                  className={`${styles["widget-wrapper"]} ${
+                    selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
+                  } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
+                  onClick={(e) => {
+                    if (!isPreviewMode && cursorMode === "select") {
+                      e.stopPropagation();
+                      setSelectedWidget(widget.id);
+                    }
+                  }}
+                  style={{
+                    backgroundColor: widget.style.backgroundColor,
+                    color: widget.style.textColor,
+                    borderRadius: `${widget.style.borderRadius}px`,
+                    border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
+                    padding: `${widget.style.padding}px`,
+                    opacity: widget.style.opacity,
+                    width: "100%",
+                    height: "100%",
+                    display: "flex",
+                    flexDirection: "column"
+                  }}
+                >
+                  {!isPreviewMode && cursorMode === "select" && (
+                    <div className={styles["drag-handle"]}>
+                      <div className={styles["widget-label"]}>
+                        <GripHorizontal size={14} opacity={0.5} />
+                        <span style={{ fontSize: "10px", fontWeight: 600, opacity: 0.7 }}>{widget.title}</span>
+                      </div>
+                      <button 
+                        className={styles["settings-btn"]} 
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          setSelectedWidget(widget.id);
+                          setSettingsModalOpen(true);
+                        }}
+                      >
+                        <Settings size={14} />
+                      </button>
+                    </div>
+                  )}
+                  <div className={styles["widget-content"]} style={{ paddingTop: cursorMode === "select" ? "32px" : "6px" }}>
+                    {(() => {
+                      switch (widget.type) {
+                        case "chart": return <ChartWidget widget={widget} />;
+                        case "text": return <TextWidget widget={widget} />;
+                        case "kpi": return <KpiWidget widget={widget} />;
+                        case "slicer": return <SlicerWidget widget={widget} />;
+                        case "ai-summary": return <AiSummaryWidget widget={widget} />;
+                        default: return null;
+                      }
+                    })()}
+                  </div>
+                </div>
+              </Rnd>
+            );
+          })
+        )}
+      </div>
     </div>
   );
 }

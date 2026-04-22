@@ -13,14 +13,15 @@ import type { Project } from "@/types";
 export default function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
   const { setProject } = useProjectStore();
-  const { setPreviewMode } = useUiStore();
+  const { setPreviewMode, setTheme } = useUiStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
   useEffect(() => {
     setPreviewMode(true);
+    setTheme("light"); // Force light mode for share page
     return () => setPreviewMode(false);
-  }, [setPreviewMode]);
+  }, [setPreviewMode, setTheme]);
 
   useEffect(() => {
     const fetchProject = async () => {
@@ -61,13 +62,7 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
   }
 
   return (
-    <div style={{ minHeight: "100vh" }}>
-      <div style={{ position: "fixed", top: 16, right: 16, zIndex: 100 }}>
-        <ThemeToggle />
-      </div>
-      <div style={{ padding: "16px 0", textAlign: "center" }}>
-        <span style={{ fontSize: "12px", color: "var(--color-primary)", fontWeight: 600 }}>SHARED DASHBOARD</span>
-      </div>
+    <div style={{ minHeight: "100vh", backgroundColor: "var(--color-bg)" }}>
       <CanvasArea />
     </div>
   );

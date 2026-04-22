@@ -53,6 +53,9 @@ interface UiStore {
   isPreviewMode: boolean;
   setPreviewMode: (mode: boolean) => void;
 
+  cursorMode: "select" | "pan";
+  setCursorMode: (mode: "select" | "pan") => void;
+
   /* --- Toasts --- */
   toasts: { id: string; message: string; type: "success" | "error" | "info" }[];
   addToast: (message: string, type?: "success" | "error" | "info") => void;
@@ -117,6 +120,9 @@ export const useUiStore = create<UiStore>((set) => ({
   /* --- Canvas --- */
   isPreviewMode: false,
   setPreviewMode: (mode) => set({ isPreviewMode: mode }),
+
+  cursorMode: "select",
+  setCursorMode: (mode) => set({ cursorMode: mode }),
 
   /* --- Toasts --- */
   toasts: [],
