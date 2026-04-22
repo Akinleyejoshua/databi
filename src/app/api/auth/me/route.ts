@@ -15,7 +15,10 @@ export async function GET(req: NextRequest) {
     }
 
     await connectDB();
-    const user = await UserModel.findById(userId).lean();
+    const identifier = userId; // This is now an email address
+    
+    // Find user by email
+    const user = await UserModel.findOne({ email: identifier.toLowerCase().trim() }).lean();
 
     if (!user) {
       const response = NextResponse.json({ user: null }, { status: 200 });

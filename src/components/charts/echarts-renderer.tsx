@@ -5,19 +5,20 @@
 
 import { useMemo, useEffect, useRef } from "react";
 import ReactECharts from "echarts-for-react";
-import type { ChartConfig, DataTable, ActiveFilter, Measure } from "@/types";
-import { applyFilters, CHART_COLORS } from "@/lib/utils";
+import type { ChartConfig, DataTable, ActiveFilter, Measure, Relationship } from "@/types";
+import { applyFilters, CHART_COLORS, parseSafeNumber, joinTables } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
   tables: DataTable[];
   filters: ActiveFilter[];
+  relationships?: Relationship[];
   measures?: Measure[];
   width?: number;
   height?: number;
 }
 
-export default function EChartsRenderer({ config, tables, filters, measures = [], height = 300 }: Props) {
+export default function EChartsRenderer({ config, tables, filters, relationships = [], measures = [], height = 300 }: Props) {
   const chartRef = useRef<ReactECharts>(null);
 
   // Resize when the container changes
@@ -27,23 +28,33 @@ export default function EChartsRenderer({ config, tables, filters, measures = []
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  const option = useMemo(() => {
-    if (!config.fields.length || !config.values.length) return null;
+  const { option, hasData } = useMemo(() => {
+    if (!config.fields.length || !config.values.length) return { option: null, hasData: false };
 
     const fieldDef = config.fields[0];
     const table = tables.find((t) => t.id === fieldDef.tableId);
-    if (!table) return null;
+    if (!table) return { option: null, hasData: false };
 
-    const rows = applyFilters(table, filters);
+    // Determine if we need to join tables
+    const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
+    let rows: Record<string, unknown>[] = [];
+    
+    if (valueTableIds.length > 0 && relationships.length > 0) {
+      const tablesToJoin = tables.filter(t => t.id === fieldDef.tableId || valueTableIds.includes(t.id));
+      rows = joinTables(tablesToJoin, relationships, filters);
+    } else {
+      rows = applyFilters(table, filters);
+    }
+
+    if (rows.length === 0) return { option: null, hasData: false };
+
     const categories = [...new Set(rows.map((r) => String(r[fieldDef.columnName])))];
     const colors = config.colorScheme?.length ? config.colorScheme : CHART_COLORS;
 
     const series = config.values.map((v, i) => {
       // Check if it's a measure
       if (v.aggregation === "measure") {
-        const measure = measures.find((m) => m.id === v.columnName); // columnName stores measure ID
-        const mTable = tables.find((t) => t.id === measure?.tableId);
-        const mRows = mTable ? applyFilters(mTable, filters) : rows;
+        const measure = measures.find((m) => m.id === v.columnName);
         
         let evalFn: Function | null = null;
         if (measure) {
@@ -55,10 +66,9 @@ export default function EChartsRenderer({ config, tables, filters, measures = []
         }
 
         const data = categories.map((cat) => {
-          const matching = mRows.filter((r) => String(r[fieldDef.columnName]) === cat);
+          const matching = rows.filter((r) => String(r[fieldDef.columnName]) === cat);
           if (!evalFn || matching.length === 0) return 0;
           try {
-            // Evaluates the formula by passing the first matching row and all matching rows
             const res = evalFn(matching[0], matching);
             return Number(res) || 0;
           } catch (e) {
@@ -76,12 +86,9 @@ export default function EChartsRenderer({ config, tables, filters, measures = []
       }
 
       // Standard Column Aggregation
-      const vTable = tables.find((t) => t.id === v.tableId);
-      const vRows = vTable ? applyFilters(vTable, filters) : rows;
-
       const data = categories.map((cat) => {
-        const matching = vRows.filter((r) => String(r[fieldDef.columnName]) === cat);
-        const vals = matching.map((r) => Number(r[v.columnName])).filter((n) => !isNaN(n));
+        const matching = rows.filter((r) => String(r[fieldDef.columnName]) === cat);
+        const vals = matching.map((r) => parseSafeNumber(r[v.columnName])).filter((n) => !isNaN(n));
 
         switch (v.aggregation) {
           case "sum": return vals.reduce((a, b) => a + b, 0);
@@ -106,26 +113,29 @@ export default function EChartsRenderer({ config, tables, filters, measures = []
     const isHorizontalBar = config.chartType === "bar";
 
     return {
-      title: { text: config.title, left: "center", top: 8, textStyle: { fontSize: 14, fontFamily: "Bricolage Grotesque", fontWeight: 600 } },
-      tooltip: config.showTooltip ? { trigger: isPie ? "item" : "axis" } : undefined,
-      legend: config.showLegend ? { bottom: 4, textStyle: { fontSize: 11 } } : undefined,
-      grid: isPie ? undefined : { left: "8%", right: "4%", top: 40, bottom: config.showLegend ? 40 : 24, containLabel: true },
-      xAxis: isPie ? undefined : (isHorizontalBar
-        ? { type: "value" as const }
-        : { type: "category" as const, data: categories, axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 11 } }),
-      yAxis: isPie ? undefined : (isHorizontalBar
-        ? { type: "category" as const, data: categories }
-        : { type: "value" as const }),
-      series,
-      color: colors,
+      hasData: true,
+      option: {
+        title: { text: config.title, left: "center", top: 8, textStyle: { fontSize: 14, fontFamily: "Bricolage Grotesque", fontWeight: 600 } },
+        tooltip: config.showTooltip ? { trigger: isPie ? "item" : "axis" } : undefined,
+        legend: config.showLegend ? { bottom: 4, textStyle: { fontSize: 11 } } : undefined,
+        grid: isPie ? undefined : { left: "8%", right: "4%", top: 40, bottom: config.showLegend ? 40 : 24, containLabel: true },
+        xAxis: isPie ? undefined : (isHorizontalBar
+          ? { type: "value" as const }
+          : { type: "category" as const, data: categories, axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 11 } }),
+        yAxis: isPie ? undefined : (isHorizontalBar
+          ? { type: "category" as const, data: categories }
+          : { type: "value" as const }),
+        series,
+        color: colors,
+      }
     };
-  }, [config, tables, filters, measures]);
+  }, [config, tables, filters, measures, relationships]);
 
-  if (!option) {
+  if (!hasData) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "13px", flexDirection: "column", gap: "8px" }}>
-        <span style={{ fontSize: "24px" }}>📊</span>
-        <span>Configure Fields & Values</span>
+        <span style={{ fontSize: "24px" }}>🔍</span>
+        <span>{(!config.fields.length || !config.values.length) ? "Configure Fields & Values" : "No data found for current filters"}</span>
       </div>
     );
   }

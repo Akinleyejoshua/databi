@@ -95,11 +95,12 @@ export default function CanvasArea() {
           onLayoutChange={handleLayoutChange}
           isDraggable={!isPreviewMode}
           isResizable={!isPreviewMode}
-          compactType="vertical"
-          preventCollision={false}
+          compactType={null}
+          preventCollision={true}
           margin={[8, 8] as [number, number]}
           containerPadding={[16, 16] as [number, number]}
           useCSSTransforms
+          style={{ minHeight: "calc(100vh - 100px)" }}
         >
           {project.widgets.map((widget) => (
             <div

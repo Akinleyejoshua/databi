@@ -15,13 +15,13 @@ export async function GET(
 ) {
   try {
     await connectDB();
-    const userId = _req.cookies.get("databi_user")?.value;
-    if (!userId) {
+    const userEmail = _req.cookies.get("databi_user")?.value;
+    if (!userEmail) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const { id } = await params;
-    const project = await ProjectModel.findOne({ _id: id, userId }).lean();
+    const project = await ProjectModel.findOne({ _id: id, userId: userEmail }).lean();
 
     if (!project) {
       return NextResponse.json(
@@ -46,8 +46,8 @@ export async function PUT(
 ) {
   try {
     await connectDB();
-    const userId = req.cookies.get("databi_user")?.value;
-    if (!userId) {
+    const userEmail = req.cookies.get("databi_user")?.value;
+    if (!userEmail) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
@@ -58,7 +58,7 @@ export async function PUT(
     const { _id, ...updateData } = body;
 
     const project = await ProjectModel.findOneAndUpdate(
-      { _id: id, userId },
+      { _id: id, userId: userEmail },
       { $set: updateData },
       { returnDocument: "after", runValidators: true }
     ).lean();
@@ -86,13 +86,13 @@ export async function DELETE(
 ) {
   try {
     await connectDB();
-    const userId = _req.cookies.get("databi_user")?.value;
-    if (!userId) {
+    const userEmail = _req.cookies.get("databi_user")?.value;
+    if (!userEmail) {
       return NextResponse.json({ error: "Not authenticated" }, { status: 401 });
     }
 
     const { id } = await params;
-    const project = await ProjectModel.findOneAndDelete({ _id: id, userId });
+    const project = await ProjectModel.findOneAndDelete({ _id: id, userId: userEmail });
 
     if (!project) {
       return NextResponse.json(

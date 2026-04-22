@@ -23,6 +23,7 @@ export default function ChartWidget({ widget }: Props) {
         tables={project.tables}
         filters={activeFilters}
         measures={project.measures}
+        relationships={project.relationships}
       />
     </div>
   );

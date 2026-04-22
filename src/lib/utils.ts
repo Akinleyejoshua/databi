@@ -45,8 +45,9 @@ export function applyFilters(
 
   for (const filter of filters) {
     if (filter.tableId === table.id && filter.values.length > 0) {
+      const filterValues = filter.values.map(String);
       rows = rows.filter((row) =>
-        filter.values.includes(row[filter.columnName])
+        filterValues.includes(String(row[filter.columnName]))
       );
     }
   }
@@ -90,7 +91,7 @@ export function joinTables(
     const joined: Record<string, unknown>[] = [];
     for (const leftRow of result) {
       for (const rightRow of nextRows) {
-        if (leftRow[leftCol] === rightRow[rightCol]) {
+        if (String(leftRow[leftCol]) === String(rightRow[rightCol])) {
           joined.push({
             ...leftRow,
             ...Object.fromEntries(
@@ -111,6 +112,19 @@ export function joinTables(
 }
 
 /**
+ * Parse a value to a number, handling strings with commas, currency symbols, etc.
+ */
+export function parseSafeNumber(value: any): number {
+  if (typeof value === "number") return value;
+  if (!value) return 0;
+  
+  // Remove non-numeric characters except for decimal point and minus sign
+  const cleaned = String(value).replace(/[^-0.9.]/g, "");
+  const num = parseFloat(cleaned);
+  return isNaN(num) ? 0 : num;
+}
+
+/**
  * Compute aggregation on a column
  */
 export function computeAggregation(
@@ -121,7 +135,7 @@ export function computeAggregation(
   if (aggregation === "count") return rows.length;
 
   const values = rows
-    .map((r) => Number(r[column]))
+    .map((r) => parseSafeNumber(r[column]))
     .filter((v) => !isNaN(v));
 
   if (values.length === 0) return 0;
@@ -148,7 +162,11 @@ export function detectColumnType(
 
   if (sample.length === 0) return "string";
 
-  const allNumbers = sample.every((v) => !isNaN(Number(v)));
+  const allNumbers = sample.every((v) => {
+    if (typeof v === "number") return true;
+    const cleaned = String(v).replace(/[^-0.9.]/g, "");
+    return cleaned.length > 0 && !isNaN(parseFloat(cleaned));
+  });
   if (allNumbers) return "number";
 
   const allBooleans = sample.every(

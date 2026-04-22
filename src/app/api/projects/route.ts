@@ -11,13 +11,13 @@ export const dynamic = "force-dynamic";
 export async function GET(req: NextRequest) {
   try {
     await connectDB();
-    const userId = req.cookies.get("databi_user")?.value;
+    const userEmail = req.cookies.get("databi_user")?.value;
 
-    if (!userId) {
+    if (!userEmail) {
       return NextResponse.json([], { status: 200 });
     }
 
-    const projects = await ProjectModel.find({ userId })
+    const projects = await ProjectModel.find({ userId: userEmail })
       .select("name description createdAt updatedAt shareToken")
       .sort({ updatedAt: -1 })
       .lean();
@@ -40,9 +40,9 @@ export async function GET(req: NextRequest) {
 export async function POST(req: NextRequest) {
   try {
     await connectDB();
-    const userId = req.cookies.get("databi_user")?.value;
+    const userEmail = req.cookies.get("databi_user")?.value;
 
-    if (!userId) {
+    if (!userEmail) {
       return NextResponse.json(
         { error: "Not authenticated" },
         { status: 401 }
@@ -54,7 +54,7 @@ export async function POST(req: NextRequest) {
     const project = await ProjectModel.create({
       name: body.name || "Untitled Project",
       description: body.description || "",
-      userId,
+      userId: userEmail,
       tables: body.tables || [],
       relationships: body.relationships || [],
       measures: body.measures || [],

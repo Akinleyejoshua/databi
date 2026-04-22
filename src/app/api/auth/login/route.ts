@@ -52,8 +52,8 @@ export async function POST(req: NextRequest) {
       name: user.name,
     });
 
-    // Set a simple cookie for session
-    response.cookies.set("databi_user", user._id.toString(), {
+    // Set a simple cookie for session (storing email for environment portability)
+    response.cookies.set("databi_user", normalizedEmail, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
