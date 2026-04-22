@@ -165,7 +165,7 @@ export interface Project {
 /* ---------- UI State ---------- */
 
 export type EditorTab = "data" | "canvas" | "preview";
-export type DataPanel = "tables" | "transform" | "relationships" | "measures";
+export type DataPanel = "tables" | "transform" | "relationships" | "measures" | "insights";
 export type SidebarPanel = "widgets" | "fields" | "settings" | "none";
 
 export interface ActiveFilter {

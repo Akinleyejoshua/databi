@@ -23,9 +23,10 @@ import {
   Settings
 } from "lucide-react";
 import styles from "./sidebar.module.css";
+import AiFormattedText from "../shared/ai-formatted-text";
 
 export default function Sidebar() {
-  const { activeTab, sidebarPanel, setSidebarPanel, dataPanel, setDataPanel, setUploadModalOpen, setRelationshipModalOpen, setMeasureModalOpen, selectedTableId, setSelectedTableId, setEditingMeasureId, addToast } = useUiStore();
+  const { activeTab, sidebarPanel, setSidebarPanel, dataPanel, setDataPanel, setUploadModalOpen, setRelationshipModalOpen, setMeasureModalOpen, selectedTableId, setSelectedTableId, setEditingMeasureId, addToast, globalAnalysis, setGlobalAnalysis, isAnalyzingGlobal, setIsAnalyzingGlobal } = useUiStore();
   const { project, addWidget, selectedWidgetId, removeMeasure, removeRelationship, updateTable, saveProject } = useProjectStore();
 
   if (!project) return null;
@@ -42,7 +43,7 @@ export default function Sidebar() {
         </div>
 
         <div className={styles["panel-tabs"]}>
-          {(["tables", "transform", "relationships", "measures"] as const).map((p) => (
+          {(["tables", "transform", "relationships", "measures", "insights"] as const).map((p) => (
             <button
               key={p}
               className={`${styles["panel-tab"]} ${dataPanel === p ? styles["panel-tab--active"] : ""}`}
@@ -186,6 +187,66 @@ export default function Sidebar() {
                   );
                 })
               )}
+            </div>
+          )}
+          {dataPanel === "insights" && (
+            <div className={styles["insights-panel"]} style={{ padding: "16px", height: "100%", display: "flex", flexDirection: "column" }}>
+              <div style={{ marginBottom: "20px", padding: "16px", background: "var(--color-primary-glow)", borderRadius: "12px", border: "1px solid var(--color-primary-glow-strong)" }}>
+                <h4 style={{ fontSize: "14px", fontWeight: 700, marginBottom: "8px", display: "flex", alignItems: "center", gap: "8px" }}>
+                  <span>🤖</span> AI Data Assistant
+                </h4>
+                <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", lineHeight: "1.5", marginBottom: "16px" }}>
+                  Generate an overall summary and strategic insights for your entire dataset.
+                </p>
+                <button 
+                  className="btn btn-primary" 
+                  style={{ width: "100%" }}
+                  disabled={isAnalyzingGlobal || project.tables.length === 0}
+                  onClick={async () => {
+                    setIsAnalyzingGlobal(true);
+                    addToast("Analyzing all project data...", "info");
+                    
+                    try {
+                      const res = await fetch("/api/ai/insights", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({
+                          mode: "data",
+                          tables: project.tables.map(t => ({
+                            name: t.name,
+                            rowCount: t.rowCount,
+                            columns: t.columns,
+                            rows: t.rows.slice(0, 50)
+                          }))
+                        }),
+                      });
+                      
+                      const data = await res.json();
+                      if (data.summary) {
+                        setGlobalAnalysis(data.summary);
+                        addToast("Analysis complete!", "success");
+                      }
+                    } catch (e) {
+                      addToast("AI Analysis failed", "error");
+                    } finally {
+                      setIsAnalyzingGlobal(false);
+                    }
+                  }}
+                >
+                  {isAnalyzingGlobal ? "Analyzing..." : "Generate Overall Analysis"}
+                </button>
+              </div>
+
+              <div style={{ flex: 1, overflowY: "auto", paddingRight: "4px" }}>
+                {globalAnalysis ? (
+                  <AiFormattedText text={globalAnalysis} />
+                ) : (
+                  <div style={{ textAlign: "center", padding: "40px 20px", opacity: 0.5 }}>
+                    <div style={{ fontSize: "32px", marginBottom: "16px" }}>🔭</div>
+                    <p style={{ fontSize: "12px" }}>No analysis generated yet. Click the button above to start.</p>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 

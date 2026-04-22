@@ -56,6 +56,12 @@ interface UiStore {
   cursorMode: "select" | "pan";
   setCursorMode: (mode: "select" | "pan") => void;
 
+  /* --- AI Insights --- */
+  globalAnalysis: string | null;
+  setGlobalAnalysis: (analysis: string | null) => void;
+  isAnalyzingGlobal: boolean;
+  setIsAnalyzingGlobal: (loading: boolean) => void;
+
   /* --- Toasts --- */
   toasts: { id: string; message: string; type: "success" | "error" | "info" }[];
   addToast: (message: string, type?: "success" | "error" | "info") => void;
@@ -123,6 +129,12 @@ export const useUiStore = create<UiStore>((set) => ({
 
   cursorMode: "select",
   setCursorMode: (mode) => set({ cursorMode: mode }),
+
+  /* --- AI Insights --- */
+  globalAnalysis: null,
+  setGlobalAnalysis: (analysis) => set({ globalAnalysis: analysis }),
+  isAnalyzingGlobal: false,
+  setIsAnalyzingGlobal: (loading) => set({ isAnalyzingGlobal: loading }),
 
   /* --- Toasts --- */
   toasts: [],
