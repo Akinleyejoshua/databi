@@ -12,7 +12,8 @@ import type { Project } from "@/types";
 
 export default function SharePage({ params }: { params: Promise<{ token: string }> }) {
   const { token } = use(params);
-  const { setProject } = useProjectStore();
+  const setProject = useProjectStore((state) => state.setProject);
+  const projectInStore = useProjectStore((state) => state.project);
   const { setPreviewMode, setTheme } = useUiStore();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -20,7 +21,9 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
   useEffect(() => {
     setPreviewMode(true);
     setTheme("light"); // Force light mode for share page
-    return () => setPreviewMode(false);
+    return () => {
+      setPreviewMode(false);
+    };
   }, [setPreviewMode, setTheme]);
 
   useEffect(() => {
@@ -62,8 +65,15 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
   }
 
   return (
-    <div style={{ minHeight: "100vh", backgroundColor: "var(--color-bg)" }}>
-      <CanvasArea />
+    <div style={{ 
+      height: "100vh", 
+      width: "100vw",
+      display: "flex", 
+      flexDirection: "column",
+      backgroundColor: "var(--color-bg)",
+      overflow: "hidden"
+    }}>
+      {projectInStore && <CanvasArea />}
     </div>
   );
 }

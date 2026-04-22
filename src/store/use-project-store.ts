@@ -96,7 +96,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   isLoading: false,
 
   /* --- Project Actions --- */
-  setProject: (project) => set({ project, isDirty: false }),
+  setProject: (project) => set({ project, activeFilters: [], selectedWidgetId: null, isDirty: false }),
 
   updateProjectMeta: (name, description) =>
     set((state) => ({
@@ -374,7 +374,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       if (!res.ok) throw new Error("Failed to load project");
 
       const project = await res.json();
-      set({ project, isDirty: false, isLoading: false });
+      set({ project, activeFilters: [], selectedWidgetId: null, isDirty: false, isLoading: false });
     } catch (error) {
       console.error("Load error:", error);
       set({ isLoading: false });

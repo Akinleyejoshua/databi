@@ -30,7 +30,10 @@ export default function CanvasArea() {
 
   useEffect(() => {
     setHasMounted(true);
-    if (!containerRef.current) return;
+  }, []);
+
+  useEffect(() => {
+    if (!hasMounted || !containerRef.current) return;
 
     const width = containerRef.current.offsetWidth;
     if (width > 0) setContainerWidth(width);
@@ -43,7 +46,7 @@ export default function CanvasArea() {
 
     observer.observe(containerRef.current);
     return () => observer.disconnect();
-  }, []);
+  }, [hasMounted]);
 
   // Keyboard shortcuts for tools
   useEffect(() => {

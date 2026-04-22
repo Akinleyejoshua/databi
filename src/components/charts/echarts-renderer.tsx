@@ -40,18 +40,18 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     if (!config.fields.length || !config.values.length) return { option: null, hasData: false };
 
     const fieldDef = config.fields[0];
-    const table = tables.find((t) => t.id === fieldDef.tableId);
-    if (!table) return { option: null, hasData: false };
+    const table = tables?.find((t) => t.id === fieldDef.tableId);
+    if (!table || !table.rows) return { option: null, hasData: false };
 
     // Determine if we need to join tables
     const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
     let rows: Record<string, unknown>[] = [];
     
-    if (valueTableIds.length > 0 && relationships.length > 0) {
+    if (valueTableIds.length > 0 && relationships?.length > 0) {
       const tablesToJoin = tables.filter(t => t.id === fieldDef.tableId || valueTableIds.includes(t.id));
       rows = joinTables(tablesToJoin, relationships, filters);
     } else {
-      rows = applyFilters(table, filters);
+      rows = applyFilters(table, filters || []);
     }
 
     if (rows.length === 0) return { option: null, hasData: false };
