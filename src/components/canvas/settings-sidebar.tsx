@@ -258,6 +258,7 @@ export default function SettingsModal() {
                     <option value="data">Analyze Raw Data</option>
                     <option value="schema">Analyze Structure</option>
                     <option value="charts">Analyze Visuals</option>
+                    <option value="overall">Overall Dataset Analysis</option>
                   </select>
                 </div>
                 <div className={styles.field}>
@@ -292,17 +293,49 @@ export default function SettingsModal() {
             <span className={styles["section-label"]}>Visual Style</span>
             <div className={styles.field}>
               <label className="label">Background</label>
-              <div className={styles["color-input"]}>
-                <input type="color" value={widget.style.backgroundColor.startsWith("var") ? "#ffffff" : widget.style.backgroundColor} onChange={(e) => updateWidgetStyle(widget.id, { backgroundColor: e.target.value })} />
-                <input className="input" value={widget.style.backgroundColor} onChange={(e) => updateWidgetStyle(widget.id, { backgroundColor: e.target.value })} />
+              <div className={styles["premium-color-picker"]}>
+                <div 
+                  className={styles["color-swatch"]} 
+                  style={{ backgroundColor: widget.style.backgroundColor.startsWith("var") ? "var(--color-bg-secondary)" : widget.style.backgroundColor }}
+                  onClick={() => document.getElementById(`bg-color-${widget.id}`)?.click()}
+                />
+                <input 
+                  id={`bg-color-${widget.id}`}
+                  type="color" 
+                  value={widget.style.backgroundColor.startsWith("var") ? "#ffffff" : widget.style.backgroundColor} 
+                  onChange={(e) => updateWidgetStyle(widget.id, { backgroundColor: e.target.value })} 
+                  style={{ visibility: "hidden", position: "absolute", width: 0 }}
+                />
+                <input 
+                  className="input" 
+                  value={widget.style.backgroundColor} 
+                  onChange={(e) => updateWidgetStyle(widget.id, { backgroundColor: e.target.value })} 
+                  style={{ flex: 1, height: "32px", fontSize: "12px" }}
+                />
               </div>
             </div>
 
             <div className={styles.field}>
               <label className="label">Text Color</label>
-              <div className={styles["color-input"]}>
-                <input type="color" value={widget.style.textColor.startsWith("var") ? "#000000" : widget.style.textColor} onChange={(e) => updateWidgetStyle(widget.id, { textColor: e.target.value })} />
-                <input className="input" value={widget.style.textColor} onChange={(e) => updateWidgetStyle(widget.id, { textColor: e.target.value })} />
+              <div className={styles["premium-color-picker"]}>
+                <div 
+                  className={styles["color-swatch"]} 
+                  style={{ backgroundColor: widget.style.textColor.startsWith("var") ? "var(--color-text)" : widget.style.textColor }}
+                  onClick={() => document.getElementById(`text-color-${widget.id}`)?.click()}
+                />
+                <input 
+                  id={`text-color-${widget.id}`}
+                  type="color" 
+                  value={widget.style.textColor.startsWith("var") ? "#000000" : widget.style.textColor} 
+                  onChange={(e) => updateWidgetStyle(widget.id, { textColor: e.target.value })} 
+                  style={{ visibility: "hidden", position: "absolute", width: 0 }}
+                />
+                <input 
+                  className="input" 
+                  value={widget.style.textColor} 
+                  onChange={(e) => updateWidgetStyle(widget.id, { textColor: e.target.value })} 
+                  style={{ flex: 1, height: "32px", fontSize: "12px" }}
+                />
               </div>
             </div>
 

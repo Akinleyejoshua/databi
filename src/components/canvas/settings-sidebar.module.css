@@ -42,20 +42,36 @@
   gap: var(--space-1);
 }
 
+.premium-color-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 4px;
+  transition: all var(--transition-fast);
+}
+
+.premium-color-picker:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-glow);
+}
+
+.color-swatch {
+  width: 24px;
+  height: 24px;
+  border-radius: var(--radius-full);
+  border: 2px solid #fff;
+  box-shadow: 0 0 0 1px var(--color-border);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
 .color-input {
   display: flex;
   align-items: center;
   gap: var(--space-2);
-}
-
-.color-input input[type="color"] {
-  width: 32px;
-  height: 32px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  padding: 2px;
-  background: var(--color-bg-secondary);
 }
 
 .section-label {

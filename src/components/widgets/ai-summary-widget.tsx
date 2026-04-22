@@ -43,6 +43,13 @@ export default function AiSummaryWidget({ widget }: Props) {
             fields: w.chartConfig?.fields,
             values: w.chartConfig?.values
           }));
+      } else if (mode === "overall") {
+        payload.tables = project.tables.map((t) => ({
+          name: t.name,
+          rowCount: t.rowCount,
+          columns: t.columns,
+          rows: t.rows.slice(0, 50),
+        }));
       } else {
         const tablesToSend = aiConfig?.tableIds?.length
           ? project.tables.filter((t) => aiConfig.tableIds.includes(t.id))

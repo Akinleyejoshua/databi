@@ -114,7 +114,7 @@ export interface AiSummaryConfig {
   generatedText: string;
   isLoading: boolean;
   tableIds: string[];
-  analysisMode: "data" | "schema" | "charts";
+  analysisMode: "data" | "schema" | "charts" | "overall";
 }
 
 export interface Widget {
