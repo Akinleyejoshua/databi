@@ -117,7 +117,8 @@ export default function CanvasArea() {
                 w: widget.layout.w,
                 h: widget.layout.h,
                 minW: widget.layout.minW || 4,
-                minH: widget.layout.minH || 4
+                minH: widget.layout.minH || 4,
+                resizeHandles: ["s", "e", "se"]
               }}
               className={`${styles["widget-wrapper"]} ${
                 selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
