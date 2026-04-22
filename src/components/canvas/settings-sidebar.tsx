@@ -246,9 +246,9 @@ export default function SettingsModal() {
                         <option key={c.name} value={c.name}>{c.name}</option>
                       ))}
                     </optgroup>
-                    {project?.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).length > 0 && (
+                    {project?.measures && project.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).length > 0 && (
                       <optgroup label="Custom Measures">
-                        {project?.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).map((m) => (
+                        {project.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).map((m) => (
                           <option key={m.id} value={m.id}>∑ {m.name}</option>
                         ))}
                       </optgroup>
