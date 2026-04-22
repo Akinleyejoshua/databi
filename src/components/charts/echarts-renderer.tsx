@@ -21,11 +21,19 @@ interface Props {
 export default function EChartsRenderer({ config, tables, filters, relationships = [], measures = [], height = 300 }: Props) {
   const chartRef = useRef<ReactECharts>(null);
 
-  // Resize when the container changes
+  // Resize when the container changes (handles canvas widget resizing)
   useEffect(() => {
-    const handleResize = () => chartRef.current?.getEchartsInstance()?.resize();
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    if (!chartRef.current) return;
+    
+    const chartInstance = chartRef.current.getEchartsInstance();
+    const container = chartInstance.getDom();
+    
+    const resizeObserver = new ResizeObserver(() => {
+      chartInstance.resize();
+    });
+    
+    resizeObserver.observe(container);
+    return () => resizeObserver.disconnect();
   }, []);
 
   const { option, hasData } = useMemo(() => {
