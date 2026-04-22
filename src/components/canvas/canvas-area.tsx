@@ -1,13 +1,10 @@
 /* ============================================================
-   Canvas Area — Drag & Drop grid using react-grid-layout
+   Canvas Area — Drag & Drop using react-rnd (Alternative to RGL)
    ============================================================ */
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
-import { Responsive, WidthProvider } from "react-grid-layout/legacy";
-const ResponsiveGridLayout = WidthProvider(Responsive);
-import "react-grid-layout/css/styles.css";
-import "react-resizable/css/styles.css";
+import { useState, useEffect, useMemo, useRef } from "react";
+import { Rnd } from "react-rnd";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import ChartWidget from "@/components/widgets/chart-widget";
@@ -21,42 +18,28 @@ export default function CanvasArea() {
   const { project, selectedWidgetId, setSelectedWidget, updateLayouts } = useProjectStore();
   const { isPreviewMode } = useUiStore();
   const [hasMounted, setHasMounted] = useState(false);
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [containerWidth, setContainerWidth] = useState(1200);
 
   useEffect(() => {
     setHasMounted(true);
+    if (!containerRef.current) return;
+
+    const observer = new ResizeObserver((entries) => {
+      for (let entry of entries) {
+        setContainerWidth(entry.contentRect.width);
+      }
+    });
+
+    observer.observe(containerRef.current);
+    return () => observer.disconnect();
   }, []);
 
-  const layouts = useMemo(() => {
-    if (!project) return { lg: [], md: [], sm: [], xs: [], xxs: [] };
-    const lg = project.widgets.map((w) => ({
-      i: w.id,
-      x: w.layout.x,
-      y: w.layout.y,
-      w: w.layout.w,
-      h: w.layout.h,
-      minW: w.layout.minW || 4,
-      minH: w.layout.minH || 4,
-    }));
-    // Provide a stable layout object for all breakpoints
-    return { lg, md: lg, sm: lg, xs: lg, xxs: lg };
-  }, [project?.widgets]); // Only recompute if widgets change
-
-  const handleLayoutChange = useCallback(
-    (currentLayout: any) => {
-      if (isPreviewMode) return;
-      const mapped = currentLayout.map((l: any) => ({
-        id: l.i,
-        x: l.x,
-        y: l.y,
-        w: l.w,
-        h: l.h,
-      }));
-      updateLayouts(mapped);
-    },
-    [updateLayouts, isPreviewMode]
-  );
-
   if (!project || !hasMounted) return null;
+
+  const cols = project.canvasSettings.cols || 24;
+  const rowHeight = project.canvasSettings.rowHeight || 30;
+  const colWidth = containerWidth / cols;
 
   const renderWidget = (widget: typeof project.widgets[0]) => {
     switch (widget.type) {
@@ -69,10 +52,49 @@ export default function CanvasArea() {
     }
   };
 
+  const handleDragStop = (id: string, d: { x: number; y: number }) => {
+    const x = Math.round(d.x / colWidth);
+    const y = Math.round(d.y / rowHeight);
+    
+    const widget = project.widgets.find(w => w.id === id);
+    if (!widget) return;
+
+    updateLayouts([{
+      id,
+      x,
+      y,
+      w: widget.layout.w,
+      h: widget.layout.h
+    }]);
+  };
+
+  const handleResizeStop = (id: string, ref: HTMLElement, position: { x: number; y: number }) => {
+    const w = Math.round(ref.offsetWidth / colWidth);
+    const h = Math.round(ref.offsetHeight / rowHeight);
+    const x = Math.round(position.x / colWidth);
+    const y = Math.round(position.y / rowHeight);
+
+    updateLayouts([{
+      id,
+      x,
+      y,
+      w,
+      h
+    }]);
+  };
+
   return (
     <div
+      ref={containerRef}
       className={styles.canvas}
-      style={{ backgroundColor: project.canvasSettings.backgroundColor }}
+      style={{ 
+        backgroundColor: project.canvasSettings.backgroundColor,
+        minHeight: "calc(100vh - 100px)",
+        position: "relative",
+        /* @ts-ignore */
+        "--col-width": `${colWidth}px`,
+        "--row-height": `${rowHeight}px`
+      }}
       onClick={() => setSelectedWidget(null)}
     >
       {project.widgets.length === 0 ? (
@@ -86,70 +108,68 @@ export default function CanvasArea() {
           <p>Add widgets from the sidebar to start building your dashboard</p>
         </div>
       ) : (
-        <ResponsiveGridLayout
-          className="layout"
-          layouts={layouts}
-          breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
-          cols={{ lg: project.canvasSettings.cols, md: 18, sm: 12, xs: 8, xxs: 4 }}
-          rowHeight={project.canvasSettings.rowHeight}
-          onLayoutChange={handleLayoutChange}
-          onDragStart={(layout, oldItem, newItem) => {
-            if (!isPreviewMode && newItem) setSelectedWidget(newItem.i);
-          }}
-          onResizeStart={(layout, oldItem, newItem) => {
-            if (!isPreviewMode && newItem) setSelectedWidget(newItem.i);
-          }}
-          isDraggable={!isPreviewMode}
-          isResizable={!isPreviewMode}
-          compactType={null}
-          preventCollision={true}
-          margin={[8, 8] as [number, number]}
-          containerPadding={[16, 16] as [number, number]}
-          useCSSTransforms
-          style={{ minHeight: "calc(100vh - 100px)" }}
-        >
-          {project.widgets.map((widget) => (
-            <div
+        project.widgets.map((widget) => {
+          const x = widget.layout.x * colWidth;
+          const y = widget.layout.y * rowHeight;
+          const w = widget.layout.w * colWidth;
+          const h = widget.layout.h * rowHeight;
+
+          return (
+            <Rnd
               key={widget.id}
-              data-grid={{
-                x: widget.layout.x,
-                y: widget.layout.y,
-                w: widget.layout.w,
-                h: widget.layout.h,
-                minW: widget.layout.minW || 4,
-                minH: widget.layout.minH || 4,
-                resizeHandles: ["s", "e", "se"]
-              }}
-              className={`${styles["widget-wrapper"]} ${
-                selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
-              } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
-              onClick={(e) => {
-                // Keep selection for clicks that don't involve dragging
-                if (!isPreviewMode) {
-                  e.stopPropagation();
-                  setSelectedWidget(widget.id);
-                }
-              }}
-              style={{
-                backgroundColor: widget.style.backgroundColor,
-                color: widget.style.textColor,
-                borderRadius: `${widget.style.borderRadius}px`,
-                border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
-                padding: `${widget.style.padding}px`,
-                opacity: widget.style.opacity,
-              }}
+              size={{ width: w, height: h }}
+              position={{ x, y }}
+              onDragStart={() => setSelectedWidget(widget.id)}
+              onResizeStart={() => setSelectedWidget(widget.id)}
+              onDragStop={(e, d) => handleDragStop(widget.id, d)}
+              onResizeStop={(e, direction, ref, delta, position) => handleResizeStop(widget.id, ref, position)}
+              dragGrid={[colWidth, rowHeight]}
+              resizeGrid={[colWidth, rowHeight]}
+              disableDragging={isPreviewMode}
+              enableResizing={!isPreviewMode}
+              dragHandleClassName={styles["drag-handle"]}
+              minWidth={colWidth * (widget.layout.minW || 1)}
+              minHeight={rowHeight * (widget.layout.minH || 1)}
+              bounds="parent"
+              style={{ zIndex: selectedWidgetId === widget.id ? 50 : 1 }}
             >
-              {!isPreviewMode && (
-                <div className={styles["widget-label"]}>
-                  {widget.type === "chart" ? "📊" : widget.type === "kpi" ? "🎯" : widget.type === "slicer" ? "🔽" : widget.type === "ai-summary" ? "🤖" : "📝"}
+              <div
+                className={`${styles["widget-wrapper"]} ${
+                  selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
+                } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
+                onClick={(e) => {
+                  if (!isPreviewMode) {
+                    e.stopPropagation();
+                    setSelectedWidget(widget.id);
+                  }
+                }}
+                style={{
+                  backgroundColor: widget.style.backgroundColor,
+                  color: widget.style.textColor,
+                  borderRadius: `${widget.style.borderRadius}px`,
+                  border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
+                  padding: `${widget.style.padding}px`,
+                  opacity: widget.style.opacity,
+                  width: "100%",
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column"
+                }}
+              >
+                {!isPreviewMode && (
+                  <div className={styles["drag-handle"]}>
+                    <div className={styles["widget-label"]}>
+                      {widget.type === "chart" ? "📊" : widget.type === "kpi" ? "🎯" : widget.type === "slicer" ? "🔽" : widget.type === "ai-summary" ? "🤖" : "📝"}
+                    </div>
+                  </div>
+                )}
+                <div className={styles["widget-content"]}>
+                  {renderWidget(widget)}
                 </div>
-              )}
-              <div className={styles["widget-content"]}>
-                {renderWidget(widget)}
               </div>
-            </div>
-          ))}
-        </ResponsiveGridLayout>
+            </Rnd>
+          );
+        })
       )}
     </div>
   );

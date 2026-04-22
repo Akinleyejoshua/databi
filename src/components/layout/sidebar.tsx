@@ -257,40 +257,42 @@ export default function Sidebar() {
                 <span className={styles["widget-group-label"]}>Charts</span>
                 <div className={styles["widget-grid"]}>
                   {([
-                    { type: "chart" as WidgetType, chart: "bar" as ChartType, label: "Bar", icon: "📊" },
-                    { type: "chart" as WidgetType, chart: "column" as ChartType, label: "Column", icon: "📶" },
-                    { type: "chart" as WidgetType, chart: "line" as ChartType, label: "Line", icon: "📈" },
-                    { type: "chart" as WidgetType, chart: "area" as ChartType, label: "Area", icon: "📉" },
-                    { type: "chart" as WidgetType, chart: "pie" as ChartType, label: "Pie", icon: "🥧" },
-                    { type: "chart" as WidgetType, chart: "donut" as ChartType, label: "Donut", icon: "🍩" },
-                    { type: "chart" as WidgetType, chart: "scatter" as ChartType, label: "Scatter", icon: "✨" },
+                    { type: "chart" as WidgetType, chart: "bar" as ChartType, label: "Bar Chart", icon: "📊" },
+                    { type: "chart" as WidgetType, chart: "column" as ChartType, label: "Column Chart", icon: "📶" },
+                    { type: "chart" as WidgetType, chart: "line" as ChartType, label: "Line Chart", icon: "📈" },
+                    { type: "chart" as WidgetType, chart: "area" as ChartType, label: "Area Chart", icon: "📉" },
+                    { type: "chart" as WidgetType, chart: "pie" as ChartType, label: "Pie Chart", icon: "🥧" },
+                    { type: "chart" as WidgetType, chart: "donut" as ChartType, label: "Donut Chart", icon: "🍩" },
+                    { type: "chart" as WidgetType, chart: "scatter" as ChartType, label: "Scatter Chart", icon: "✨" },
                     { type: "chart" as WidgetType, chart: "time-series" as ChartType, label: "Time Series", icon: "⏱️" },
                   ]).map((w) => (
-                    <button
-                      key={w.chart}
-                      className={styles["widget-btn"]}
-                      onClick={() => {
-                        addWidget({
-                          id: generateId(),
-                          type: w.type,
-                          title: `${w.label} Chart`,
-                          layout: { x: 0, y: Infinity, w: 12, h: 10, minW: 4, minH: 4 },
-                          style: getDefaultWidgetStyle(),
-                          chartConfig: {
-                            chartType: w.chart,
-                            fields: [],
-                            values: [],
-                            showLegend: true,
-                            showTooltip: true,
-                            title: `${w.label} Chart`,
-                            colorScheme: ["#4169E1", "#6C8EF2", "#2F52C7", "#8BA4F5", "#1A3A9E"],
-                          },
-                        });
-                      }}
-                    >
-                      <span className={styles["widget-icon"]}>{w.icon}</span>
-                      <span>{w.label}</span>
-                    </button>
+                    <div key={w.chart} className="tooltip-wrapper">
+                      <button
+                        className={styles["widget-btn"]}
+                        onClick={() => {
+                          addWidget({
+                            id: generateId(),
+                            type: w.type,
+                            title: w.label,
+                            layout: { x: 0, y: Infinity, w: 12, h: 10, minW: 4, minH: 4 },
+                            style: getDefaultWidgetStyle(),
+                            chartConfig: {
+                              chartType: w.chart,
+                              fields: [],
+                              values: [],
+                              showLegend: true,
+                              showTooltip: true,
+                              title: w.label,
+                              colorScheme: ["#4169E1", "#6C8EF2", "#2F52C7", "#8BA4F5", "#1A3A9E"],
+                            },
+                          });
+                        }}
+                      >
+                        <span className={styles["widget-icon"]}>{w.icon}</span>
+                        <span>{w.label}</span>
+                      </button>
+                      <div className="tooltip">{w.label}</div>
+                    </div>
                   ))}
                 </div>
               </div>
@@ -298,61 +300,73 @@ export default function Sidebar() {
               <div className={styles["widget-group"]}>
                 <span className={styles["widget-group-label"]}>Elements</span>
                 <div className={styles["widget-grid"]}>
-                  <button className={styles["widget-btn"]} onClick={() => {
-                    addWidget({
-                      id: generateId(),
-                      type: "text",
-                      title: "Text",
-                      layout: { x: 0, y: Infinity, w: 8, h: 2, minW: 3, minH: 1 },
-                      style: { ...getDefaultWidgetStyle(), backgroundColor: "transparent", borderWidth: 0 },
-                      textConfig: { content: "Click to edit title", align: "left" },
-                    });
-                  }}>
-                    <span className={styles["widget-icon"]}>📝</span>
-                    <span>Text</span>
-                  </button>
+                  <div className="tooltip-wrapper">
+                    <button className={styles["widget-btn"]} onClick={() => {
+                      addWidget({
+                        id: generateId(),
+                        type: "text",
+                        title: "Text",
+                        layout: { x: 0, y: Infinity, w: 8, h: 2, minW: 3, minH: 1 },
+                        style: { ...getDefaultWidgetStyle(), backgroundColor: "transparent", borderWidth: 0 },
+                        textConfig: { content: "Click to edit title", align: "left" },
+                      });
+                    }}>
+                      <span className={styles["widget-icon"]}>📝</span>
+                      <span>Text</span>
+                    </button>
+                    <div className="tooltip">Text Box</div>
+                  </div>
 
-                  <button className={styles["widget-btn"]} onClick={() => {
-                    addWidget({
-                      id: generateId(),
-                      type: "kpi",
-                      title: "KPI Card",
-                      layout: { x: 0, y: Infinity, w: 6, h: 4, minW: 3, minH: 3 },
-                      style: getDefaultWidgetStyle(),
-                      kpiConfig: { tableId: "", valueColumn: "", aggregation: "sum", label: "Metric", prefix: "", suffix: "" },
-                    });
-                  }}>
-                    <span className={styles["widget-icon"]}>🎯</span>
-                    <span>KPI Card</span>
-                  </button>
+                  <div className="tooltip-wrapper">
+                    <button className={styles["widget-btn"]} onClick={() => {
+                      addWidget({
+                        id: generateId(),
+                        type: "kpi",
+                        title: "KPI Card",
+                        layout: { x: 0, y: Infinity, w: 6, h: 4, minW: 3, minH: 3 },
+                        style: getDefaultWidgetStyle(),
+                        kpiConfig: { tableId: "", valueColumn: "", aggregation: "sum", label: "Metric", prefix: "", suffix: "" },
+                      });
+                    }}>
+                      <span className={styles["widget-icon"]}>🎯</span>
+                      <span>KPI Card</span>
+                    </button>
+                    <div className="tooltip">KPI Card</div>
+                  </div>
 
-                  <button className={styles["widget-btn"]} onClick={() => {
-                    addWidget({
-                      id: generateId(),
-                      type: "slicer",
-                      title: "Slicer",
-                      layout: { x: 0, y: Infinity, w: 6, h: 6, minW: 3, minH: 3 },
-                      style: getDefaultWidgetStyle(),
-                      slicerConfig: { tableId: "", columnName: "", selectedValues: [], multiSelect: true },
-                    });
-                  }}>
-                    <span className={styles["widget-icon"]}>🔽</span>
-                    <span>Slicer</span>
-                  </button>
+                  <div className="tooltip-wrapper">
+                    <button className={styles["widget-btn"]} onClick={() => {
+                      addWidget({
+                        id: generateId(),
+                        type: "slicer",
+                        title: "Slicer",
+                        layout: { x: 0, y: Infinity, w: 6, h: 6, minW: 3, minH: 3 },
+                        style: getDefaultWidgetStyle(),
+                        slicerConfig: { tableId: "", columnName: "", selectedValues: [], multiSelect: true },
+                      });
+                    }}>
+                      <span className={styles["widget-icon"]}>🔽</span>
+                      <span>Slicer</span>
+                    </button>
+                    <div className="tooltip">Slicer / Filter</div>
+                  </div>
 
-                  <button className={styles["widget-btn"]} onClick={() => {
-                    addWidget({
-                      id: generateId(),
-                      type: "ai-summary",
-                      title: "AI Insights",
-                      layout: { x: 0, y: Infinity, w: 12, h: 8, minW: 6, minH: 4 },
-                      style: getDefaultWidgetStyle(),
-                      aiSummaryConfig: { prompt: "", generatedText: "", isLoading: false, tableIds: [], analysisMode: "data" },
-                    });
-                  }}>
-                    <span className={styles["widget-icon"]}>🤖</span>
-                    <span>AI Summary</span>
-                  </button>
+                  <div className="tooltip-wrapper">
+                    <button className={styles["widget-btn"]} onClick={() => {
+                      addWidget({
+                        id: generateId(),
+                        type: "ai-summary",
+                        title: "AI Insights",
+                        layout: { x: 0, y: Infinity, w: 12, h: 8, minW: 6, minH: 4 },
+                        style: getDefaultWidgetStyle(),
+                        aiSummaryConfig: { prompt: "", generatedText: "", isLoading: false, tableIds: [], analysisMode: "data" },
+                      });
+                    }}>
+                      <span className={styles["widget-icon"]}>🤖</span>
+                      <span>AI Summary</span>
+                    </button>
+                    <div className="tooltip">AI Insights</div>
+                  </div>
                 </div>
               </div>
             </div>

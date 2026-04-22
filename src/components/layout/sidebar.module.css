@@ -249,35 +249,43 @@
 
 .widget-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: var(--space-2);
+  grid-template-columns: repeat(4, 1fr);
+  gap: 2px;
+  background: var(--color-border-light);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
 }
 
 .widget-btn {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-1);
-  padding: var(--space-3);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  font-size: var(--font-size-xs);
-  font-weight: 500;
+  justify-content: center;
+  aspect-ratio: 1;
+  padding: var(--space-1);
+  background: var(--color-surface);
+  border: 1px solid transparent;
+  border-radius: 2px;
+  font-size: 10px;
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
   cursor: pointer;
 }
 
-.widget-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-text);
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px var(--color-shadow);
+.widget-icon {
+  font-size: 16px;
 }
 
-.widget-icon {
-  font-size: 20px;
+.widget-btn span:not(.widget-icon) {
+  display: none; /* Hide label to match PowerBI's icon-only visual pane */
+}
+
+.widget-btn:hover {
+  background: var(--color-primary-glow);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  z-index: 1;
 }
 
 /* Fields Panel */

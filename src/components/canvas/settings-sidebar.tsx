@@ -257,10 +257,8 @@ export default function SettingsSidebar() {
           </div>
         )}
 
-        {/* Divider */}
-        <div className="divider" />
-
         {/* Style section */}
+        <div className="divider" />
         <span className={styles["section-label"]}>Style</span>
 
         <div className={styles.field}>

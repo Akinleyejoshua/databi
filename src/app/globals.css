@@ -71,9 +71,9 @@
   --transition-slow: 350ms cubic-bezier(0.4, 0, 0.2, 1);
 
   /* Layout */
-  --sidebar-width: 280px;
+  --sidebar-width: 240px;
   --header-height: 56px;
-  --settings-width: 320px;
+  --settings-width: 300px;
 
   /* Z-Index Scale */
   --z-base: 1;

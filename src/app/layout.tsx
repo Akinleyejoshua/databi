@@ -19,7 +19,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" data-theme="dark" className={bricolage.variable} suppressHydrationWarning>
+    <html lang="en" data-theme="light" className={bricolage.variable} suppressHydrationWarning>
       <body>{children}</body>
     </html>
   );
