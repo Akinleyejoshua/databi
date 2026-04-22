@@ -123,7 +123,7 @@ export default function Sidebar() {
                     <div key={m.id} className={styles["measure-item"]}>
                       <span className={styles["measure-name"]}>{m.name}</span>
                       <span className={styles["measure-meta"]}>{table?.name} · {m.resultType}</span>
-                      <code className={styles["measure-formula"]}>{m.formula}</code>
+                      <code className={styles["measure-formula"]}>{m.originalFormula || m.formula}</code>
                     </div>
                   );
                 })

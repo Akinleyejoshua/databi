@@ -34,6 +34,7 @@ export interface Measure {
   name: string;
   tableId: string;
   formula: string;
+  originalFormula?: string;
   resultType: DataType;
 }
 

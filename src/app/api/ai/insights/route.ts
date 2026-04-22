@@ -9,9 +9,9 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { tables, prompt } = body;
 
-    const apiKey = process.env.XAI_API_KEY;
+    const apiKey = process.env.GROQ_API_KEY;
 
-    if (!apiKey || apiKey === "your_xai_api_key_here") {
+    if (!apiKey || apiKey === "your_groq_api_key_here") {
       // Fallback: generate a basic summary without AI
       const summary = generateBasicSummary(tables);
       return NextResponse.json({ summary });
@@ -35,14 +35,14 @@ export async function POST(req: NextRequest) {
       ? `${prompt}\n\nData:\n${dataContext}`
       : `Analyze this data and provide:\n1. Key Summaries (3-5 bullet points)\n2. Notable Trends\n3. Outliers or Anomalies\n4. Recommendations\n\nData:\n${dataContext}`;
 
-    const response = await fetch("https://api.x.ai/v1/chat/completions", {
+    const response = await fetch("https://api.groq.com/openai/v1/chat/completions", {
       method: "POST",
       headers: {
         "Content-Type": "application/json",
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "grok-3-mini-fast",
+        model: "llama-3.3-70b-versatile",
         messages: [
           { role: "system", content: systemPrompt },
           { role: "user", content: userPrompt },
