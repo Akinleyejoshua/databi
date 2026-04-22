@@ -17,6 +17,7 @@ import RelationshipsModal from "@/components/data/relationships-modal";
 import MeasuresModal from "@/components/data/measures-modal";
 import ShareModal from "@/components/projects/share-modal";
 import ToastContainer from "@/components/layout/toast-container";
+import MobileWarning from "@/components/layout/mobile-warning";
 import { useRouter } from "next/navigation";
 import styles from "./page.module.css";
 
@@ -69,12 +70,13 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
         {activeTab === "canvas" && !isPreviewMode && <SettingsSidebar />}
       </div>
 
-      {/* Modals */}
+      {/* Modals & Overlays */}
       <UploadModal />
       <RelationshipsModal />
       <MeasuresModal />
       <ShareModal />
       <ToastContainer />
+      <MobileWarning />
     </div>
   );
 }
