@@ -48,7 +48,25 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
     if (rows.length === 0) return { option: null, hasData: false };
 
-    const categories = [...new Set(rows.map((r) => String(r[fieldDef.columnName])))];
+    // Calculate Categories
+    let categories: string[] = [];
+    if (fieldDef.aggregation === "measure") {
+      const measure = measures.find(m => m.id === fieldDef.columnName);
+      if (measure) {
+        try {
+          const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+          categories = [...new Set(rows.map(r => String(evalFn(r, rows))))];
+        } catch (e) {
+          console.error("Error evaluating field measure", e);
+          categories = ["Error"];
+        }
+      } else {
+        categories = ["Unknown Measure"];
+      }
+    } else {
+      categories = [...new Set(rows.map((r) => String(r[fieldDef.columnName])))];
+    }
+
     const colors = config.colorScheme?.length ? config.colorScheme : CHART_COLORS;
 
     const series = config.values.map((v, i) => {
@@ -66,9 +84,21 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         }
 
         const data = categories.map((cat) => {
-          const matching = rows.filter((r) => String(r[fieldDef.columnName]) === cat);
+          const matching = rows.filter((r) => {
+            if (fieldDef.aggregation === "measure") {
+               // Re-evaluate measure for matching if needed, but we already have categories from results
+               // This is slightly inefficient but correct for grouping
+               const measureF = measures.find(m => m.id === fieldDef.columnName);
+               if (!measureF) return false;
+               const f = new Function("row", "rows", `return ${measureF.formula}`);
+               return String(f(r, rows)) === cat;
+            }
+            return String(r[fieldDef.columnName]) === cat;
+          });
+          
           if (!evalFn || matching.length === 0) return 0;
           try {
+            // For a value measure, we usually evaluate it against the subset (matching)
             const res = evalFn(matching[0], matching);
             return Number(res) || 0;
           } catch (e) {
@@ -87,7 +117,16 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
       // Standard Column Aggregation
       const data = categories.map((cat) => {
-        const matching = rows.filter((r) => String(r[fieldDef.columnName]) === cat);
+        const matching = rows.filter((r) => {
+          if (fieldDef.aggregation === "measure") {
+             const measureF = measures.find(m => m.id === fieldDef.columnName);
+             if (!measureF) return false;
+             const f = new Function("row", "rows", `return ${measureF.formula}`);
+             return String(f(r, rows)) === cat;
+          }
+          return String(r[fieldDef.columnName]) === cat;
+        });
+
         const vals = matching.map((r) => parseSafeNumber(r[v.columnName])).filter((n) => !isNaN(n));
 
         switch (v.aggregation) {

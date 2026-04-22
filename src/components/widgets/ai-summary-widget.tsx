@@ -5,6 +5,7 @@
 
 import { useState } from "react";
 import { useProjectStore } from "@/store/use-project-store";
+import { useUiStore } from "@/store/use-ui-store";
 import type { Widget } from "@/types";
 import styles from "./ai-summary-widget.module.css";
 
@@ -12,12 +13,18 @@ interface Props { widget: Widget; }
 
 export default function AiSummaryWidget({ widget }: Props) {
   const { project, updateWidget } = useProjectStore();
+  const { addToast } = useUiStore();
   const [isLoading, setIsLoading] = useState(false);
   const aiConfig = widget.aiSummaryConfig;
 
   const handleGenerate = async () => {
-    if (!project || project.tables.length === 0) return;
+    if (!project || project.tables.length === 0) {
+      addToast("No data available for analysis", "error");
+      return;
+    }
+    
     setIsLoading(true);
+    addToast("Starting AI analysis...", "info");
 
     try {
       const tablesToSend = aiConfig?.tableIds?.length
@@ -37,14 +44,35 @@ export default function AiSummaryWidget({ widget }: Props) {
         body: JSON.stringify({ tables: tablesForAI, prompt: aiConfig?.prompt || "" }),
       });
 
+      if (!res.ok) {
+        throw new Error(`API error: ${res.status}`);
+      }
+
       const data = await res.json();
+      
+      if (data.error) {
+        throw new Error(data.error);
+      }
+
       updateWidget(widget.id, {
-        aiSummaryConfig: { ...aiConfig!, generatedText: data.summary, isLoading: false },
+        aiSummaryConfig: { 
+          ...aiConfig!, 
+          generatedText: data.summary, 
+          isLoading: false 
+        },
       });
-    } catch (error) {
-      console.error(error);
+      
+      addToast("Analysis generated successfully", "success");
+    } catch (error: any) {
+      console.error("AI Insight Error:", error);
+      addToast(error.message || "Failed to generate AI insights", "error");
+      
       updateWidget(widget.id, {
-        aiSummaryConfig: { ...aiConfig!, generatedText: "Failed to generate insights.", isLoading: false },
+        aiSummaryConfig: { 
+          ...aiConfig!, 
+          generatedText: "Error: " + (error.message || "Failed to generate insights."), 
+          isLoading: false 
+        },
       });
     } finally {
       setIsLoading(false);
