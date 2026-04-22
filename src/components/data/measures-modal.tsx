@@ -21,19 +21,26 @@ export default function MeasuresModal() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<number | null>(null);
 
-  // Ensure component is mounted to avoid hydration issues
+  // --- Hooks must be at the top level ---
+
   useEffect(() => {
     setMounted(true);
   }, []);
 
-  // Sync with selected table from UI store when modal opens
   useEffect(() => {
     if (isMeasureModalOpen && selectedTableId) {
       setTableId(selectedTableId);
     }
   }, [isMeasureModalOpen, selectedTableId]);
 
-  // Suggestions based on selected table
+  useEffect(() => {
+    if (!isMeasureModalOpen) {
+      setName(""); 
+      setFormula(""); 
+      setResultType("number");
+    }
+  }, [isMeasureModalOpen]);
+
   const suggestions = useMemo(() => {
     if (!project?.tables) return [];
     const table = project.tables.find((t) => t.id === tableId);
@@ -45,15 +52,16 @@ export default function MeasuresModal() {
     [tableId, project?.tables]
   );
 
-  useEffect(() => {
-    if (!isMeasureModalOpen) {
-      setName(""); 
-      setFormula(""); 
-      setResultType("number");
-      // Don't reset tableId so it persists the selection
+  const daxPreview = useMemo(() => {
+    if (!formula) return "";
+    try {
+      return convertToDAX(formula, selectedTable?.name || "Table");
+    } catch (e) {
+      return formula;
     }
-  }, [isMeasureModalOpen]);
+  }, [formula, selectedTable?.name]);
 
+  // --- Early return AFTER hooks ---
   if (!mounted || !isMeasureModalOpen || !project) return null;
 
   const handleApplySuggestion = (s: SuggestedKPI) => {
@@ -68,7 +76,6 @@ export default function MeasuresModal() {
       return;
     }
 
-    // Convert simplified syntax to executable JS
     const executableJs = convertToJs(formula);
 
     try {
@@ -96,15 +103,6 @@ export default function MeasuresModal() {
     setMeasureModalOpen(false);
   };
 
-  const daxPreview = useMemo(() => {
-    if (!formula) return "";
-    try {
-      return convertToDAX(formula, selectedTable?.name || "Table");
-    } catch (e) {
-      return formula;
-    }
-  }, [formula, selectedTable?.name]);
-
   return (
     <div className="modal-overlay" onClick={() => setMeasureModalOpen(false)}>
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "850px", width: "95%", maxHeight: "90vh" }}>
@@ -124,7 +122,6 @@ export default function MeasuresModal() {
           overflowY: "auto" 
         }}>
           
-          {/* Main Form */}
           <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
@@ -204,7 +201,6 @@ export default function MeasuresModal() {
             </div>
           </div>
 
-          {/* KPI Suggestions Sidebar */}
           {suggestions.length > 0 && (
             <div style={{ borderLeft: "1px solid var(--color-border)", paddingLeft: "20px" }}>
               <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "16px", color: "var(--color-text-secondary)" }}>Suggested KPIs</h3>
