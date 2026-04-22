@@ -77,13 +77,12 @@ export default function CanvasArea() {
       ) : (
         <ResponsiveGridLayout
           className="layout"
-          layouts={layouts}
           breakpoints={{ lg: 1200, md: 996, sm: 768, xs: 480, xxs: 0 }}
           cols={{ lg: project.canvasSettings.cols, md: 18, sm: 12, xs: 8, xxs: 4 }}
           rowHeight={project.canvasSettings.rowHeight}
           onLayoutChange={handleLayoutChange}
-          isDraggable={!isPreviewMode}
-          isResizable={!isPreviewMode}
+          isDraggable={true}
+          isResizable={true}
           compactType="vertical"
           preventCollision={false}
           margin={[8, 8] as [number, number]}
@@ -93,10 +92,20 @@ export default function CanvasArea() {
           {project.widgets.map((widget) => (
             <div
               key={widget.id}
+              data-grid={{
+                x: widget.layout.x,
+                y: widget.layout.y,
+                w: widget.layout.w,
+                h: widget.layout.h,
+                minW: widget.layout.minW || 4,
+                minH: widget.layout.minH || 4
+              }}
               className={`${styles["widget-wrapper"]} ${
-                selectedWidgetId === widget.id ? styles["widget-wrapper--selected"] : ""
+                selectedWidgetId === widget.id && !isPreviewMode ? styles["widget-wrapper--selected"] : ""
               } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
-              onClick={(e) => { e.stopPropagation(); setSelectedWidget(widget.id); }}
+              onClick={() => {
+                if (!isPreviewMode) setSelectedWidget(widget.id);
+              }}
               style={{
                 backgroundColor: widget.style.backgroundColor,
                 color: widget.style.textColor,

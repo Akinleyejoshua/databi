@@ -132,9 +132,95 @@ export default function Sidebar() {
           )}
 
           {dataPanel === "transform" && (
-            <div className="empty-state" style={{ padding: "32px 16px" }}>
-              <h3>Transform Panel</h3>
-              <p>Select a table first, then use the transform tools in the data view</p>
+            <div className={styles["transform-panel"]}>
+              {project.tables.length === 0 ? (
+                <div className="empty-state" style={{ padding: "32px 16px" }}>
+                  <h3>No data</h3>
+                  <p>Upload data to use transformations</p>
+                </div>
+              ) : !selectedTableId ? (
+                <div className="empty-state" style={{ padding: "32px 16px" }}>
+                  <h3>Select a Table</h3>
+                  <p>Choose a table from the Tables panel first</p>
+                </div>
+              ) : (
+                <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px" }}>
+                  <div className={styles.field}>
+                    <label className="label">Target Column</label>
+                    <select className="select" id="transform-column-select" defaultValue="">
+                      <option value="">All columns</option>
+                      {project.tables.find(t => t.id === selectedTableId)?.columns.map(c => (
+                        <option key={c.name} value={c.name}>{c.name} ({c.type})</option>
+                      ))}
+                    </select>
+                  </div>
+                  
+                  <div className="divider" />
+
+                  <span className={styles["section-label"]}>Data Cleaning</span>
+                  <button className="btn btn-secondary btn-sm" onClick={async () => {
+                    const col = (document.getElementById('transform-column-select') as HTMLSelectElement)?.value;
+                    const table = project.tables.find(t => t.id === selectedTableId);
+                    if (!table) return;
+                    useUiStore.getState().addToast("Transforming...", "info");
+                    const res = await fetch("/api/data/transform", {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ table, transform: { tableId: table.id, action: "remove-nulls", column: col || undefined } })
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
+                      useUiStore.getState().addToast("Nulls removed successfully", "success");
+                    }
+                  }}>
+                    Remove Nulls
+                  </button>
+
+                  <button className="btn btn-secondary btn-sm" onClick={async () => {
+                    const col = (document.getElementById('transform-column-select') as HTMLSelectElement)?.value;
+                    const table = project.tables.find(t => t.id === selectedTableId);
+                    if (!table) return;
+                    useUiStore.getState().addToast("Transforming...", "info");
+                    const res = await fetch("/api/data/transform", {
+                      method: "POST", headers: { "Content-Type": "application/json" },
+                      body: JSON.stringify({ table, transform: { tableId: table.id, action: "remove-duplicates", column: col || undefined } })
+                    });
+                    if (res.ok) {
+                      const data = await res.json();
+                      useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
+                      useUiStore.getState().addToast("Duplicates removed successfully", "success");
+                    }
+                  }}>
+                    Remove Duplicates
+                  </button>
+
+                  <div className="divider" />
+
+                  <span className={styles["section-label"]}>Data Types</span>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                    {(["string", "number", "boolean", "date"] as const).map(type => (
+                      <button key={type} className="btn btn-secondary btn-sm" onClick={async () => {
+                        const col = (document.getElementById('transform-column-select') as HTMLSelectElement)?.value;
+                        if (!col) return useUiStore.getState().addToast("Select a column to cast type", "error");
+                        const table = project.tables.find(t => t.id === selectedTableId);
+                        if (!table) return;
+                        useUiStore.getState().addToast("Casting type...", "info");
+                        const res = await fetch("/api/data/transform", {
+                          method: "POST", headers: { "Content-Type": "application/json" },
+                          body: JSON.stringify({ table, transform: { tableId: table.id, action: "cast-type", column: col, targetType: type } })
+                        });
+                        if (res.ok) {
+                          const data = await res.json();
+                          useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
+                          useUiStore.getState().addToast(`Cast to ${type} successful`, "success");
+                        }
+                      }}>
+                        To {type}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -188,7 +274,7 @@ export default function Sidebar() {
                           id: generateId(),
                           type: w.type,
                           title: `${w.label} Chart`,
-                          layout: { x: 0, y: Infinity, w: 8, h: 8, minW: 4, minH: 4 },
+                          layout: { x: 0, y: Infinity, w: 12, h: 10, minW: 4, minH: 4 },
                           style: getDefaultWidgetStyle(),
                           chartConfig: {
                             chartType: w.chart,

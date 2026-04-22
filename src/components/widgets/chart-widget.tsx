@@ -22,6 +22,7 @@ export default function ChartWidget({ widget }: Props) {
         config={widget.chartConfig}
         tables={project.tables}
         filters={activeFilters}
+        measures={project.measures}
       />
     </div>
   );

@@ -142,27 +142,6 @@ export default function DataTableView() {
         </div>
 
         <div className={styles["toolbar-right"]}>
-          <button className="btn btn-secondary btn-sm" onClick={() => handleTransform("remove-nulls")} disabled={isTransforming}>
-            Remove Nulls
-          </button>
-          <button className="btn btn-secondary btn-sm" onClick={() => handleTransform("remove-duplicates")} disabled={isTransforming}>
-            Remove Duplicates
-          </button>
-
-          <div className={styles.dropdown}>
-            <button className="btn btn-secondary btn-sm">Cast Type ▾</button>
-            <div className={styles["dropdown-content"]}>
-              {(["string", "number", "boolean", "date"] as DataType[]).map((t) => (
-                <button key={t} onClick={() => {
-                  if (!transformColumn) { addToast("Select a column first", "info"); return; }
-                  handleTransform("cast-type", t);
-                }}>
-                  To {t}
-                </button>
-              ))}
-            </div>
-          </div>
-
           <button className="btn btn-danger btn-sm" onClick={() => {
             removeTable(table.id);
             setSelectedTableId(null);

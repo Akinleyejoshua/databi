@@ -3,20 +3,30 @@
    ============================================================ */
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useEffect, useRef } from "react";
 import ReactECharts from "echarts-for-react";
-import type { ChartConfig, DataTable, ActiveFilter } from "@/types";
+import type { ChartConfig, DataTable, ActiveFilter, Measure } from "@/types";
 import { applyFilters, CHART_COLORS } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
   tables: DataTable[];
   filters: ActiveFilter[];
+  measures?: Measure[];
   width?: number;
   height?: number;
 }
 
-export default function EChartsRenderer({ config, tables, filters, height = 300 }: Props) {
+export default function EChartsRenderer({ config, tables, filters, measures = [], height = 300 }: Props) {
+  const chartRef = useRef<ReactECharts>(null);
+
+  // Resize when the container changes
+  useEffect(() => {
+    const handleResize = () => chartRef.current?.getEchartsInstance()?.resize();
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   const option = useMemo(() => {
     if (!config.fields.length || !config.values.length) return null;
 
@@ -29,6 +39,43 @@ export default function EChartsRenderer({ config, tables, filters, height = 300 
     const colors = config.colorScheme?.length ? config.colorScheme : CHART_COLORS;
 
     const series = config.values.map((v, i) => {
+      // Check if it's a measure
+      if (v.aggregation === "measure") {
+        const measure = measures.find((m) => m.id === v.columnName); // columnName stores measure ID
+        const mTable = tables.find((t) => t.id === measure?.tableId);
+        const mRows = mTable ? applyFilters(mTable, filters) : rows;
+        
+        let evalFn: Function | null = null;
+        if (measure) {
+          try {
+            evalFn = new Function("row", "rows", `return ${measure.formula}`);
+          } catch (e) {
+            console.error("Invalid measure formula", e);
+          }
+        }
+
+        const data = categories.map((cat) => {
+          const matching = mRows.filter((r) => String(r[fieldDef.columnName]) === cat);
+          if (!evalFn || matching.length === 0) return 0;
+          try {
+            // Evaluates the formula by passing the first matching row and all matching rows
+            const res = evalFn(matching[0], matching);
+            return Number(res) || 0;
+          } catch (e) {
+            return 0;
+          }
+        });
+
+        const base: Record<string, unknown> = {
+          name: measure ? measure.name : "Unknown Measure",
+          data,
+          itemStyle: { color: colors[i % colors.length] },
+        };
+        
+        return buildSeriesObject(base, config.chartType, categories, data, colors, i);
+      }
+
+      // Standard Column Aggregation
       const vTable = tables.find((t) => t.id === v.tableId);
       const vRows = vTable ? applyFilters(vTable, filters) : rows;
 
@@ -52,22 +99,7 @@ export default function EChartsRenderer({ config, tables, filters, height = 300 
         itemStyle: { color: colors[i % colors.length] },
       };
 
-      switch (config.chartType) {
-        case "bar": return { ...base, type: "bar" };
-        case "column": return { ...base, type: "bar" };
-        case "line": case "time-series": return { ...base, type: "line", smooth: true };
-        case "area": return { ...base, type: "line", smooth: true, areaStyle: { opacity: 0.3 } };
-        case "scatter": return { ...base, type: "scatter", symbolSize: 10 };
-        case "pie": case "donut":
-          return {
-            type: "pie",
-            name: v.columnName,
-            radius: config.chartType === "donut" ? ["40%", "70%"] : "70%",
-            data: categories.map((cat, j) => ({ name: cat, value: data[j], itemStyle: { color: colors[j % colors.length] } })),
-            label: { show: true, fontSize: 11 },
-          };
-        default: return { ...base, type: "bar" };
-      }
+      return buildSeriesObject(base, config.chartType, categories, data, colors, i);
     });
 
     const isPie = config.chartType === "pie" || config.chartType === "donut";
@@ -87,7 +119,7 @@ export default function EChartsRenderer({ config, tables, filters, height = 300 
       series,
       color: colors,
     };
-  }, [config, tables, filters]);
+  }, [config, tables, filters, measures]);
 
   if (!option) {
     return (
@@ -98,5 +130,33 @@ export default function EChartsRenderer({ config, tables, filters, height = 300 
     );
   }
 
-  return <ReactECharts option={option} style={{ height: "100%", width: "100%" }} opts={{ renderer: "svg" }} />;
+  return (
+    <ReactECharts 
+      ref={chartRef}
+      option={option} 
+      style={{ height: "100%", width: "100%", minHeight: "150px" }} 
+      opts={{ renderer: "svg" }} 
+      notMerge={true}
+      lazyUpdate={true}
+    />
+  );
+}
+
+function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number) {
+  switch (chartType) {
+    case "bar": return { ...base, type: "bar" };
+    case "column": return { ...base, type: "bar" };
+    case "line": case "time-series": return { ...base, type: "line", smooth: true };
+    case "area": return { ...base, type: "line", smooth: true, areaStyle: { opacity: 0.3 } };
+    case "scatter": return { ...base, type: "scatter", symbolSize: 10 };
+    case "pie": case "donut":
+      return {
+        type: "pie",
+        name: base.name,
+        radius: chartType === "donut" ? ["40%", "70%"] : "70%",
+        data: categories.map((cat, j) => ({ name: cat, value: data[j], itemStyle: { color: colors[j % colors.length] } })),
+        label: { show: true, fontSize: 11 },
+      };
+    default: return { ...base, type: "bar" };
+  }
 }

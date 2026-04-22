@@ -94,22 +94,43 @@ export default function SettingsSidebar() {
             {/* Values */}
             <div className={styles.field}>
               <label className="label">Value</label>
-              <select className="select" value={widget.chartConfig.values[0] ? `${widget.chartConfig.values[0].tableId}:::${widget.chartConfig.values[0].columnName}` : ""} onChange={(e) => {
-                const [tableId, columnName] = e.target.value.split(":::");
+              <select className="select" value={
+                widget.chartConfig.values[0] 
+                  ? `${widget.chartConfig.values[0].tableId}:::${widget.chartConfig.values[0].columnName}:::${widget.chartConfig.values[0].aggregation === "measure" ? "measure" : "col"}` 
+                  : ""
+              } onChange={(e) => {
+                if (!e.target.value) return;
+                const [tableId, columnName, type] = e.target.value.split(":::");
                 updateWidget(widget.id, {
-                  chartConfig: { ...widget.chartConfig!, values: [{ tableId, columnName, aggregation: widget.chartConfig!.values[0]?.aggregation || "sum" }] },
+                  chartConfig: { 
+                    ...widget.chartConfig!, 
+                    values: [{ 
+                      tableId, 
+                      columnName, 
+                      aggregation: type === "measure" ? "measure" : (widget.chartConfig!.values[0]?.aggregation !== "measure" && widget.chartConfig!.values[0]?.aggregation ? widget.chartConfig!.values[0].aggregation : "sum") 
+                    }] 
+                  },
                 });
               }}>
                 <option value="">Select value...</option>
-                {project?.tables.map((t) =>
-                  t.columns.filter((c) => c.type === "number").map((c) => (
-                    <option key={`${t.id}:::${c.name}`} value={`${t.id}:::${c.name}`}>{t.name} → {c.name}</option>
-                  ))
+                <optgroup label="Columns">
+                  {project?.tables.map((t) =>
+                    t.columns.filter((c) => c.type === "number").map((c) => (
+                      <option key={`${t.id}:::${c.name}:::col`} value={`${t.id}:::${c.name}:::col`}>{t.name} → {c.name}</option>
+                    ))
+                  )}
+                </optgroup>
+                {project?.measures && project.measures.length > 0 && (
+                  <optgroup label="Custom Measures">
+                    {project.measures.map((m) => (
+                      <option key={`${m.tableId}:::${m.id}:::measure`} value={`${m.tableId}:::${m.id}:::measure`}>∑ {m.name}</option>
+                    ))}
+                  </optgroup>
                 )}
               </select>
             </div>
 
-            {widget.chartConfig.values.length > 0 && (
+            {widget.chartConfig.values.length > 0 && widget.chartConfig.values[0].aggregation !== "measure" && (
               <div className={styles.field}>
                 <label className="label">Aggregation</label>
                 <select className="select" value={widget.chartConfig.values[0]?.aggregation || "sum"} onChange={(e) => {

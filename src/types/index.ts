@@ -60,7 +60,7 @@ export type ChartType =
 export interface WidgetField {
   tableId: string;
   columnName: string;
-  aggregation?: "sum" | "average" | "count" | "min" | "max" | "none";
+  aggregation?: "sum" | "average" | "count" | "min" | "max" | "none" | "measure";
 }
 
 export interface WidgetStyle {
