@@ -6,12 +6,14 @@
 import { useState, useMemo } from "react";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
+import { useTableTransform } from "@/hooks/use-table-transform";
 import type { DataTable as DataTableType, TransformAction, DataType } from "@/types";
 import styles from "./data-table.module.css";
 
 export default function DataTableView() {
   const { project, updateTable, removeTable } = useProjectStore();
   const { selectedTableId, setSelectedTableId, addToast } = useUiStore();
+  const { applyTransform } = useTableTransform();
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [transformColumn, setTransformColumn] = useState("");
@@ -146,9 +148,11 @@ export default function DataTableView() {
             Rows in memory: {table.rows.length} / {table.rowCount}
           </span>
           <button className="btn btn-danger btn-sm" onClick={() => {
-            removeTable(table.id);
-            setSelectedTableId(null);
-            addToast(`Table "${table.name}" removed`, "info");
+            if (confirm(`Are you sure you want to delete table "${table.name}"? This action cannot be undone.`)) {
+              removeTable(table.id);
+              setSelectedTableId(null);
+              addToast(`Table "${table.name}" deleted`, "success");
+            }
           }}>
             Delete Table
           </button>

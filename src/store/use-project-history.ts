@@ -30,6 +30,7 @@ export const useProjectHistory = () => {
       if (lastSavedStateRef.current === "") {
         lastSavedStateRef.current = currentState;
         clearHistory();
+        console.log("History initialized for project:", project.name);
       }
       return;
     }
@@ -38,6 +39,7 @@ export const useProjectHistory = () => {
     const previousState = JSON.parse(lastSavedStateRef.current);
     pushHistory(previousState);
     lastSavedStateRef.current = currentState;
+    console.log("Project change tracked - History size:", useHistoryStore.getState().past.length);
   }, [project, pushHistory, clearHistory]);
 
   const undo = useCallback(() => {
@@ -89,28 +91,35 @@ export const useHistoryShortcuts = () => {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      // Skip if typing in input or textarea
+      // Skip if typing in input or textarea, but allow contentEditable elements
+      const target = e.target as HTMLElement;
       if (
-        e.target instanceof HTMLInputElement ||
-        e.target instanceof HTMLTextAreaElement
+        target instanceof HTMLInputElement ||
+        target instanceof HTMLTextAreaElement ||
+        (target && target.getAttribute("contenteditable") === "true")
       ) {
         return;
       }
 
-      // Ctrl+Z or Cmd+Z for undo
-      if ((e.ctrlKey || e.metaKey) && e.key === "z" && !e.shiftKey) {
+      // Make key lowercase for consistent comparison
+      const key = e.key.toLowerCase();
+
+      // Ctrl+Z or Cmd+Z for undo (case-insensitive)
+      if ((e.ctrlKey || e.metaKey) && key === "z" && !e.shiftKey) {
         e.preventDefault();
+        console.log("Undo triggered - canUndo:", canUndo);
         if (canUndo) {
           undo();
         }
       }
 
-      // Ctrl+Shift+Z or Ctrl+Y or Cmd+Shift+Z for redo
+      // Ctrl+Shift+Z or Ctrl+Y or Cmd+Shift+Z for redo (case-insensitive)
       if (
-        ((e.ctrlKey || e.metaKey) && e.key === "z" && e.shiftKey) ||
-        ((e.ctrlKey || e.metaKey) && e.key === "y")
+        ((e.ctrlKey || e.metaKey) && key === "z" && e.shiftKey) ||
+        ((e.ctrlKey || e.metaKey) && key === "y" && !e.shiftKey)
       ) {
         e.preventDefault();
+        console.log("Redo triggered - canRedo:", canRedo);
         if (canRedo) {
           redo();
         }

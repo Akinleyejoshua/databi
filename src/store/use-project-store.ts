@@ -35,6 +35,7 @@ interface ProjectStore {
   addTable: (table: DataTable) => void;
   updateTable: (tableId: string, table: Partial<DataTable>) => void;
   removeTable: (tableId: string) => void;
+  applyTableTransform: (tableId: string, transformedTable: DataTable) => void;
 
   /* --- Relationship Actions --- */
   addRelationship: (relationship: Omit<Relationship, "id">) => void;
@@ -143,6 +144,19 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
             relationships: state.project.relationships.filter(
               (r) =>
                 r.sourceTableId !== tableId && r.targetTableId !== tableId
+            ),
+          }
+        : null,
+      isDirty: true,
+    })),
+
+  applyTableTransform: (tableId, transformedTable) =>
+    set((state) => ({
+      project: state.project
+        ? {
+            ...state.project,
+            tables: state.project.tables.map((t) =>
+              t.id === tableId ? transformedTable : t
             ),
           }
         : null,

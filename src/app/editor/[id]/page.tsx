@@ -8,6 +8,7 @@ import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import { useAuthStore } from "@/store/use-auth-store";
 import { useProjectHistory } from "@/store/use-project-history";
+import { KeyboardShortcutsProvider } from "@/components/providers/keyboard-shortcuts-provider";
 import Header from "@/components/layout/header";
 import Sidebar from "@/components/layout/sidebar";
 import CanvasArea from "@/components/canvas/canvas-area";

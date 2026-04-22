@@ -66,6 +66,12 @@ interface UiStore {
   toasts: { id: string; message: string; type: "success" | "error" | "info" }[];
   addToast: (message: string, type?: "success" | "error" | "info") => void;
   removeToast: (id: string) => void;
+
+  /* --- Auto-Save --- */
+  autoSaveEnabled: boolean;
+  setAutoSaveEnabled: (enabled: boolean) => void;
+  unsavedChanges: boolean;
+  setUnsavedChanges: (unsaved: boolean) => void;
 }
 
 export const useUiStore = create<UiStore>((set) => ({
@@ -148,4 +154,10 @@ export const useUiStore = create<UiStore>((set) => ({
     }),
   removeToast: (id) =>
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
+
+  /* --- Auto-Save --- */
+  autoSaveEnabled: false,
+  setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
+  unsavedChanges: false,
+  setUnsavedChanges: (unsaved) => set({ unsavedChanges: unsaved }),
 }));
