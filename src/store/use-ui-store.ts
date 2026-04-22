@@ -39,6 +39,9 @@ interface UiStore {
   isMeasureModalOpen: boolean;
   setMeasureModalOpen: (open: boolean) => void;
 
+  editingMeasureId: string | null;
+  setEditingMeasureId: (id: string | null) => void;
+
   isSettingsModalOpen: boolean;
   setSettingsModalOpen: (open: boolean) => void;
 
@@ -100,6 +103,9 @@ export const useUiStore = create<UiStore>((set) => ({
 
   isMeasureModalOpen: false,
   setMeasureModalOpen: (open) => set({ isMeasureModalOpen: open }),
+
+  editingMeasureId: null,
+  setEditingMeasureId: (id) => set({ editingMeasureId: id }),
 
   isSettingsModalOpen: false,
   setSettingsModalOpen: (open) => set({ isSettingsModalOpen: open }),

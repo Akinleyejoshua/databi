@@ -107,13 +107,27 @@ export default function Sidebar() {
                   const source = project.tables.find((t) => t.id === rel.sourceTableId);
                   const target = project.tables.find((t) => t.id === rel.targetTableId);
                   return (
-                    <div key={rel.id} className={styles["rel-item"]}>
+                    <div key={rel.id} className={styles["rel-item"]} style={{ position: "relative" }}>
                       <div className={styles["rel-tables"]}>
                         <span className="badge">{source?.name}</span>
                         <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><line x1="5" y1="12" x2="19" y2="12"/><polyline points="12 5 19 12 12 19"/></svg>
                         <span className="badge">{target?.name}</span>
                       </div>
                       <span className={styles["rel-info"]}>{rel.sourceColumn} → {rel.targetColumn} ({rel.cardinality})</span>
+                      <button 
+                        className="btn btn-ghost btn-icon btn-sm" 
+                        style={{ position: "absolute", top: "8px", right: "8px", height: "20px", width: "20px", color: "var(--color-error)" }}
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          if (confirm(`Delete relationship between ${source?.name} and ${target?.name}?`)) {
+                            useProjectStore.getState().removeRelationship(rel.id);
+                            useUiStore.getState().addToast("Relationship deleted", "success");
+                            await useProjectStore.getState().saveProject();
+                          }
+                        }}
+                      >
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                      </button>
                     </div>
                   );
                 })
@@ -136,7 +150,36 @@ export default function Sidebar() {
                   const table = project.tables.find((t) => t.id === m.tableId);
                   return (
                     <div key={m.id} className={styles["measure-item"]}>
-                      <span className={styles["measure-name"]}>{m.name}</span>
+                      <div className={styles["measure-header"]} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                        <span className={styles["measure-name"]}>{m.name}</span>
+                        <div style={{ display: "flex", gap: "4px" }}>
+                          <button 
+                            className="btn btn-ghost btn-icon btn-sm" 
+                            style={{ height: "24px", width: "24px" }}
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              useUiStore.getState().setEditingMeasureId(m.id);
+                              useUiStore.getState().setMeasureModalOpen(true);
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
+                          </button>
+                          <button 
+                            className="btn btn-ghost btn-icon btn-sm" 
+                            style={{ height: "24px", width: "24px", color: "var(--color-error)" }}
+                            onClick={async (e) => {
+                              e.stopPropagation();
+                              if (confirm(`Delete measure "${m.name}"?`)) {
+                                useProjectStore.getState().removeMeasure(m.id);
+                                useUiStore.getState().addToast("Measure deleted", "success");
+                                await useProjectStore.getState().saveProject();
+                              }
+                            }}
+                          >
+                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
+                          </button>
+                        </div>
+                      </div>
                       <span className={styles["measure-meta"]}>{table?.name} · {m.resultType}</span>
                       <code className={styles["measure-formula"]}>{m.originalFormula || m.formula}</code>
                     </div>
@@ -186,6 +229,7 @@ export default function Sidebar() {
                       const data = await res.json();
                       useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
                       useUiStore.getState().addToast("Nulls removed successfully", "success");
+                      await useProjectStore.getState().saveProject();
                     }
                   }}>
                     Remove Nulls
@@ -204,6 +248,7 @@ export default function Sidebar() {
                       const data = await res.json();
                       useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
                       useUiStore.getState().addToast("Duplicates removed successfully", "success");
+                      await useProjectStore.getState().saveProject();
                     }
                   }}>
                     Remove Duplicates
@@ -228,6 +273,7 @@ export default function Sidebar() {
                           const data = await res.json();
                           useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
                           useUiStore.getState().addToast(`Cast to ${type} successful`, "success");
+                          await useProjectStore.getState().saveProject();
                         }
                       }}>
                         To {type}

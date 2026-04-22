@@ -23,13 +23,15 @@ export default function RelationshipsModal() {
   const sourceTable = project.tables.find((t) => t.id === sourceTableId);
   const targetTable = project.tables.find((t) => t.id === targetTableId);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!sourceTableId || !sourceColumn || !targetTableId || !targetColumn) {
       addToast("Please fill all fields", "error");
       return;
     }
+    const { addRelationship, saveProject } = useProjectStore.getState();
     addRelationship({ sourceTableId, sourceColumn, targetTableId, targetColumn, cardinality });
     addToast("Relationship created", "success");
+    await saveProject();
     setSourceTableId(""); setSourceColumn(""); setTargetTableId(""); setTargetColumn("");
     setRelationshipModalOpen(false);
   };

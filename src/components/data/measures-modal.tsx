@@ -10,8 +10,8 @@ import type { DataType } from "@/types";
 import { generateKPIs, convertToJs, convertToDAX, type SuggestedKPI } from "@/lib/kpi-engine";
 
 export default function MeasuresModal() {
-  const { isMeasureModalOpen, setMeasureModalOpen, addToast, selectedTableId } = useUiStore();
-  const { project, addMeasure } = useProjectStore();
+  const { isMeasureModalOpen, setMeasureModalOpen, addToast, selectedTableId, editingMeasureId, setEditingMeasureId } = useUiStore();
+  const { project, addMeasure, updateMeasure, saveProject } = useProjectStore();
 
   const [mounted, setMounted] = useState(false);
   const [name, setName] = useState("");
@@ -20,26 +20,37 @@ export default function MeasuresModal() {
   const [resultType, setResultType] = useState<DataType>("number");
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<number | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
-  // --- Hooks must be at the top level ---
+  // --- Hooks ---
 
   useEffect(() => {
     setMounted(true);
   }, []);
 
+  // Load editing measure
   useEffect(() => {
-    if (isMeasureModalOpen && selectedTableId) {
+    if (isMeasureModalOpen && editingMeasureId && project?.measures) {
+      const m = project.measures.find(measure => measure.id === editingMeasureId);
+      if (m) {
+        setName(m.name);
+        setTableId(m.tableId);
+        setFormula(m.originalFormula || m.formula);
+        setResultType(m.resultType);
+      }
+    } else if (isMeasureModalOpen && selectedTableId) {
       setTableId(selectedTableId);
     }
-  }, [isMeasureModalOpen, selectedTableId]);
+  }, [isMeasureModalOpen, editingMeasureId, selectedTableId, project?.measures]);
 
   useEffect(() => {
     if (!isMeasureModalOpen) {
       setName(""); 
       setFormula(""); 
       setResultType("number");
+      setEditingMeasureId(null);
     }
-  }, [isMeasureModalOpen]);
+  }, [isMeasureModalOpen, setEditingMeasureId]);
 
   const suggestions = useMemo(() => {
     if (!project?.tables) return [];
@@ -70,7 +81,7 @@ export default function MeasuresModal() {
     setResultType(s.type);
   };
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!name || !tableId || !formula) {
       addToast("Please fill all fields", "error");
       return;
@@ -78,6 +89,7 @@ export default function MeasuresModal() {
 
     const executableJs = convertToJs(formula);
 
+    // Validation
     try {
       const table = project.tables?.find((t) => t.id === tableId);
       if (table && table.rows?.length > 0) {
@@ -88,19 +100,39 @@ export default function MeasuresModal() {
       }
     } catch (e) {
       addToast("Invalid formula syntax", "error");
+      console.error("Formula validation error:", e);
       return;
     }
 
-    addMeasure({ 
-      name, 
-      tableId, 
-      formula: executableJs, 
-      originalFormula: formula,
-      resultType 
-    });
+    setIsSaving(true);
+    try {
+      if (editingMeasureId) {
+        updateMeasure(editingMeasureId, {
+          name,
+          tableId,
+          formula: executableJs,
+          originalFormula: formula,
+          resultType
+        });
+        addToast(`Measure "${name}" updated`, "success");
+      } else {
+        addMeasure({ 
+          name, 
+          tableId, 
+          formula: executableJs, 
+          originalFormula: formula,
+          resultType 
+        });
+        addToast(`Measure "${name}" created`, "success");
+      }
 
-    addToast(`Measure "${name}" created`, "success");
-    setMeasureModalOpen(false);
+      await saveProject();
+      setMeasureModalOpen(false);
+    } catch (error) {
+      addToast("Failed to save measure", "error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -108,8 +140,8 @@ export default function MeasuresModal() {
       <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "850px", width: "95%", maxHeight: "90vh" }}>
         <div className="modal-header">
           <div>
-            <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Measure Calculator</h2>
-            <p style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>Create KPIs using simplified DAX syntax</p>
+            <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>{editingMeasureId ? "Edit Measure" : "Measure Calculator"}</h2>
+            <p style={{ fontSize: "12px", color: "var(--color-text-tertiary)" }}>{editingMeasureId ? "Update your KPI formula" : "Create KPIs using simplified DAX syntax"}</p>
           </div>
           <button className="btn btn-ghost btn-icon" onClick={() => setMeasureModalOpen(false)}>✕</button>
         </div>
@@ -237,7 +269,9 @@ export default function MeasuresModal() {
 
         <div className="modal-footer" style={{ marginTop: "0", padding: "20px 24px", background: "var(--color-bg-secondary)" }}>
           <button type="button" className="btn btn-secondary" onClick={() => setMeasureModalOpen(false)}>Cancel</button>
-          <button type="button" className="btn btn-primary" onClick={handleSubmit} style={{ minWidth: "140px" }}>Create Measure</button>
+          <button type="button" className="btn btn-primary" onClick={handleSubmit} style={{ minWidth: "140px" }} disabled={isSaving}>
+            {isSaving ? "Saving..." : (editingMeasureId ? "Update Measure" : "Create Measure")}
+          </button>
         </div>
       </div>
     </div>

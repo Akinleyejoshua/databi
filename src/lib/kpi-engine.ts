@@ -20,7 +20,7 @@ export function convertToJs(formula: string): string {
 
   // Helper to replace [Col] with r["Col"] inside a string
   const replaceCols = (str: string, rowVar: string = "r") => {
-    return str.replace(/\[(.*?)\]/g, (_, col) => `(Number(${rowVar}["${col}"]) || 0)`);
+    return str.replace(/\[(.*?)\]/g, (_, col) => `(Number(${rowVar}["${col.trim()}"]) || 0)`);
   };
 
   // 1. Handle Aggregations with complex expressions
@@ -39,23 +39,23 @@ export function convertToJs(formula: string): string {
 
   // DISTINCTCOUNT([Col])
   js = js.replace(/DISTINCTCOUNT\(\s*\[?(.*?)\]?\s*\)/gi, (_, col) => {
-    return `new Set(rows.map(r => r["${col}"])).size`;
+    const cleanCol = col.trim().replace(/^\[|\]$/g, "");
+    return `new Set(rows.map(r => r["${cleanCol}"])).size`;
   });
 
   // MIN([Col])
   js = js.replace(/MIN\(\s*(.*?)\s*\)/gi, (_, inner) => {
-    return `Math.min(...rows.map(r => ${replaceCols(inner, "r")}))`;
+    return `(rows.length ? Math.min(...rows.map(r => ${replaceCols(inner, "r")})) : 0)`;
   });
 
   // MAX([Col])
   js = js.replace(/MAX\(\s*(.*?)\s*\)/gi, (_, inner) => {
-    return `Math.max(...rows.map(r => ${replaceCols(inner, "r")}))`;
+    return `(rows.length ? Math.max(...rows.map(r => ${replaceCols(inner, "r")})) : 0)`;
   });
 
   // 2. Handle standalone column references [Col] -> (Number(row["Col"]) || 0)
-  // This is used for row-level expressions or outside aggregations
   js = js.replace(/\[(.*?)\]/g, (_, col) => {
-    return `(Number(row["${col}"]) || 0)`;
+    return `(Number(row["${col.trim()}"]) || 0)`;
   });
 
   return js;
