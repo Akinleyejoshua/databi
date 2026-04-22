@@ -29,15 +29,21 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Find or create user
-    let user = await UserModel.findOne({ email: normalizedEmail }).lean();
+    // Find or create user atomically to prevent duplicates
+    // This ensures that if the user exists, we log them in; otherwise, we create a new account.
+    const user = await UserModel.findOneAndUpdate(
+      { email: normalizedEmail },
+      { 
+        $setOnInsert: { 
+          email: normalizedEmail,
+          name: normalizedEmail.split("@")[0] 
+        } 
+      },
+      { upsert: true, new: true, lean: true }
+    );
 
     if (!user) {
-      const created = await UserModel.create({
-        email: normalizedEmail,
-        name: normalizedEmail.split("@")[0],
-      });
-      user = created.toJSON();
+      throw new Error("Failed to find or create user");
     }
 
     const response = NextResponse.json({

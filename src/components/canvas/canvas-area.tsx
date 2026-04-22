@@ -4,9 +4,8 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import * as RGL from "react-grid-layout";
-const { Responsive, WidthProvider } = RGL as any;
-const ResponsiveGridLayout: any = WidthProvider(Responsive);
+import { Responsive, WidthProvider } from "react-grid-layout/legacy";
+const ResponsiveGridLayout = WidthProvider(Responsive);
 import "react-grid-layout/css/styles.css";
 import "react-resizable/css/styles.css";
 import { useProjectStore } from "@/store/use-project-store";
