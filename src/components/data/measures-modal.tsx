@@ -10,9 +10,10 @@ import type { DataType } from "@/types";
 import { generateKPIs, convertToJs, convertToDAX, type SuggestedKPI } from "@/lib/kpi-engine";
 
 export default function MeasuresModal() {
-  const { isMeasureModalOpen, setMeasureModalOpen, addToast } = useUiStore();
+  const { isMeasureModalOpen, setMeasureModalOpen, addToast, selectedTableId } = useUiStore();
   const { project, addMeasure } = useProjectStore();
 
+  const [mounted, setMounted] = useState(false);
   const [name, setName] = useState("");
   const [tableId, setTableId] = useState("");
   const [formula, setFormula] = useState("");
@@ -20,24 +21,40 @@ export default function MeasuresModal() {
   const [showAdvanced, setShowAdvanced] = useState(false);
   const [hoveredSuggestion, setHoveredSuggestion] = useState<number | null>(null);
 
+  // Ensure component is mounted to avoid hydration issues
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  // Sync with selected table from UI store when modal opens
+  useEffect(() => {
+    if (isMeasureModalOpen && selectedTableId) {
+      setTableId(selectedTableId);
+    }
+  }, [isMeasureModalOpen, selectedTableId]);
+
   // Suggestions based on selected table
   const suggestions = useMemo(() => {
-    const table = project?.tables.find((t) => t.id === tableId);
+    if (!project?.tables) return [];
+    const table = project.tables.find((t) => t.id === tableId);
     return table ? generateKPIs(table) : [];
   }, [tableId, project?.tables]);
 
   const selectedTable = useMemo(() => 
-    project?.tables.find(t => t.id === tableId),
+    project?.tables?.find(t => t.id === tableId),
     [tableId, project?.tables]
   );
 
   useEffect(() => {
     if (!isMeasureModalOpen) {
-      setName(""); setTableId(""); setFormula(""); setResultType("number");
+      setName(""); 
+      setFormula(""); 
+      setResultType("number");
+      // Don't reset tableId so it persists the selection
     }
   }, [isMeasureModalOpen]);
 
-  if (!isMeasureModalOpen || !project) return null;
+  if (!mounted || !isMeasureModalOpen || !project) return null;
 
   const handleApplySuggestion = (s: SuggestedKPI) => {
     setName(s.name);
@@ -54,19 +71,15 @@ export default function MeasuresModal() {
     // Convert simplified syntax to executable JS
     const executableJs = convertToJs(formula);
 
-    // Validate formula by trying to create a function
     try {
-      const table = project.tables.find((t) => t.id === tableId);
-      if (table && table.rows.length > 0) {
-        // Wrap in try-catch to avoid runtime errors during validation
+      const table = project.tables?.find((t) => t.id === tableId);
+      if (table && table.rows?.length > 0) {
         const testFn = new Function("row", "rows", `try { return ${executableJs}; } catch(e) { return null; }`);
         testFn(table.rows[0], table.rows);
       } else {
-        // Just check syntax
         new Function("row", "rows", `return ${executableJs}`);
       }
     } catch (e) {
-      console.error("Formula validation error:", e);
       addToast("Invalid formula syntax", "error");
       return;
     }
@@ -85,12 +98,16 @@ export default function MeasuresModal() {
 
   const daxPreview = useMemo(() => {
     if (!formula) return "";
-    return convertToDAX(formula, selectedTable?.name || "Table");
+    try {
+      return convertToDAX(formula, selectedTable?.name || "Table");
+    } catch (e) {
+      return formula;
+    }
   }, [formula, selectedTable?.name]);
 
   return (
     <div className="modal-overlay" onClick={() => setMeasureModalOpen(false)}>
-      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "800px", width: "90%" }}>
+      <div className="modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: "850px", width: "95%", maxHeight: "90vh" }}>
         <div className="modal-header">
           <div>
             <h2 style={{ fontSize: "1.125rem", fontWeight: 700 }}>Measure Calculator</h2>
@@ -99,16 +116,22 @@ export default function MeasuresModal() {
           <button className="btn btn-ghost btn-icon" onClick={() => setMeasureModalOpen(false)}>✕</button>
         </div>
 
-        <div className="modal-body" style={{ display: "grid", gridTemplateColumns: suggestions.length > 0 ? "1fr 250px" : "1fr", gap: "24px", padding: "24px" }}>
+        <div className="modal-body" style={{ 
+          display: "grid", 
+          gridTemplateColumns: suggestions.length > 0 ? "1fr 280px" : "1fr", 
+          gap: "24px", 
+          padding: "24px",
+          overflowY: "auto" 
+        }}>
           
           {/* Main Form */}
-          <div style={{ display: "flex", flexDirection: "column", gap: "16px" }}>
-            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+          <div style={{ display: "flex", flexDirection: "column", gap: "20px" }}>
+            <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "16px" }}>
               <div>
                 <label className="label">Table Source</label>
                 <select className="select" value={tableId} onChange={(e) => setTableId(e.target.value)}>
                   <option value="">Select table...</option>
-                  {project.tables.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
+                  {project.tables?.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
                 </select>
               </div>
               <div>
@@ -118,11 +141,12 @@ export default function MeasuresModal() {
             </div>
 
             <div style={{ position: "relative" }}>
-              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "4px" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-end", marginBottom: "6px" }}>
                 <label className="label" style={{ marginBottom: 0 }}>Formula</label>
                 <button 
+                  type="button"
                   className="btn btn-ghost" 
-                  style={{ fontSize: "11px", height: "auto", padding: "2px 8px" }}
+                  style={{ fontSize: "11px", height: "auto", padding: "4px 8px", background: "var(--color-bg-secondary)" }}
                   onClick={() => setShowAdvanced(!showAdvanced)}
                 >
                   {showAdvanced ? "Hide Helper" : "Show Helper"}
@@ -134,20 +158,20 @@ export default function MeasuresModal() {
                 value={formula}
                 onChange={(e) => setFormula(e.target.value)}
                 placeholder={`e.g. SUM([Amount]) or [Sales] * 0.1`}
-                style={{ fontFamily: "monospace", minHeight: "120px", fontSize: "14px", lineHeight: "1.5" }}
+                style={{ fontFamily: "monospace", minHeight: "140px", fontSize: "14px", lineHeight: "1.6", backgroundColor: "var(--color-bg-secondary)" }}
               />
 
               {formula && (
-                <div style={{ marginTop: "8px", padding: "8px 12px", background: "var(--color-bg-secondary)", borderRadius: "6px", border: "1px solid var(--color-border)" }}>
-                  <div style={{ fontSize: "10px", textTransform: "uppercase", color: "var(--color-text-tertiary)", marginBottom: "4px" }}>DAX Preview</div>
-                  <code style={{ color: "var(--color-primary)", fontWeight: 500, wordBreak: "break-all" }}>{daxPreview}</code>
+                <div style={{ marginTop: "12px", padding: "12px", background: "var(--color-bg-tertiary)", borderRadius: "8px", border: "1px solid var(--color-border)" }}>
+                  <div style={{ fontSize: "10px", textTransform: "uppercase", color: "var(--color-text-tertiary)", marginBottom: "6px", fontWeight: 700 }}>DAX Preview</div>
+                  <code style={{ color: "var(--color-primary)", fontWeight: 600, wordBreak: "break-all", fontSize: "13px" }}>{daxPreview}</code>
                 </div>
               )}
 
               {showAdvanced && (
-                <div style={{ marginTop: "12px", padding: "12px", background: "var(--color-surface-hover)", borderRadius: "8px", border: "1px dashed var(--color-border)" }}>
-                  <h4 style={{ fontSize: "12px", marginBottom: "8px" }}>Available Functions:</h4>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px", fontSize: "11px" }}>
+                <div style={{ marginTop: "12px", padding: "16px", background: "var(--color-surface-hover)", borderRadius: "10px", border: "1px dashed var(--color-border)" }}>
+                  <h4 style={{ fontSize: "13px", marginBottom: "10px", fontWeight: 600 }}>Available Functions:</h4>
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "10px", fontSize: "12px" }}>
                     <code>SUM([Col])</code>
                     <code>AVG([Col])</code>
                     <code>COUNT([Col])</code>
@@ -155,7 +179,7 @@ export default function MeasuresModal() {
                     <code>MIN([Col])</code>
                     <code>MAX([Col])</code>
                   </div>
-                  <p style={{ fontSize: "11px", color: "var(--color-text-tertiary)", marginTop: "12px" }}>
+                  <p style={{ fontSize: "11px", color: "var(--color-text-tertiary)", marginTop: "14px" }}>
                     Tip: Use <code>[ColumnName]</code> to reference table columns.
                   </p>
                 </div>
@@ -183,30 +207,30 @@ export default function MeasuresModal() {
           {/* KPI Suggestions Sidebar */}
           {suggestions.length > 0 && (
             <div style={{ borderLeft: "1px solid var(--color-border)", paddingLeft: "20px" }}>
-              <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px" }}>Suggested KPIs</h3>
-              <div style={{ display: "flex", flexDirection: "column", gap: "8px", maxHeight: "400px", overflowY: "auto" }}>
+              <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "16px", color: "var(--color-text-secondary)" }}>Suggested KPIs</h3>
+              <div style={{ display: "flex", flexDirection: "column", gap: "10px", maxHeight: "450px", overflowY: "auto", paddingRight: "4px" }}>
                 {suggestions.map((s, i) => (
                   <button
                     key={i}
                     type="button"
-                    className="suggestion-card"
                     onMouseEnter={() => setHoveredSuggestion(i)}
                     onMouseLeave={() => setHoveredSuggestion(null)}
                     onClick={() => handleApplySuggestion(s)}
                     style={{
                       textAlign: "left",
-                      padding: "10px",
+                      padding: "12px",
                       background: hoveredSuggestion === i ? "var(--color-surface-hover)" : "var(--color-surface)",
                       border: "1px solid",
                       borderColor: hoveredSuggestion === i ? "var(--color-primary)" : "var(--color-border)",
-                      borderRadius: "8px",
+                      borderRadius: "10px",
                       cursor: "pointer",
                       transition: "all 0.2s",
-                      transform: hoveredSuggestion === i ? "translateY(-1px)" : "none"
+                      transform: hoveredSuggestion === i ? "translateY(-2px)" : "none",
+                      boxShadow: hoveredSuggestion === i ? "0 4px 12px var(--color-shadow)" : "none"
                     }}
                   >
-                    <div style={{ fontWeight: 600, fontSize: "13px" }}>{s.name}</div>
-                    <div style={{ fontSize: "11px", color: "var(--color-text-tertiary)", marginTop: "4px" }}>{s.description}</div>
+                    <div style={{ fontWeight: 700, fontSize: "13px", color: hoveredSuggestion === i ? "var(--color-primary)" : "inherit" }}>{s.name}</div>
+                    <div style={{ fontSize: "11px", color: "var(--color-text-tertiary)", marginTop: "6px", lineHeight: "1.4" }}>{s.description}</div>
                   </button>
                 ))}
               </div>
@@ -215,9 +239,9 @@ export default function MeasuresModal() {
 
         </div>
 
-        <div className="modal-footer" style={{ marginTop: "24px", padding: "16px 24px" }}>
-          <button className="btn btn-secondary" onClick={() => setMeasureModalOpen(false)}>Cancel</button>
-          <button className="btn btn-primary" onClick={handleSubmit}>Create Measure</button>
+        <div className="modal-footer" style={{ marginTop: "0", padding: "20px 24px", background: "var(--color-bg-secondary)" }}>
+          <button type="button" className="btn btn-secondary" onClick={() => setMeasureModalOpen(false)}>Cancel</button>
+          <button type="button" className="btn btn-primary" onClick={handleSubmit} style={{ minWidth: "140px" }}>Create Measure</button>
         </div>
       </div>
     </div>
