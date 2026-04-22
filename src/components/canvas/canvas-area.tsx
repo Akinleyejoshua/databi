@@ -118,8 +118,14 @@ export default function CanvasArea() {
               } ${isPreviewMode ? styles["widget-wrapper--preview"] : ""}`}
               onClickCapture={(e) => {
                 if (!isPreviewMode) {
-                  e.stopPropagation();
-                  setSelectedWidget(widget.id);
+                  // Only intercept if we're not clicking an interactive element
+                  const target = e.target as HTMLElement;
+                  const isInteractive = target.closest("button, input, select, textarea, [role='button']");
+                  
+                  if (!isInteractive) {
+                    e.stopPropagation();
+                    setSelectedWidget(widget.id);
+                  }
                 }
               }}
               style={{
