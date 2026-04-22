@@ -27,7 +27,8 @@ import {
   Database,
   Link2,
   Wand2,
-  Calculator
+  Calculator,
+  Map
 } from "lucide-react";
 import styles from "./sidebar.module.css";
 import AiFormattedText from "../shared/ai-formatted-text";
@@ -361,6 +362,7 @@ export default function Sidebar() {
                     { type: "chart" as WidgetType, chart: "donut" as ChartType, label: "Donut Chart", icon: <CircleDot size={18} /> },
                     { type: "chart" as WidgetType, chart: "scatter" as ChartType, label: "Scatter Chart", icon: <ScatterChart size={18} /> },
                     { type: "chart" as WidgetType, chart: "time-series" as ChartType, label: "Time Series", icon: <History size={18} /> },
+                    { type: "chart" as WidgetType, chart: "map" as ChartType, label: "Map Chart", icon: <Map size={18} /> },
                   ]).map((w) => (
                     <div key={w.chart} className="tooltip-wrapper">
                       <button

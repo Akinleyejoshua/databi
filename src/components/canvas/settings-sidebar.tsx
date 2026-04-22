@@ -96,7 +96,7 @@ export default function SettingsModal() {
                   <select className="select" value={widget.chartConfig.chartType} onChange={(e) =>
                     updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, chartType: e.target.value as ChartType } })
                   }>
-                    {["bar","column","line","area","pie","donut","scatter","time-series"].map((t) => (
+                    {["bar","column","line","area","pie","donut","scatter","time-series","map"].map((t) => (
                       <option key={t} value={t}>{t}</option>
                     ))}
                   </select>
@@ -241,12 +241,18 @@ export default function SettingsModal() {
                     updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, valueColumn: e.target.value } })
                   }>
                     <option value="">Select column or measure...</option>
-                    {project?.tables.find((t) => t.id === widget.kpiConfig?.tableId)?.columns.filter((c) => c.type === "number").map((c) => (
-                      <option key={c.name} value={c.name}>{c.name}</option>
-                    ))}
-                    {project?.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).map((m) => (
-                      <option key={m.id} value={m.id}>{m.name} (Measure)</option>
-                    ))}
+                    <optgroup label="Columns">
+                      {project?.tables.find((t) => t.id === widget.kpiConfig?.tableId)?.columns.filter((c) => c.type === "number").map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}</option>
+                      ))}
+                    </optgroup>
+                    {project?.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).length > 0 && (
+                      <optgroup label="Custom Measures">
+                        {project?.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).map((m) => (
+                          <option key={m.id} value={m.id}>∑ {m.name}</option>
+                        ))}
+                      </optgroup>
+                    )}
                   </select>
                 </div>
                 <div className={styles.field}>

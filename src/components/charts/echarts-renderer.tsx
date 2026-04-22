@@ -3,7 +3,7 @@
    ============================================================ */
 "use client";
 
-import { useMemo, useEffect, useRef } from "react";
+import { useMemo, useEffect, useRef, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter, Measure, Relationship } from "@/types";
 import { applyFilters, CHART_COLORS, parseSafeNumber, joinTables, abbreviateNumber } from "@/lib/utils";
@@ -95,9 +95,11 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     const isPie = config.chartType === "pie" || config.chartType === "donut";
     const isHorizontalBar = config.chartType === "bar";
 
+    const isMap = config.chartType === "map";
+
     const series = config.values.map((v, i) => {
       // Logic for raw data (Scatter plots with raw values)
-      if (isScatter && !v.aggregation || v.aggregation === "none") {
+      if (isScatter && (!v.aggregation || v.aggregation === "none")) {
         const data = rows.map(r => {
           const x = parseSafeNumber(r[fieldDef.columnName]);
           const y = parseSafeNumber(r[v.columnName]);
@@ -155,6 +157,21 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
     const showAsValueAxis = (config.chartType === "line" || config.chartType === "area" || config.chartType === "scatter") && xIsNumeric;
 
+    let visualMap;
+    if (isMap && series.length > 0) {
+      const mapData = series[0].data as {name: string, value: number}[];
+      const maxVal = Math.max(...mapData.map(d => d.value || 0), 100);
+      visualMap = {
+        left: 'right',
+        min: 0,
+        max: maxVal,
+        inRange: { color: ['#e0f3f8', '#2563eb', '#1e3a8a'] },
+        text: ['High', 'Low'],
+        calculable: true,
+        textStyle: { fontSize: 10 }
+      };
+    }
+
     return {
       hasData: true,
       option: {
@@ -165,14 +182,15 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           textStyle: { fontSize: 13, fontFamily: "inherit", fontWeight: 600, color: "var(--color-text)" } 
         },
         tooltip: config.showTooltip ? { 
-          trigger: isPie ? "item" : "axis",
+          trigger: isPie || isMap ? "item" : "axis",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderColor: "var(--color-border)",
           textStyle: { color: "var(--color-text)", fontSize: 11 }
         } : undefined,
-        legend: config.showLegend ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
-        grid: isPie ? undefined : { left: "4%", right: "4%", top: 45, bottom: config.showLegend ? 45 : 30, containLabel: true },
-        xAxis: isPie ? undefined : (isHorizontalBar
+        legend: config.showLegend && !isMap ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
+        visualMap,
+        grid: isPie || isMap ? undefined : { left: "4%", right: "4%", top: 45, bottom: config.showLegend ? 45 : 30, containLabel: true },
+        xAxis: isPie || isMap ? undefined : (isHorizontalBar
           ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v) }, axisName: config.xAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
           : { 
               type: showAsValueAxis ? "value" : "category", 
@@ -181,7 +199,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
               axisName: config.xAxisLabel || undefined,
               axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 }
             }),
-        yAxis: isPie ? undefined : (isHorizontalBar
+        yAxis: isPie || isMap ? undefined : (isHorizontalBar
           ? { type: "category", data: categories, axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
           : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v), color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }),
         series,
@@ -191,11 +209,34 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     };
   }, [config, tables, filters, measures, relationships]);
 
-  if (!hasData) {
+  const [mapLoaded, setMapLoaded] = useState(false);
+
+  useEffect(() => {
+    if (config.chartType === "map" && !mapLoaded) {
+      import("echarts").then((echarts) => {
+        // Only fetch if not already registered
+        if (!echarts.getMap('world')) {
+          fetch('https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/world.json')
+            .then(res => res.json())
+            .then(geoJson => {
+              echarts.registerMap('world', geoJson);
+              setMapLoaded(true);
+            })
+            .catch(console.error);
+        } else {
+          setMapLoaded(true);
+        }
+      });
+    }
+  }, [config.chartType, mapLoaded]);
+
+  if (!hasData || (config.chartType === "map" && !mapLoaded)) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "12px", flexDirection: "column", gap: "10px", textAlign: "center", padding: "20px" }}>
         <div style={{ fontSize: "32px", opacity: 0.5 }}>📊</div>
-        <div style={{ fontWeight: 500 }}>{(!config.fields.length || !config.values.length) ? "Configure Chart Fields" : "No data available"}</div>
+        <div style={{ fontWeight: 500 }}>
+          {config.chartType === "map" && !mapLoaded ? "Loading Map..." : (!config.fields.length || !config.values.length) ? "Configure Chart Fields" : "No data available"}
+        </div>
         <div style={{ fontSize: "11px", opacity: 0.7 }}>Add dimensions to Fields and metrics to Values</div>
       </div>
     );
@@ -220,6 +261,15 @@ function buildSeriesObject(base: any, chartType: string, categories: string[], d
     case "line": case "time-series": return { ...base, type: "line", smooth: true, symbol: "circle", symbolSize: 6 };
     case "area": return { ...base, type: "line", smooth: true, areaStyle: { opacity: 0.2 }, symbol: "circle", symbolSize: 4 };
     case "scatter": return { ...base, type: "scatter", symbolSize: 10, itemStyle: { ...base.itemStyle, opacity: 0.7 } };
+    case "map": 
+      return {
+        type: "map",
+        map: "world",
+        name: base.name,
+        roam: true,
+        data: categories.map((cat, j) => ({ name: cat, value: data[j] })),
+        emphasis: { label: { show: true } }
+      };
     case "pie": case "donut":
       return {
         type: "pie",
