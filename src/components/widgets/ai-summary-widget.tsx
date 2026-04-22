@@ -106,11 +106,11 @@ export default function AiSummaryWidget({ widget }: Props) {
 
 
   return (
-    <div className={styles["ai-widget"]} style={{ height: "100%", display: "flex", flexDirection: "column" }}>
+    <div className={styles["ai-widget"]}>
       <div className={styles["ai-header"]}>
-        <div style={{ display: "flex", alignItems: "center", gap: "8px" }}>
-          <span className={styles["ai-badge"]}>🤖 AI Data Analyst</span>
-          {localLoading && <div className={styles["ai-pulse"]} style={{ width: "8px", height: "8px" }} />}
+        <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
+          <div className={styles["ai-pulse"]} />
+          <span className={styles["ai-badge"]}>AI Data Analyst</span>
         </div>
         <button
           className="btn btn-primary btn-sm"
@@ -119,36 +119,29 @@ export default function AiSummaryWidget({ widget }: Props) {
             handleGenerate();
           }}
           disabled={localLoading || !project?.tables.length}
-          style={{ height: "28px", padding: "0 12px", borderRadius: "14px" }}
+          style={{ height: "32px", padding: "0 16px", borderRadius: "16px", fontWeight: 600 }}
         >
           {localLoading ? "Analyzing..." : hasAnalysis ? "Regenerate" : "Generate Analysis"}
         </button>
       </div>
 
-      <div className={styles["ai-content"]} style={{ 
-        flex: 1, 
-        overflowY: "auto", 
-        minHeight: "100px",
-        padding: "16px 4px"
-      }}>
+      <div className={styles["ai-content"]}>
         {localLoading ? (
           <div className={styles["ai-loading"]}>
-            <div className={styles["ai-pulse"]} />
-            <span style={{ fontSize: "12px", color: "var(--color-text-tertiary)", fontWeight: 500 }}>
+            <div className={styles["ai-pulse"]} style={{ width: "40px", height: "40px" }} />
+            <span style={{ fontSize: "14px", color: "var(--color-text-secondary)", fontWeight: 500 }}>
               Crunching numbers and identifying trends...
             </span>
           </div>
         ) : hasAnalysis ? (
-          <div className={styles["ai-container"]} style={{ paddingRight: "8px" }}>
-            <AiFormattedText text={aiConfig.generatedText} />
-          </div>
+          <AiFormattedText text={aiConfig.generatedText} />
         ) : (
           <div className={styles["ai-placeholder"]}>
-            <div style={{ fontSize: "32px", marginBottom: "16px" }}>💡</div>
-            <h3 style={{ fontSize: "15px", fontWeight: 700, color: "var(--color-text)", marginBottom: "8px" }}>
+            <div style={{ fontSize: "48px", marginBottom: "20px" }}>🤖</div>
+            <h3 style={{ fontSize: "18px", fontWeight: 700, color: "var(--color-text)", marginBottom: "10px" }}>
               Ready to analyze your data?
             </h3>
-            <p style={{ fontSize: "12px", color: "var(--color-text-secondary)", lineHeight: "1.5" }}>
+            <p style={{ fontSize: "14px", color: "var(--color-text-secondary)", lineHeight: "1.6", maxWidth: "400px" }}>
               Click the button above to generate AI-powered summaries, detect anomalies, and get strategic recommendations based on your tables.
             </p>
           </div>
@@ -157,3 +150,4 @@ export default function AiSummaryWidget({ widget }: Props) {
     </div>
   );
 }
+

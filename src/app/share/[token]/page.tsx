@@ -164,6 +164,48 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
       overflow: "hidden"
     }}>
       {projectInStore && <CanvasArea isSharePage={true} />}
+
+      {/* Badge for new users */}
+      <a 
+        href="/"
+        target="_blank"
+        rel="noopener noreferrer"
+        style={{
+          position: "fixed",
+          bottom: "24px",
+          right: "24px",
+          display: "flex",
+          alignItems: "center",
+          gap: "8px",
+          padding: "10px 18px",
+          backgroundColor: "#ffffff",
+          border: "1px solid rgba(0,0,0,0.08)",
+          borderRadius: "100px",
+          boxShadow: "0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)",
+          textDecoration: "none",
+          color: "#1e293b",
+          fontSize: "14px",
+          fontWeight: 600,
+          zIndex: 1000,
+          transition: "transform 0.2s ease, box-shadow 0.2s ease"
+        }}
+        onMouseEnter={(e) => {
+          e.currentTarget.style.transform = "translateY(-2px)";
+          e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)";
+        }}
+        onMouseLeave={(e) => {
+          e.currentTarget.style.transform = "none";
+          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)";
+        }}
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
+          <rect x="2" y="2" width="8" height="8" rx="2" fill="#4169E1" />
+          <rect x="14" y="2" width="8" height="8" rx="2" fill="#4169E1" opacity="0.6" />
+          <rect x="2" y="14" width="8" height="8" rx="2" fill="#4169E1" opacity="0.4" />
+          <rect x="14" y="14" width="8" height="8" rx="2" fill="#4169E1" opacity="0.8" />
+        </svg>
+        Build your own dashboard
+      </a>
     </div>
   );
 }

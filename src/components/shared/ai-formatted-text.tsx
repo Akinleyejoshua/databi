@@ -1,9 +1,10 @@
 /* ============================================================
-   AI Formatted Text — Shared component for rendering AI insights
+   AI Formatted Text — Premium Grid Version
    ============================================================ */
 "use client";
 
 import React from "react";
+import styles from "../widgets/ai-summary-widget.module.css";
 
 interface Props {
   text: string;
@@ -12,83 +13,79 @@ interface Props {
 export default function AiFormattedText({ text }: Props) {
   if (!text) return null;
 
-  const lines = text.split("\n");
-  return (
-    <div className="ai-formatted-content">
-      {lines.map((line, idx) => {
-        let content = line.trim();
-        if (!content) return <div key={idx} style={{ height: "12px" }} />;
+  // 1. Identify Sections
+  // We'll look for ### Key Findings, ### Recommendations, ### Risks, ### Opportunities
+  const sections = text.split(/###\s+/);
+  
+  // The first part (before the first ###) is the intro
+  const introText = sections[0].trim();
+  const cardSections = sections.slice(1);
 
-        // Section Headers
-        const isHeader = content.startsWith("###") || content.startsWith("##") || 
-                         (content.endsWith(":") && content.length < 40 && !content.startsWith("•"));
-        
-        const formattedContent = content
-          .replace(/^#+\s*/, "") 
-          .split(/(\*\*.*?\*\*)/g)
-          .map((part, i) => {
-            if (part.startsWith("**") && part.endsWith("**")) {
-              return <strong key={part + i} style={{ color: "var(--color-text)", fontWeight: 700 }}>{part.slice(2, -2)}</strong>;
-            }
-            return part;
-          });
+  const getSectionIcon = (title: string) => {
+    const lower = title.toLowerCase();
+    if (lower.includes("finding")) return "🎯";
+    if (lower.includes("recommend")) return "📈";
+    if (lower.includes("risk")) return "⚠️";
+    if (lower.includes("opportunit")) return "💡";
+    return "📊";
+  };
 
-        if (isHeader) {
-          let icon = "📊";
-          const lower = content.toLowerCase();
-          if (lower.includes("summary")) icon = "📝";
-          if (lower.includes("trend")) icon = "📈";
-          if (lower.includes("anomaly") || lower.includes("outlier")) icon = "🔍";
-          if (lower.includes("recommend")) icon = "🚀";
-          if (lower.includes("insight")) icon = "💡";
+  const getSectionClass = (title: string) => {
+    const lower = title.toLowerCase();
+    if (lower.includes("finding")) return styles["card-findings"];
+    if (lower.includes("recommend")) return styles["card-recommendations"];
+    if (lower.includes("risk")) return styles["card-risks"];
+    if (lower.includes("opportunit")) return styles["card-opportunities"];
+    return "";
+  };
 
-          return (
-            <h4 key={idx} style={{ 
-              fontSize: "14px", 
-              fontWeight: 800, 
-              marginTop: "20px", 
-              marginBottom: "10px", 
-              color: "var(--color-primary)",
-              display: "flex",
-              alignItems: "center",
-              gap: "8px",
-              borderBottom: "1px solid var(--color-border-light)",
-              paddingBottom: "4px"
-            }}>
-              <span>{icon}</span>
-              {formattedContent}
-            </h4>
-          );
+  const formatLine = (line: string) => {
+    return line
+      .split(/(\*\*.*?\*\*)/g)
+      .map((part, i) => {
+        if (part.startsWith("**") && part.endsWith("**")) {
+          return <strong key={i}>{part.slice(2, -2)}</strong>;
         }
+        return part;
+      });
+  };
 
-        // Bullet points
-        if (content.startsWith("-") || content.startsWith("•") || content.match(/^\d+\./)) {
+  return (
+    <div className={styles["ai-container"]}>
+      {introText && (
+        <div className={styles["ai-intro"]}>
+          {introText.split("\n").map((line, i) => (
+            <p key={i}>{formatLine(line)}</p>
+          ))}
+        </div>
+      )}
+
+      <div className={styles["ai-grid"]}>
+        {cardSections.map((section, idx) => {
+          const lines = section.trim().split("\n");
+          const title = lines[0].trim();
+          const contentLines = lines.slice(1).filter(l => l.trim().length > 0);
+
           return (
-            <div key={idx} style={{ 
-              display: "flex", 
-              gap: "10px", 
-              marginBottom: "8px", 
-              paddingLeft: "4px",
-              fontSize: "13px",
-              lineHeight: "1.6"
-            }}>
-              <span style={{ color: "var(--color-primary)", fontWeight: "bold" }}>•</span>
-              <div style={{ flex: 1 }}>{formattedContent}</div>
+            <div key={idx} className={`${styles["ai-card"]} ${getSectionClass(title)}`}>
+              <div className={styles["ai-card-header"]}>
+                <span>{getSectionIcon(title)}</span>
+                {title}
+              </div>
+              <div className={styles["ai-card-content"]}>
+                <ul>
+                  {contentLines.map((line, lIdx) => (
+                    <li key={lIdx}>
+                      {formatLine(line.replace(/^[•\-\*\d\.]+\s*/, ""))}
+                    </li>
+                  ))}
+                </ul>
+              </div>
             </div>
           );
-        }
-
-        return (
-          <p key={idx} style={{ 
-            marginBottom: "12px", 
-            fontSize: "13px", 
-            lineHeight: "1.7",
-            color: "var(--color-text-secondary)" 
-          }}>
-            {formattedContent}
-          </p>
-        );
-      })}
+        })}
+      </div>
     </div>
   );
 }
+

@@ -34,11 +34,21 @@ export async function POST(req: NextRequest) {
           (mode === "data" ? `Sample data: ${JSON.stringify(t.rows)}` : "")
         ).join("\n\n");
 
-    const systemPrompt = `You are a Senior Business Intelligence analyst. ${modePrompts[mode as keyof typeof modePrompts] || modePrompts.data} Be professional, concise, and thorough. Use bullet points.`;
+    const systemPrompt = `You are a Senior Business Intelligence analyst. Your goal is to provide a comprehensive, executive-level data analysis report.
+    
+    Structure your response EXACTLY as follows:
+    1. A single introductory paragraph summarizing the overall dataset (e.g., "Our analysis of [X] records reveals...").
+    2. A section titled "### Key Findings" followed by bullet points.
+    3. A section titled "### Recommendations" followed by bullet points.
+    4. A section titled "### Risks to Monitor" followed by bullet points.
+    5. A section titled "### Opportunities" followed by bullet points.
+    
+    Use a professional, insight-driven tone. Highlight specific numbers and percentages where possible. Be concise but thorough.`;
 
     const userPrompt = prompt
       ? `${prompt}\n\nContext Data:\n${dataContext}`
-      : `Analyze this context and provide a thorough report.\n\nContext Data:\n${dataContext}`;
+      : `Analyze the provided context and provide a structured report according to the defined format.\n\nContext Data:\n${dataContext}`;
+
 
     if (!apiKey || apiKey === "your_groq_api_key_here") {
       const summary = generateBasicSummary(tables || []);

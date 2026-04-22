@@ -170,6 +170,12 @@ export default function HomePage() {
         <div className={styles["login-theme"]}>
           <ThemeToggle />
         </div>
+
+        {/* Footer */}
+        <div style={{ position: "absolute", bottom: "24px", padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "13px", color: "var(--color-text-tertiary)", zIndex: 10 }}>
+          Built by <a href="https://joshuapro.netlify.app" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none", marginLeft: "6px" }}>Joshua Akinleye</a>
+        </div>
+
         <ToastContainer />
       </div>
     );
@@ -282,6 +288,12 @@ export default function HomePage() {
           </div>
         )}
       </main>
+
+      {/* Footer */}
+      <div style={{ padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "13px", color: "var(--color-text-tertiary)", marginTop: "auto", borderTop: "1px solid var(--color-border-light)" }}>
+        Built by <a href="https://joshuapro.netlify.app" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none", marginLeft: "6px" }}>Joshua Akinleye</a>
+      </div>
+
       <ToastContainer />
     </div>
   );
