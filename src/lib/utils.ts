@@ -164,7 +164,7 @@ export function detectColumnType(
 
   const allNumbers = sample.every((v) => {
     if (typeof v === "number") return true;
-    const cleaned = String(v).replace(/[^-0.9.]/g, "");
+    const cleaned = String(v).replace(/[^-0-9.]/g, "");
     return cleaned.length > 0 && !isNaN(parseFloat(cleaned));
   });
   if (allNumbers) return "number";
