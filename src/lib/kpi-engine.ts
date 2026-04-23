@@ -19,8 +19,9 @@ export function convertToJs(formula: string): string {
   let js = formula;
 
   // Helper to replace [Col] with r["Col"] inside a string
+  // Using [^"']+ prevents matching already replaced JS array notation like r["Col"]
   const replaceCols = (str: string, rowVar: string = "r") => {
-    return str.replace(/\[(.*?)\]/g, (_, col) => `(Number(${rowVar}["${col.trim()}"]) || 0)`);
+    return str.replace(/\[([^"']+?)\]/g, (_, col) => `(Number(${rowVar}["${col.trim()}"]) || 0)`);
   };
 
   // 1. Handle Aggregations with complex expressions
@@ -39,7 +40,7 @@ export function convertToJs(formula: string): string {
 
   // DISTINCTCOUNT([Col])
   js = js.replace(/DISTINCTCOUNT\(\s*\[?(.*?)\]?\s*\)/gi, (_, col) => {
-    const cleanCol = col.trim().replace(/^\[|\]$/g, "");
+    const cleanCol = col.trim().replace(/^\[|\]$/g, "").replace(/["']/g, "");
     return `new Set(rows.map(r => r["${cleanCol}"])).size`;
   });
 
@@ -54,7 +55,7 @@ export function convertToJs(formula: string): string {
   });
 
   // 2. Handle standalone column references [Col] -> (Number(row["Col"]) || 0)
-  js = js.replace(/\[(.*?)\]/g, (_, col) => {
+  js = js.replace(/\[([^"']+?)\]/g, (_, col) => {
     return `(Number(row["${col.trim()}"]) || 0)`;
   });
 
