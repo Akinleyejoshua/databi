@@ -280,6 +280,25 @@ export default function SettingsModal() {
                 )}
 
                 <div className={styles.field}>
+                  <label className="label">Currency Format</label>
+                  <select className="select" value={widget.chartConfig.currency || ""} onChange={(e) =>
+                    updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, currency: e.target.value || undefined } })
+                  }>
+                    <option value="">No Currency</option>
+                    <option value="USD">USD ($)</option>
+                    <option value="EUR">EUR (€)</option>
+                    <option value="GBP">GBP (£)</option>
+                    <option value="NGN">NGN (₦)</option>
+                    <option value="INR">INR (₹)</option>
+                    <option value="JPY">JPY (¥)</option>
+                    <option value="CNY">CNY (¥)</option>
+                    <option value="AUD">AUD ($)</option>
+                    <option value="CAD">CAD ($)</option>
+                    <option value="BRL">BRL (R$)</option>
+                  </select>
+                </div>
+
+                <div className={styles.field}>
                   <label className="label" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     <input type="checkbox" checked={widget.chartConfig.showLegend} onChange={(e) =>
                       updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, showLegend: e.target.checked } })
@@ -345,11 +364,13 @@ export default function SettingsModal() {
                     <option value="USD">USD ($)</option>
                     <option value="EUR">EUR (€)</option>
                     <option value="GBP">GBP (£)</option>
+                    <option value="NGN">NGN (₦)</option>
                     <option value="JPY">JPY (¥)</option>
                     <option value="CNY">CNY (¥)</option>
                     <option value="INR">INR (₹)</option>
                     <option value="AUD">AUD ($)</option>
                     <option value="CAD">CAD ($)</option>
+                    <option value="BRL">BRL (R$)</option>
                     <option value="CHF">CHF (CHF)</option>
                     <option value="SEK">SEK (kr)</option>
                     <option value="NZD">NZD ($)</option>

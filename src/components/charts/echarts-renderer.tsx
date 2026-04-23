@@ -505,7 +505,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
             if (Array.isArray(params)) return params[0].name;
             const data = params.data;
             const value = params.value || 0;
-            const formattedValue = typeof value === "number" ? value.toLocaleString() : value;
+            const formattedValue = typeof value === "number" ? formatWithCurrency(value, config.currency) : value;
             return `${data?.originalName || params.name}: ${formattedValue}`;
           } : undefined
         } : undefined,
@@ -513,7 +513,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         visualMap,
         grid: isPie || isMap ? undefined : { left: "4%", right: "4%", top: 45, bottom: config.showLegend ? 45 : 30, containLabel: true },
         xAxis: isPie || isMap ? undefined : (isHorizontalBar
-          ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v) }, axisName: config.xAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
+          ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency) }, axisName: config.xAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
           : {
             type: showAsValueAxis ? "value" : "category",
             data: showAsValueAxis ? undefined : categories,
@@ -523,7 +523,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           }),
         yAxis: isPie || isMap ? undefined : (isHorizontalBar
           ? { type: "category", data: categories, axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
-          : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v), color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }),
+          : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency), color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }),
         series,
         animation: true,
         animationDuration: 1000,
@@ -632,6 +632,31 @@ export default function EChartsRenderer({ config, tables, filters, relationships
       lazyUpdate={true}
     />
   );
+}
+
+function formatWithCurrency(value: number, currency?: string) {
+  if (!currency) return value.toLocaleString();
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currency,
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 0
+    }).format(value);
+  } catch (e) {
+    return value.toLocaleString();
+  }
+}
+
+function formatAxisValue(v: number, currency?: string) {
+  const abbreviated = abbreviateNumber(v);
+  if (!currency) return abbreviated;
+  try {
+    const symbol = new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(0).replace(/\d|\./g, '').trim();
+    return `${symbol}${abbreviated}`;
+  } catch (e) {
+    return abbreviated;
+  }
 }
 
 function normalizeStateName(name: string): string {

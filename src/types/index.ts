@@ -98,6 +98,7 @@ export interface ChartConfig {
   mapRegion?: string; // "world" or "country"
   mapCountry?: string; // e.g., "Nigeria", "USA"
   customMapUrl?: string; // URL to a GeoJSON file
+  currency?: string; // e.g., "USD", "EUR", "GBP", etc.
 }
 
 export interface SlicerConfig {
