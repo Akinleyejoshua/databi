@@ -504,7 +504,9 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           formatter: isMap ? (params: any) => {
             if (Array.isArray(params)) return params[0].name;
             const data = params.data;
-            return `${data?.originalName || params.name}: ${params.value || 0}`;
+            const value = params.value || 0;
+            const formattedValue = typeof value === "number" ? value.toLocaleString() : value;
+            return `${data?.originalName || params.name}: ${formattedValue}`;
           } : undefined
         } : undefined,
         legend: config.showLegend && !isMap ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
