@@ -81,6 +81,7 @@ export function useUrlDataRefreshManager() {
           columns: newTableData.columns,
           source: {
             ...table.source,
+            type: "url",
             lastRefreshed: new Date().toISOString(),
           },
         });
@@ -117,6 +118,7 @@ export function useUrlDataRefreshManager() {
     updateTable(tableId, {
       source: {
         ...table.source,
+        type: table.source?.type || "url",
         isAutoRefresh: true,
         refreshInterval: intervalMs || table.source?.refreshInterval || 3600000,
       },
@@ -139,6 +141,7 @@ export function useUrlDataRefreshManager() {
     updateTable(tableId, {
       source: {
         ...table.source,
+        type: table.source?.type || "url",
         isAutoRefresh: false,
       },
     });

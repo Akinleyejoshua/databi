@@ -221,7 +221,7 @@ export default function UploadModal() {
                     }}
                   />
                   <small style={{ display: "block", marginTop: "6px", color: "var(--color-text-secondary)" }}>
-                    Supported: CSV, Excel, JSON, GitHub Raw, Dropbox, Google Drive, OneDrive, SharePoint, Excel Online (Microsoft 365), or API endpoints
+                    Supported: CSV, Excel, JSON, GitHub Raw, Dropbox, Google Drive, OneDrive, SharePoint, Excel Online (Microsoft 365), 1drv.ms URLs, or API endpoints
                   </small>
                 </div>
 

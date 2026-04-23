@@ -22,6 +22,7 @@ const SUPPORTED_PATTERNS = [
   /dropbox\.com/,                     // Dropbox links
   /drive\.google\.com/,               // Google Drive
   /onedrive\.live\.com/,              // OneDrive personal
+  /1drv\.ms/,                         // Microsoft 365 / OneDrive short link
   /sharepoint\.com/,                  // SharePoint/OneDrive Business
   /\.csv$/i,                          // CSV files
   /\.xlsx?$/i,                        // Excel files
@@ -34,8 +35,8 @@ const SUPPORTED_PATTERNS = [
  */
 export function normalizeOneDriveUrl(url: string): string {
   try {
-    // OneDrive personal share link - convert to download
-    if (url.includes("onedrive.live.com")) {
+    // OneDrive personal share link or 1drv.ms short link - convert to download
+    if (url.includes("onedrive.live.com") || url.includes("1drv.ms")) {
       // If it's a share link, modify to download
       if (!url.includes("download=1")) {
         url = url.includes("?") ? `${url}&download=1` : `${url}?download=1`;
@@ -180,6 +181,7 @@ export function isValidDatasetUrl(url: string): boolean {
       hostname.includes("drive.google.com") ||
       hostname.includes("googleapis.com") ||
       hostname.includes("onedrive.live.com") ||
+      hostname.includes("1drv.ms") ||
       hostname.includes("sharepoint.com") ||
       hostname.includes("office.com") ||
       hostname.includes("excel.cloud.microsoft") ||
@@ -213,7 +215,7 @@ export function detectContentType(
   }
 
   if (lowercaseUrl.endsWith(".csv")) return "csv";
-  if (lowercaseUrl.endsWith(".xlsx") || lowercaseUrl.endsWith(".xls")) return "excel";
+  if (lowercaseUrl.endsWith(".xlsx") || lowercaseUrl.endsWith(".xls") || lowercaseUrl.includes("1drv.ms/x/")) return "excel";
   if (lowercaseUrl.endsWith(".json")) return "json";
 
   return "unknown";
@@ -227,7 +229,7 @@ export async function fetchDataFromUrl(url: string): Promise<Buffer> {
     // Normalize URLs for OneDrive/SharePoint/Excel Online/Excel Cloud
     let normalizedUrl = url;
     
-    if (url.includes("onedrive.live.com") || url.includes("sharepoint.com")) {
+    if (url.includes("onedrive.live.com") || url.includes("sharepoint.com") || url.includes("1drv.ms")) {
       normalizedUrl = normalizeOneDriveUrl(url);
     }
     

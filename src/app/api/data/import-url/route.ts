@@ -27,7 +27,7 @@ export async function POST(req: NextRequest) {
     // Validate URL format
     if (!isValidDatasetUrl(url)) {
       return NextResponse.json(
-        { error: "Invalid or unsupported dataset URL. Supported: GitHub raw, Dropbox, Google Drive, OneDrive, SharePoint, Excel Online, direct CSV/Excel/JSON files, or API endpoints" },
+        { error: "Invalid or unsupported dataset URL. Supported: GitHub raw, Dropbox, Google Drive, OneDrive, SharePoint, Excel Online, 1drv.ms URLs, direct CSV/Excel/JSON files, or API endpoints" },
         { status: 400 }
       );
     }
