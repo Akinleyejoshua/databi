@@ -148,25 +148,9 @@ export function isValidDatasetUrl(url: string): boolean {
     const hostname = parsed.hostname;
     if (!hostname) return false;
 
-    // Allow GitHub raw, Dropbox, Google Drive, OneDrive, SharePoint, APIs, or direct file URLs
-    const isKnownSource = 
-      hostname.includes("github.com") ||
-      hostname.includes("dropbox.com") ||
-      hostname.includes("drive.google.com") ||
-      hostname.includes("googleapis.com") ||
-      hostname.includes("onedrive.live.com") ||
-      hostname.includes("1drv.ms") ||
-      hostname.includes("sharepoint.com") ||
-      hostname.includes("office.com") ||
-      hostname.includes("excel.cloud.microsoft") ||
-      url.toLowerCase().endsWith(".csv") ||
-      url.toLowerCase().endsWith(".xlsx") ||
-      url.toLowerCase().endsWith(".xls") ||
-      url.toLowerCase().endsWith(".json") ||
-      url.includes("/api/") ||
-      url.includes("scoreboard");
-
-    return isKnownSource;
+    // Allow almost any valid HTTP/HTTPS URL for generalization
+    // The parser handles the content type detection and fallback
+    return true;
   } catch {
     return false;
   }
@@ -366,11 +350,14 @@ export function parseJsonBuffer(buffer: Buffer, name: string) {
       throw new Error("JSON contains no data rows");
     }
 
+    // Flatten nested objects for better table representation
+    const flattenedRows = rows.map(row => flattenObject(row));
+
     return {
       name,
-      columns: buildColumns(rows),
-      rows,
-      rowCount: rows.length,
+      columns: buildColumns(flattenedRows),
+      rows: flattenedRows,
+      rowCount: flattenedRows.length,
     };
   } catch (error) {
     if (error instanceof Error) {
@@ -445,4 +432,27 @@ export function detectColumnType(
   }
 
   return "string";
+}
+
+/**
+ * Flattens a nested object into a single-level record with dot notation
+ */
+function flattenObject(obj: any, prefix = ""): Record<string, unknown> {
+  if (!obj || typeof obj !== "object") return { [prefix]: obj };
+  
+  const flattened: Record<string, unknown> = {};
+
+  for (const key in obj) {
+    if (Object.prototype.hasOwnProperty.call(obj, key)) {
+      const propName = prefix ? `${prefix}.${key}` : key;
+
+      if (typeof obj[key] === "object" && obj[key] !== null && !Array.isArray(obj[key]) && !(obj[key] instanceof Date)) {
+        Object.assign(flattened, flattenObject(obj[key], propName));
+      } else {
+        flattened[propName] = obj[key];
+      }
+    }
+  }
+
+  return flattened;
 }
