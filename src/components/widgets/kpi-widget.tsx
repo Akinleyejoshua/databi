@@ -26,12 +26,14 @@ export default function KpiWidget({ widget }: Props) {
     if (isMeasure(kpi.valueColumn, project.measures)) {
       const measure = getMeasure(kpi.valueColumn, project.measures);
       if (measure) {
-        return executeMeasure(measure, table, rows);
+        const result = executeMeasure(measure, table, rows);
+        return result === null ? 0 : result;
       }
     }
 
     // Otherwise, compute as regular column aggregation
-    return computeAggregation(rows, kpi.valueColumn, kpi.aggregation);
+    const aggResult = computeAggregation(rows, kpi.valueColumn, kpi.aggregation);
+    return isNaN(aggResult) ? 0 : aggResult;
   }, [project, kpi, activeFilters]);
 
   // Get the display label (could be measure name or column name)
@@ -46,7 +48,7 @@ export default function KpiWidget({ widget }: Props) {
     return kpi?.label || "Metric";
   }, [kpi?.valueColumn, kpi?.label, project, project?.measures]);
 
-  if (value === null) {
+  if (!kpi?.tableId || !kpi?.valueColumn) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "13px" }}>
         Configure KPI settings
@@ -79,7 +81,7 @@ export default function KpiWidget({ widget }: Props) {
         {displayLabel}
       </span>
       <span style={{ fontSize: "28px", fontWeight: 700, color: "var(--color-primary)", lineHeight: 1.1 }}>
-        {formatValue(value)}
+        {formatValue(value ?? 0)}
       </span>
       <span style={{ fontSize: "11px", color: "var(--color-text-tertiary)" }}>
         {isMeasure(kpi?.valueColumn || "", project?.measures || []) ? "Calculated Measure" : kpi?.aggregation + " of " + kpi?.valueColumn}

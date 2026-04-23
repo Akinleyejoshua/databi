@@ -227,30 +227,30 @@ export default function SettingsModal() {
             {widget.type === "kpi" && widget.kpiConfig && (
               <>
                 <div className={styles.field}>
-                  <label className="label">Table</label>
-                  <select className="select" value={widget.kpiConfig.tableId} onChange={(e) =>
-                    updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, tableId: e.target.value } })
-                  }>
-                    <option value="">Select table...</option>
-                    {project?.tables.map((t) => <option key={t.id} value={t.id}>{t.name}</option>)}
-                  </select>
-                </div>
-                <div className={styles.field}>
                   <label className="label">Value Column / Measure</label>
-                  <select className="select" value={widget.kpiConfig.valueColumn} onChange={(e) =>
-                    updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, valueColumn: e.target.value } })
-                  }>
+                  <select className="select" value={
+                    widget.kpiConfig.valueColumn 
+                      ? `${widget.kpiConfig.tableId}:::${widget.kpiConfig.valueColumn}`
+                      : ""
+                  } onChange={(e) => {
+                    if (!e.target.value) return;
+                    const [tableId, valueColumn] = e.target.value.split(":::");
+                    updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, tableId, valueColumn } })
+                  }}>
                     <option value="">Select column or measure...</option>
                     <optgroup label="Columns">
-                      {project?.tables.find((t) => t.id === widget.kpiConfig?.tableId)?.columns.filter((c) => c.type === "number").map((c) => (
-                        <option key={c.name} value={c.name}>{c.name}</option>
-                      ))}
+                      {project?.tables.map((t) =>
+                        t.columns.filter((c) => c.type === "number").map((c) => (
+                          <option key={`${t.id}:::${c.name}`} value={`${t.id}:::${c.name}`}>{t.name} → {c.name}</option>
+                        ))
+                      )}
                     </optgroup>
-                    {project?.measures && project.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).length > 0 && (
+                    {project?.measures && project.measures.length > 0 && (
                       <optgroup label="Custom Measures">
-                        {project.measures.filter((m) => m.tableId === widget.kpiConfig?.tableId).map((m) => (
-                          <option key={m.id} value={m.id}>∑ {m.name}</option>
-                        ))}
+                        {project.measures.map((m) => {
+                          const t = project.tables.find(tbl => tbl.id === m.tableId);
+                          return <option key={`${m.tableId}:::${m.id}`} value={`${m.tableId}:::${m.id}`}>{t?.name} → ∑ {m.name}</option>
+                        })}
                       </optgroup>
                     )}
                   </select>
