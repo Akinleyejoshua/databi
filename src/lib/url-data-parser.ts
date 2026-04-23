@@ -163,7 +163,8 @@ export function isValidDatasetUrl(url: string): boolean {
       url.toLowerCase().endsWith(".xlsx") ||
       url.toLowerCase().endsWith(".xls") ||
       url.toLowerCase().endsWith(".json") ||
-      url.includes("/api/");
+      url.includes("/api/") ||
+      url.includes("scoreboard");
 
     return isKnownSource;
   } catch {
@@ -198,7 +199,7 @@ export function detectContentType(
 /**
  * Fetches data from a URL with proper error handling
  */
-export async function fetchDataFromUrl(url: string): Promise<Buffer> {
+export async function fetchDataFromUrl(url: string): Promise<{ buffer: Buffer; contentType?: string }> {
   try {
     // Normalize URLs for OneDrive/SharePoint/Excel Online/Excel Cloud
     let normalizedUrl = url;
@@ -241,7 +242,10 @@ export async function fetchDataFromUrl(url: string): Promise<Buffer> {
     }
 
     const arrayBuffer = await response.arrayBuffer();
-    return Buffer.from(arrayBuffer);
+    return { 
+      buffer: Buffer.from(arrayBuffer),
+      contentType: response.headers.get("content-type") || undefined
+    };
   } catch (error) {
     if (error instanceof Error) {
       throw new Error(`Failed to fetch URL: ${error.message}`);
@@ -350,6 +354,8 @@ export function parseJsonBuffer(buffer: Buffer, name: string) {
         rows = data.records;
       } else if (Array.isArray(data.rows)) {
         rows = data.rows;
+      } else if (Array.isArray(data.events)) {
+        rows = data.events;
       } else {
         // Single object, wrap in array
         rows = [data];

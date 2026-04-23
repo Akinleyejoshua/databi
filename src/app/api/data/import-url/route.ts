@@ -33,10 +33,10 @@ export async function POST(req: NextRequest) {
     }
 
     // Fetch data from URL
-    const buffer = await fetchDataFromUrl(url);
+    const { buffer, contentType: contentTypeHeader } = await fetchDataFromUrl(url);
 
     // Detect content type
-    const contentType = detectContentType(url);
+    const contentType = detectContentType(url, contentTypeHeader);
 
     let tables: DataTable[] = [];
 
