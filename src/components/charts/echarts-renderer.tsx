@@ -24,20 +24,20 @@ export default function EChartsRenderer({ config, tables, filters, relationships
   // Resize when the container changes (handles canvas widget resizing)
   useEffect(() => {
     if (!chartRef.current) return;
-    
+
     const chartInstance = chartRef.current.getEchartsInstance();
     const container = chartInstance.getDom();
-    
+
     const resizeObserver = new ResizeObserver(() => {
       chartInstance.resize();
     });
-    
+
     resizeObserver.observe(container);
     return () => resizeObserver.disconnect();
   }, []);
 
-  const currentMapKey = (config.mapRegion === "world" || !config.mapRegion) 
-    ? "world" 
+  const currentMapKey = (config.mapRegion === "world" || !config.mapRegion)
+    ? "world"
     : (config.mapRegion === "country" ? config.mapCountry : config.customMapUrl) || "world";
 
   const { option, hasData } = useMemo(() => {
@@ -50,7 +50,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     // Determine if we need to join tables
     const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
     let rows: Record<string, unknown>[] = [];
-    
+
     if (valueTableIds.length > 0 && relationships?.length > 0) {
       const tablesToJoin = tables.filter(t => t.id === fieldDef.tableId || valueTableIds.includes(t.id));
       rows = joinTables(tablesToJoin, relationships, filters);
@@ -82,7 +82,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
       } else {
         val = String(row[fieldDef.columnName] ?? "Blank");
       }
-      
+
       categoriesSet.add(val);
       if (!groups.has(val)) groups.set(val, []);
       groups.get(val)!.push(row);
@@ -120,7 +120,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
       // Logic for Aggregated Data
       const data = categories.map((cat) => {
         const matching = groups.get(cat) || [];
-        
+
         if (v.aggregation === "measure") {
           const measure = measures.find((m) => m.id === v.columnName);
           if (!measure || matching.length === 0) return 0;
@@ -134,7 +134,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
         // Standard Aggregation
         const vals = matching.map((r) => parseSafeNumber(r[v.columnName]));
-        
+
         // Smart Default: If column is text, default to 'count' even if 'sum' was picked
         const sampleVal = matching[0]?.[v.columnName];
         const isActuallyNumeric = typeof sampleVal === "number" || (!isNaN(parseFloat(String(sampleVal))) && String(sampleVal).length > 0);
@@ -163,7 +163,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
     let visualMap;
     if (isMap && series.length > 0) {
-      const mapData = series[0].data as {name: string, value: number}[];
+      const mapData = series[0].data as { name: string, value: number }[];
       const maxVal = Math.max(...mapData.map(d => d.value || 0), 100);
       visualMap = {
         left: 'right',
@@ -179,13 +179,13 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     return {
       hasData: true,
       option: {
-        title: { 
-          text: config.title, 
-          left: "center", 
-          top: 8, 
-          textStyle: { fontSize: 13, fontFamily: "inherit", fontWeight: 600, color: "var(--color-text)" } 
+        title: {
+          text: config.title,
+          left: "center",
+          top: 8,
+          textStyle: { fontSize: 13, fontFamily: "inherit", fontWeight: 600, color: "var(--color-text)" }
         },
-        tooltip: config.showTooltip ? { 
+        tooltip: config.showTooltip ? {
           trigger: isPie || isMap ? "item" : "axis",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderColor: "var(--color-border)",
@@ -201,13 +201,13 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         grid: isPie || isMap ? undefined : { left: "4%", right: "4%", top: 45, bottom: config.showLegend ? 45 : 30, containLabel: true },
         xAxis: isPie || isMap ? undefined : (isHorizontalBar
           ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v) }, axisName: config.xAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
-          : { 
-              type: showAsValueAxis ? "value" : "category", 
-              data: showAsValueAxis ? undefined : categories, 
-              axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: "var(--color-text-secondary)" },
-              axisName: config.xAxisLabel || undefined,
-              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 }
-            }),
+          : {
+            type: showAsValueAxis ? "value" : "category",
+            data: showAsValueAxis ? undefined : categories,
+            axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: "var(--color-text-secondary)" },
+            axisName: config.xAxisLabel || undefined,
+            axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 }
+          }),
         yAxis: isPie || isMap ? undefined : (isHorizontalBar
           ? { type: "category", data: categories, axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
           : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => abbreviateNumber(v), color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }),
@@ -281,7 +281,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     }
   }, [config.chartType, config.mapRegion, config.mapCountry, config.customMapUrl, mapLoaded]);
 
-    
+
   const isMapReady = config.chartType !== "map" || mapLoaded === currentMapKey;
 
   if (!hasData || !isMapReady) {
@@ -297,11 +297,11 @@ export default function EChartsRenderer({ config, tables, filters, relationships
   }
 
   return (
-    <ReactECharts 
+    <ReactECharts
       ref={chartRef}
-      option={option} 
-      style={{ height: "100%", width: "100%" }} 
-      opts={{ renderer: "svg" }} 
+      option={option}
+      style={{ height: "100%", width: "100%" }}
+      opts={{ renderer: "svg" }}
       notMerge={true}
       lazyUpdate={true}
     />
@@ -328,14 +328,14 @@ function buildSeriesObject(base: any, chartType: string, categories: string[], d
     case "line": case "time-series": return { ...base, type: "line", smooth: true, symbol: "circle", symbolSize: 6 };
     case "area": return { ...base, type: "line", smooth: true, areaStyle: { opacity: 0.2 }, symbol: "circle", symbolSize: 4 };
     case "scatter": return { ...base, type: "scatter", symbolSize: 10, itemStyle: { ...base.itemStyle, opacity: 0.7 } };
-    case "map": 
+    case "map":
       return {
         type: "map",
         map: mapName,
         name: base.name,
         roam: true,
-        data: categories.map((cat, j) => ({ 
-          name: normalizeStateName(cat), 
+        data: categories.map((cat, j) => ({
+          name: normalizeStateName(cat),
           value: data[j],
           originalName: cat
         })),
