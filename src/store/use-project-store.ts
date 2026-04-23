@@ -36,6 +36,8 @@ interface ProjectStore {
   updateTable: (tableId: string, table: Partial<DataTable>) => void;
   removeTable: (tableId: string) => void;
   applyTableTransform: (tableId: string, transformedTable: DataTable) => void;
+  updateTableSource: (tableId: string, url: string, refreshInterval?: number, isAutoRefresh?: boolean) => void;
+  getUrlBasedTables: () => DataTable[];
 
   /* --- Relationship Actions --- */
   addRelationship: (relationship: Omit<Relationship, "id">) => void;
@@ -162,6 +164,36 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         : null,
       isDirty: true,
     })),
+
+  updateTableSource: (tableId, url, refreshInterval, isAutoRefresh) =>
+    set((state) => ({
+      project: state.project
+        ? {
+            ...state.project,
+            tables: state.project.tables.map((t) =>
+              t.id === tableId
+                ? {
+                    ...t,
+                    source: {
+                      type: "url",
+                      url,
+                      refreshInterval: refreshInterval || 3600000,
+                      isAutoRefresh: isAutoRefresh ?? false,
+                      lastRefreshed: new Date().toISOString(),
+                    },
+                  }
+                : t
+            ),
+          }
+        : null,
+      isDirty: true,
+    })),
+
+  getUrlBasedTables: () => {
+    const { project } = get();
+    if (!project) return [];
+    return project.tables.filter((t) => t.source?.type === "url");
+  },
 
   /* --- Relationship Actions --- */
   addRelationship: (relationship) =>

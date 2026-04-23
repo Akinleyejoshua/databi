@@ -12,12 +12,21 @@ export interface ColumnSchema {
   originalType: string;
 }
 
+export interface DataSource {
+  type: "file" | "url";
+  url?: string;
+  refreshInterval?: number; // in milliseconds
+  lastRefreshed?: string;
+  isAutoRefresh?: boolean;
+}
+
 export interface DataTable {
   id: string;
   name: string;
   columns: ColumnSchema[];
   rows: Record<string, unknown>[];
   rowCount: number;
+  source?: DataSource;
 }
 
 export interface Relationship {
