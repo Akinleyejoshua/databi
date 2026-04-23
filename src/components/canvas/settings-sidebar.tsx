@@ -131,6 +131,11 @@ export default function SettingsModal() {
                           <option value="germany">Germany</option>
                           <option value="india">India</option>
                           <option value="uk">United Kingdom</option>
+                          <option value="australia">Australia</option>
+                          <option value="south_africa">South Africa</option>
+                          <option value="mexico">Mexico</option>
+                          <option value="italy">Italy</option>
+                          <option value="spain">Spain</option>
                           <option value="other">Other (Custom Code)</option>
                         </select>
                         <p style={{ fontSize: "10px", opacity: 0.7, marginTop: "4px" }}>Select a country to plot its states/provinces.</p>

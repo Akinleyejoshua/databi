@@ -8,6 +8,77 @@ import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter, Measure, Relationship } from "@/types";
 import { applyFilters, CHART_COLORS, parseSafeNumber, joinTables, abbreviateNumber } from "@/lib/utils";
 
+const LOCATION_MAPPING: Record<string, Record<string, string>> = {
+  nigeria: {
+    "port harcourt": "rivers",
+    "ph": "rivers",
+    "ikeja": "lagos",
+    "lekki": "lagos",
+    "ibadan": "oyo",
+    "benin city": "edo",
+    "benin": "edo",
+    "warri": "delta",
+    "asaba": "delta",
+    "enugu city": "enugu",
+    "onitsha": "anambra",
+    "awka": "anambra",
+    "owerri": "imo",
+    "aba": "abia",
+    "umuahia": "abia",
+    "uyo": "akwa ibom",
+    "calabar": "cross river",
+    "jos": "plateau",
+    "kaduna city": "kaduna",
+    "kano city": "kano",
+    "maiduguri": "borno",
+    "akure": "ondo",
+    "abeokuta": "ogun",
+    "osogbo": "osun",
+    "ado ekiti": "ekiti",
+    "ilorin": "kwara",
+    "lokoja": "kogi",
+    "minna": "niger",
+    "makurdi": "benue",
+    "lafia": "nassarawa",
+    "jalingo": "taraba",
+    "bauchi city": "bauchi",
+    "gombe city": "gombe",
+    "yola": "adamawa",
+    "dutse": "jigawa",
+    "birnin kebbi": "kebbi",
+    "gusau": "zamfara",
+    "sokoto city": "sokoto",
+    "katsina city": "katsina",
+    "yenagoa": "bayelsa",
+    "abakaliki": "ebonyi",
+    "abuja": "abuja",
+    "fct": "abuja"
+  },
+  usa: {
+    "nyc": "new york",
+    "los angeles": "california",
+    "chicago": "illinois",
+    "houston": "texas",
+    "phoenix": "arizona",
+    "philadelphia": "pennsylvania",
+    "san antonio": "texas",
+    "san diego": "california",
+    "dallas": "texas",
+    "san jose": "california",
+    "austin": "texas",
+    "jacksonville": "florida",
+    "fort worth": "texas",
+    "columbus": "ohio",
+    "san francisco": "california",
+    "charlotte": "north carolina",
+    "indianapolis": "indiana",
+    "seattle": "washington",
+    "denver": "colorado",
+    "dc": "district of columbia",
+    "washington dc": "district of columbia"
+  }
+};
+
 interface Props {
   config: ChartConfig;
   tables: DataTable[];
@@ -64,6 +135,8 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     const categoriesSet = new Set<string>();
     const groups = new Map<string, Record<string, unknown>[]>();
 
+    const isMap = config.chartType === "map";
+
     // Prepare groups
     rows.forEach(row => {
       let val: string;
@@ -83,9 +156,17 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         val = String(row[fieldDef.columnName] ?? "Blank");
       }
 
-      categoriesSet.add(val);
-      if (!groups.has(val)) groups.set(val, []);
-      groups.get(val)!.push(row);
+      // For maps, use normalized names to aggregate cities/variations into states
+      let groupKey = val;
+      if (isMap) {
+        const normalized = normalizeStateName(val);
+        const country = config.mapCountry?.toLowerCase();
+        groupKey = (country && LOCATION_MAPPING[country]?.[normalized]) || normalized || val;
+      }
+
+      categoriesSet.add(groupKey);
+      if (!groups.has(groupKey)) groups.set(groupKey, []);
+      groups.get(groupKey)!.push(row);
     });
 
     const categories = Array.from(categoriesSet);
@@ -98,8 +179,6 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     const isScatter = config.chartType === "scatter";
     const isPie = config.chartType === "pie" || config.chartType === "donut";
     const isHorizontalBar = config.chartType === "bar";
-
-    const isMap = config.chartType === "map";
 
     const series = config.values.map((v, i) => {
       // Logic for raw data (Scatter plots with raw values)
@@ -156,7 +235,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         itemStyle: { color: colors[i % colors.length] },
       };
 
-      return buildSeriesObject(base, config.chartType, categories, data, colors, i, currentMapKey);
+      return buildSeriesObject(base, config.chartType, categories, data, colors, i, currentMapKey, isMap);
     });
 
     const showAsValueAxis = (config.chartType === "line" || config.chartType === "area" || config.chartType === "scatter") && xIsNumeric;
@@ -245,7 +324,12 @@ export default function EChartsRenderer({ config, tables, filters, relationships
             france: "fr",
             germany: "de",
             india: "in",
-            uk: "gb"
+            uk: "gb",
+            australia: "au",
+            south_africa: "za",
+            mexico: "mx",
+            italy: "it",
+            spain: "es"
           };
           let code = isoCodes[config.mapCountry || ""] || config.mapCountry;
           if (config.mapCountry === "other" && config.customMapUrl) {
@@ -265,8 +349,16 @@ export default function EChartsRenderer({ config, tables, filters, relationships
               // Normalize names in GeoJSON for better matching
               if (geoJson.features) {
                 geoJson.features.forEach((f: any) => {
-                  if (f.properties && f.properties.name) {
-                    f.properties.name = normalizeStateName(f.properties.name);
+                  if (f.properties) {
+                    // Try to find the best name property (common in various GeoJSON sources)
+                    const rawName = f.properties.name || f.properties.NAME_1 || f.properties.STATE_NAME || f.properties.woe_name || f.properties["woe-name"] || f.properties.alt_name || f.properties["alt-name"];
+                    
+                    // Specific fix for Nigeria FCT/Abuja mismatch
+                    if (config.mapCountry === "nigeria" && (String(rawName).toLowerCase().includes("federal capital") || f.properties["alt-name"] === "Abuja")) {
+                      f.properties.name = "abuja";
+                    } else if (rawName) {
+                      f.properties.name = normalizeStateName(String(rawName));
+                    }
                   }
                 });
               }
@@ -310,18 +402,39 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
 function normalizeStateName(name: string): string {
   if (!name) return "";
-  return name
-    .toLowerCase()
+  let n = String(name).toLowerCase();
+  
+  // Specific mappings for common mismatches
+  if (n.includes("federal capital territory") || n === "fct" || n === "abuja") return "abuja";
+  if (n.includes("washington dc") || n === "dc") return "district of columbia";
+  if (n === "nyc" || n === "new york city") return "new york";
+
+  return n
+    .replace(/[.,/#!$%^&*;:{}=\-_`~()]/g, " ") // Remove punctuation
+    .replace(/\bnigeria\b/g, "")
+    .replace(/\busa\b/g, "")
+    .replace(/\bunited states\b/g, "")
+    .replace(/\buk\b/g, "")
+    .replace(/\bunited kingdom\b/g, "")
     .replace(/\bstate\b/g, "")
     .replace(/\bprovince\b/g, "")
     .replace(/\bterritory\b/g, "")
     .replace(/\bdepartment\b/g, "")
     .replace(/\bregion\b/g, "")
     .replace(/\bgovernorate\b/g, "")
+    .replace(/\bdistrict\b/g, "")
+    .replace(/\bprefecture\b/g, "")
+    .replace(/\bdivision\b/g, "")
+    .replace(/\bcounty\b/g, "")
+    .replace(/\bcity\b/g, "")
+    .replace(/\btownship\b/g, "")
+    .replace(/\blga\b/g, "")
+    .replace(/\blocal government area\b/g, "")
+    .replace(/\s+/g, " ") // Collapse multiple spaces
     .trim();
 }
 
-function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number, mapName: string = "world") {
+function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number, mapName: string = "world", isMap: boolean = false) {
   switch (chartType) {
     case "bar": return { ...base, type: "bar", borderRadius: [0, 4, 4, 0] };
     case "column": return { ...base, type: "bar", borderRadius: [4, 4, 0, 0] };
@@ -335,7 +448,7 @@ function buildSeriesObject(base: any, chartType: string, categories: string[], d
         name: base.name,
         roam: true,
         data: categories.map((cat, j) => ({
-          name: normalizeStateName(cat),
+          name: isMap ? cat : normalizeStateName(cat), // categories are already normalized for maps
           value: data[j],
           originalName: cat
         })),
