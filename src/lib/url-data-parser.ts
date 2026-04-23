@@ -245,7 +245,7 @@ export function parseCsvBuffer(buffer: Buffer, name: string) {
   const preview = buffer.toString("utf-8", 0, 500).trim().toLowerCase();
   if (preview.startsWith("<!doctype html") || preview.startsWith("<html")) {
     throw new Error(
-      "Received an HTML web page instead of a CSV file. Microsoft 365 and OneDrive share links often redirect to a web viewer. Please provide a direct download URL or upload the file manually."
+      "Received an HTML web page instead of a CSV file."
     );
   }
 
