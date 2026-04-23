@@ -119,43 +119,12 @@ export function handleExcelOnlineExport(url: string): string {
  * If direct download isn't possible, it guides the user to get a shareable link.
  */
 export function normalizeExcelCloudUrl(url: string): string {
-  try {
-    const urlObj = new URL(url);
-    
-    // Check if this is an Excel cloud URL
-    if (url.includes("excel.cloud.microsoft") || url.includes("excel.cloud.microsoft/open")) {
-      // Extract parameters
-      const docId = urlObj.searchParams.get("docId");
-      const driveId = urlObj.searchParams.get("driveId");
-      
-      if (docId && driveId) {
-        // Excel cloud URLs with docId/driveId can be converted to OneDrive API URLs
-        // The docId format is typically: driveId!itemId
-        // We'll construct an OneDrive API download URL
-        
-        // Try to construct a direct download URL using Microsoft Graph API format
-        // This attempts to access the file directly through OneDrive
-        const downloadUrl = `https://graph.microsoft.com/v1.0/drives/${driveId}/items/${docId}?$select=id,name,@microsoft.graph.downloadUrl`;
-        
-        // Note: This requires proper authentication and may not work for all scenarios
-        // Fallback to instructing user to get shareable link
-        console.warn(
-          "Excel Cloud URL detected. Converting to download format...\n" +
-          "If this doesn't work, please:\n" +
-          "1. Open the file in Excel Online\n" +
-          "2. Click 'Share' → 'Get a link'\n" +
-          "3. Copy the shareable link\n" +
-          "4. Use that link instead"
-        );
-        
-        return downloadUrl;
-      }
-    }
-
-    return url;
-  } catch {
-    return url;
+  if (url.includes("excel.cloud.microsoft") || url.includes("excel.cloud.microsoft/open")) {
+    throw new Error(
+      "Microsoft Excel Cloud links require user authentication and cannot be downloaded directly. Please open the file in your browser, export it as an Excel or CSV file, and upload it manually, or provide a public direct download link."
+    );
   }
+  return url;
 }
 
 /**
@@ -280,6 +249,13 @@ export async function fetchDataFromUrl(url: string): Promise<Buffer> {
  * Parses CSV data from buffer
  */
 export function parseCsvBuffer(buffer: Buffer, name: string) {
+  const preview = buffer.toString("utf-8", 0, 500).trim().toLowerCase();
+  if (preview.startsWith("<!doctype html") || preview.startsWith("<html")) {
+    throw new Error(
+      "Received an HTML web page instead of a CSV file. The URL might require authentication or does not point directly to the raw file. If using a share link, please provide a direct download URL or upload the file manually."
+    );
+  }
+
   const XLSX = require("xlsx");
   
   const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
@@ -305,6 +281,13 @@ export function parseCsvBuffer(buffer: Buffer, name: string) {
  * Parses Excel data from buffer
  */
 export function parseExcelBuffer(buffer: Buffer, url: string) {
+  const preview = buffer.toString("utf-8", 0, 500).trim().toLowerCase();
+  if (preview.startsWith("<!doctype html") || preview.startsWith("<html") || preview.includes("<body")) {
+    throw new Error(
+      "Received an HTML web page instead of an Excel file. Microsoft 365 and OneDrive share links often redirect to a web viewer. Please provide a direct download URL, or download the file and upload it manually."
+    );
+  }
+
   const XLSX = require("xlsx");
   
   const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
@@ -338,6 +321,13 @@ export function parseExcelBuffer(buffer: Buffer, url: string) {
  * Parses JSON data from buffer
  */
 export function parseJsonBuffer(buffer: Buffer, name: string) {
+  const preview = buffer.toString("utf-8", 0, 500).trim().toLowerCase();
+  if (preview.startsWith("<!doctype html") || preview.startsWith("<html")) {
+    throw new Error(
+      "Received an HTML web page instead of a JSON file. The URL might require authentication or does not point directly to the raw data."
+    );
+  }
+
   try {
     const jsonString = buffer.toString("utf-8");
     const data = JSON.parse(jsonString);
