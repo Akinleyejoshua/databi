@@ -37,8 +37,13 @@ export function normalizeOneDriveUrl(url: string): string {
   try {
     // OneDrive personal share link or 1drv.ms short link - convert to download
     if (url.includes("onedrive.live.com") || url.includes("1drv.ms")) {
+      // Handle OneDrive redir links (common from embed codes)
+      if (url.includes("redir?")) {
+        url = url.replace("redir?", "download?");
+      }
+
       // If it's a share link, modify to download
-      if (!url.includes("download=1")) {
+      if (!url.includes("download=1") && !url.includes("/download?")) {
         url = url.includes("?") ? `${url}&download=1` : `${url}?download=1`;
       }
       return url;
@@ -252,7 +257,7 @@ export function parseCsvBuffer(buffer: Buffer, name: string) {
   const preview = buffer.toString("utf-8", 0, 500).trim().toLowerCase();
   if (preview.startsWith("<!doctype html") || preview.startsWith("<html")) {
     throw new Error(
-      "Received an HTML web page instead of a CSV file. The URL might require authentication or does not point directly to the raw file. If using a share link, please provide a direct download URL or upload the file manually."
+      "Received an HTML web page instead of a CSV file. Microsoft 365 and OneDrive share links often redirect to a web viewer. Please provide a direct download URL or upload the file manually."
     );
   }
 
@@ -284,7 +289,7 @@ export function parseExcelBuffer(buffer: Buffer, url: string) {
   const preview = buffer.toString("utf-8", 0, 500).trim().toLowerCase();
   if (preview.startsWith("<!doctype html") || preview.startsWith("<html") || preview.includes("<body")) {
     throw new Error(
-      "Received an HTML web page instead of an Excel file. Microsoft 365 and OneDrive share links often redirect to a web viewer. Please provide a direct download URL, or download the file and upload it manually."
+      "Received an HTML web page instead of an Excel file. Microsoft 365 and OneDrive share links often redirect to a web viewer. To use OneDrive files, please download the file and upload it manually, or see if you can get a direct download link from the 'Embed' options."
     );
   }
 

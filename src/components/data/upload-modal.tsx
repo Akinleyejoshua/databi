@@ -47,9 +47,18 @@ export default function UploadModal() {
   };
 
   const handleUrlImport = async () => {
-    if (!urlInput.trim()) {
+    let finalUrl = urlInput.trim();
+    if (!finalUrl) {
       addToast("Please enter a valid URL", "error");
       return;
+    }
+
+    // Extract URL if user pasted an iframe
+    if (finalUrl.toLowerCase().startsWith("<iframe")) {
+      const srcMatch = finalUrl.match(/src="([^"]+)"/i);
+      if (srcMatch && srcMatch[1]) {
+        finalUrl = srcMatch[1];
+      }
     }
 
     setIsUploading(true);
@@ -58,7 +67,7 @@ export default function UploadModal() {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          url: urlInput.trim(),
+          url: finalUrl,
           refreshInterval: refreshInterval * 1000, // Convert to milliseconds
           isAutoRefresh,
         }),
