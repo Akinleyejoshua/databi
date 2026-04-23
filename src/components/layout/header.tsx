@@ -12,7 +12,7 @@ import styles from "./header.module.css";
 import Link from "next/link";
 
 export default function Header() {
-  const { project, isSaving } = useProjectStore();
+  const { project, isSaving, updateProjectMeta } = useProjectStore();
   const { activeTab, setActiveTab, setPreviewMode, isPreviewMode, setShareModalOpen, autoSaveEnabled, setAutoSaveEnabled } = useUiStore();
   const { user, logout } = useAuthStore();
   const { handleSave, isDirty, unsavedChanges } = useSaveManager();
@@ -33,7 +33,15 @@ export default function Header() {
         {project && (
           <div className={styles["project-name"]}>
             <span className={styles.separator}>/</span>
-            <span>{project.name}</span>
+            <input
+              className={styles["project-title-input"]}
+              value={project.name}
+              onChange={(e) => updateProjectMeta(e.target.value, project.description || "")}
+              placeholder="Project Name"
+              onBlur={() => {
+                if (autoSaveEnabled && isDirty) handleSave();
+              }}
+            />
             {unsavedChanges && <span className={styles["unsaved-dot"]} title="Unsaved changes" />}
           </div>
         )}

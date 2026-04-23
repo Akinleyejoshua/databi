@@ -324,6 +324,7 @@ interface Props {
 export default function EChartsRenderer({ config, tables, filters, relationships = [], measures = [], height = 300 }: Props) {
   const chartRef = useRef<ReactECharts>(null);
   const [hoveredData, setHoveredData] = useState<any>(null);
+  const [clickedData, setClickedData] = useState<any>(null);
   const isMap = config.chartType === "map";
 
   // Resize when the container changes (handles canvas widget resizing)
@@ -627,6 +628,15 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     },
     'mouseout': () => {
       setHoveredData(null);
+    },
+    'click': (params: any) => {
+      if (params.seriesType === 'map') {
+        // Toggle behavior: if clicking the same region, clear it.
+        // Otherwise, set it as the clicked region.
+        setClickedData((prev:any) => 
+          (prev && (prev.name === params.data?.name)) ? null : params.data
+        );
+      }
     }
   };
 
@@ -670,18 +680,23 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           </div>
           
           <div style={{ fontSize: "15px", fontWeight: 800, color: "var(--color-text)", marginBottom: "10px" }}>
-            {hoveredData ? (hoveredData.originalName || hoveredData.name) : (config.mapRegion === "world" ? "Global Summary" : `${config.mapCountry || "Map"} Overview`)}
+            {clickedData 
+              ? (clickedData.originalName || clickedData.name) 
+              : (hoveredData ? (hoveredData.originalName || hoveredData.name) : (config.mapRegion === "world" ? "Global Summary" : `${config.mapCountry || "Map"} Overview`))
+            }
           </div>
 
           <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
             <div>
               <div style={{ fontSize: "10px", color: "var(--color-text-tertiary)", fontWeight: 600 }}>
-                {hoveredData ? (config.yAxisLabel || "Metric") : `Total ${config.yAxisLabel || "Metric"}`}
+                {(clickedData || hoveredData) ? (config.yAxisLabel || "Metric") : `Total ${config.yAxisLabel || "Metric"}`}
               </div>
               <div style={{ fontSize: "18px", fontWeight: 800, color: "var(--color-primary)" }}>
-                {hoveredData 
-                  ? formatWithCurrency(hoveredData.value, config.currency) 
-                  : formatWithCurrency(totalValue || 0, config.currency)
+                {clickedData 
+                  ? formatWithCurrency(clickedData.value, config.currency) 
+                  : (hoveredData 
+                      ? formatWithCurrency(hoveredData.value, config.currency) 
+                      : formatWithCurrency(totalValue || 0, config.currency))
                 }
               </div>
             </div>
@@ -690,11 +705,20 @@ export default function EChartsRenderer({ config, tables, filters, relationships
               <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "6px", marginTop: "2px" }}>
                 <div style={{ fontSize: "10px", color: "var(--color-text-tertiary)", fontWeight: 600 }}>{config.xAxisLabel}</div>
                 <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-secondary)" }}>
-                  {hoveredData ? (hoveredData.originalName || hoveredData.name) : "Aggregated"}
+                  {clickedData 
+                    ? (clickedData.originalName || clickedData.name) 
+                    : (hoveredData ? (hoveredData.originalName || hoveredData.name) : "Aggregated")
+                  }
                 </div>
               </div>
             )}
           </div>
+          
+          {clickedData && (
+            <div style={{ marginTop: "10px", fontSize: "9px", color: "var(--color-text-tertiary)", fontStyle: "italic", textAlign: "right" }}>
+              Click again to reset
+            </div>
+          )}
         </div>
       )}
       
