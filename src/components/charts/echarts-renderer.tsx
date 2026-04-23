@@ -6,7 +6,14 @@
 import { useMemo, useEffect, useRef, useState } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter, Measure, Relationship } from "@/types";
-import { applyFilters, CHART_COLORS, parseSafeNumber, joinTables, abbreviateNumber } from "@/lib/utils";
+import { 
+  applyFilters, 
+  joinTables, 
+  abbreviateNumber, 
+  getCurrencySymbol, 
+  parseSafeNumber,
+  CHART_COLORS 
+} from "@/lib/utils";
 
 const LOCATION_MAPPING: Record<string, Record<string, string>> = {
   nigeria: {
@@ -738,28 +745,18 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 function formatWithCurrency(value: number, currency?: string) {
   if (value === undefined || value === null) return "-";
   if (!currency) return typeof value === 'number' ? value.toLocaleString() : String(value);
-  try {
-    return new Intl.NumberFormat('en-US', {
-      style: 'currency',
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0
-    }).format(value);
-  } catch (e) {
-    return typeof value === 'number' ? value.toLocaleString() : String(value);
-  }
+  
+  const symbol = getCurrencySymbol(currency);
+  const formattedValue = typeof value === 'number' ? value.toLocaleString() : String(value);
+  return `${symbol}${formattedValue}`;
 }
 
 function formatAxisValue(v: number, currency?: string) {
   if (v === undefined || v === null) return "0";
   const abbreviated = abbreviateNumber(v);
   if (!currency) return abbreviated;
-  try {
-    const symbol = new Intl.NumberFormat('en-US', { style: 'currency', currency }).format(0).replace(/\d|\./g, '').trim();
-    return `${symbol}${abbreviated}`;
-  } catch (e) {
-    return abbreviated;
-  }
+  const symbol = getCurrencySymbol(currency);
+  return `${symbol}${abbreviated}`;
 }
 
 function normalizeStateName(name: string): string {

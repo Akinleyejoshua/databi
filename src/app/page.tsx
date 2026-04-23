@@ -107,6 +107,68 @@ export default function HomePage() {
     }
   };
 
+  const handleExportProject = async (id: string, name: string) => {
+    try {
+      const res = await fetch(`/api/projects/${id}`);
+      const project = await res.json();
+      
+      // Clean up the project data for export
+      const exportData = { ...project };
+      delete exportData._id;
+      delete exportData.userId;
+      delete exportData.createdAt;
+      delete exportData.updatedAt;
+      delete exportData.shareToken;
+
+      const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${name.replace(/\s+/g, "_")}_workspace.json`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      addToast("Workspace exported", "success");
+    } catch {
+      addToast("Failed to export workspace", "error");
+    }
+  };
+
+  const [isImporting, setIsImporting] = useState(false);
+
+  const handleImportProject = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsImporting(true);
+    const reader = new FileReader();
+    reader.onload = async (event) => {
+      try {
+        const projectData = JSON.parse(event.target?.result as string);
+        const res = await fetch("/api/projects", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(projectData),
+        });
+
+        if (res.ok) {
+          addToast("Workspace imported successfully", "success");
+          fetchProjects();
+        } else {
+          throw new Error("Import failed");
+        }
+      } catch (err) {
+        addToast("Import failed. Check file format.", "error");
+      } finally {
+        setIsImporting(false);
+        // Reset input
+        e.target.value = "";
+      }
+    };
+    reader.readAsText(file);
+  };
+
   // --- Login Screen ---
   if (authLoading) {
     return (
@@ -209,9 +271,20 @@ export default function HomePage() {
             <h1 className={styles["dashboard-title"]}>Your Projects</h1>
             <p className={styles["dashboard-subtitle"]}>Create and manage your business intelligence dashboards</p>
           </div>
-          <button className="btn btn-primary" onClick={() => setShowNewProject(true)}>
-            + New Project
-          </button>
+          <div style={{ display: "flex", gap: "10px" }}>
+            <label className="btn btn-secondary" style={{ cursor: "pointer", display: "flex", alignItems: "center", gap: "8px" }}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                <polyline points="17 8 12 3 7 8" />
+                <line x1="12" y1="3" x2="12" y2="15" />
+              </svg>
+              {isImporting ? "Importing..." : "Import"}
+              <input type="file" accept=".json" onChange={handleImportProject} style={{ display: "none" }} disabled={isImporting} />
+            </label>
+            <button className="btn btn-primary" onClick={() => setShowNewProject(true)}>
+              + New Project
+            </button>
+          </div>
         </div>
 
         {showNewProject && (
@@ -261,14 +334,29 @@ export default function HomePage() {
                       <line x1="9" y1="21" x2="9" y2="9" />
                     </svg>
                   </div>
-                  <button
-                    className="btn btn-ghost btn-sm"
-                    onClick={() => handleDeleteProject(p._id)}
-                    style={{ color: "var(--color-danger)" }}
-                    disabled={deletingId === p._id}
-                  >
-                    {deletingId === p._id ? "⌛" : "🗑"}
-                  </button>
+                  <div style={{ display: "flex", gap: "4px" }}>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => handleExportProject(p._id, p.name)}
+                      title="Export Workspace"
+                      style={{ color: "var(--color-primary)" }}
+                    >
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="7 10 12 15 17 10" />
+                        <line x1="12" y1="15" x2="12" y2="3" />
+                      </svg>
+                    </button>
+                    <button
+                      className="btn btn-ghost btn-sm"
+                      onClick={() => handleDeleteProject(p._id)}
+                      title="Delete Project"
+                      style={{ color: "var(--color-danger)" }}
+                      disabled={deletingId === p._id}
+                    >
+                      {deletingId === p._id ? "⌛" : "🗑"}
+                    </button>
+                  </div>
                 </div>
                 <h3 className={styles["project-name"]}>{p.name}</h3>
                 <p className={styles["project-desc"]}>{p.description || "No description"}</p>

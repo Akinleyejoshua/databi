@@ -6,7 +6,7 @@
 import { useMemo } from "react";
 import { useProjectStore } from "@/store/use-project-store";
 import type { Widget } from "@/types";
-import { applyFilters, computeAggregation, abbreviateNumber } from "@/lib/utils";
+import { applyFilters, computeAggregation, abbreviateNumber, getCurrencySymbol } from "@/lib/utils";
 import { executeMeasure, isMeasure, getMeasure, resolveValue } from "@/lib/measure-engine";
 
 interface Props { widget: Widget; }
@@ -57,20 +57,16 @@ export default function KpiWidget({ widget }: Props) {
   }
 
   // Format value with currency if specified
-  const formatValue = (num: number) => {
+  const formatValue = (num: number | null | undefined) => {
+    if (num === null || num === undefined) return "-";
     if (kpi?.currency) {
-      try {
-        const decimalPlaces = kpi?.decimalPlaces ?? 2;
-        return new Intl.NumberFormat("en-US", {
-          style: "currency",
-          currency: kpi.currency,
-          minimumFractionDigits: decimalPlaces,
-          maximumFractionDigits: decimalPlaces,
-        }).format(num);
-      } catch (error) {
-        // Fallback if currency code is invalid
-        return `${kpi?.prefix || ""}${abbreviateNumber(num)}${kpi?.suffix || ""}`;
-      }
+      const symbol = getCurrencySymbol(kpi.currency);
+      const decimalPlaces = kpi?.decimalPlaces ?? 2;
+      const formatted = num.toLocaleString(undefined, {
+        minimumFractionDigits: decimalPlaces,
+        maximumFractionDigits: decimalPlaces,
+      });
+      return `${symbol}${formatted}`;
     }
     return `${kpi?.prefix || ""}${abbreviateNumber(num)}${kpi?.suffix || ""}`;
   };

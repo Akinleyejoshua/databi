@@ -25,6 +25,40 @@ export function formatNumber(
 }
 
 /**
+ * Currency Symbols Mapping
+ */
+export const CURRENCY_SYMBOLS: Record<string, string> = {
+  USD: "$",
+  EUR: "€",
+  GBP: "£",
+  NGN: "₦",
+  INR: "₹",
+  JPY: "¥",
+  CNY: "¥",
+  BRL: "R$",
+  AUD: "A$",
+  CAD: "C$",
+  CHF: "CHF",
+  SEK: "kr",
+  NZD: "$",
+  MXN: "$",
+  SGD: "$",
+  HKD: "$",
+};
+
+/**
+ * Get currency symbol from code
+ */
+export function getCurrencySymbol(currencyCode: string) {
+  if (CURRENCY_SYMBOLS[currencyCode]) return CURRENCY_SYMBOLS[currencyCode];
+  try {
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: currencyCode }).format(0).replace(/\d|\./g, '').trim();
+  } catch (e) {
+    return currencyCode;
+  }
+}
+
+/**
  * Abbreviated number (1K, 1M, 1B)
  */
 export function abbreviateNumber(value: number): string {
