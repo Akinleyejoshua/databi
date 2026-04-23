@@ -10,12 +10,27 @@ import { useSaveManager } from "@/hooks/use-save-manager";
 import ThemeToggle from "./theme-toggle";
 import styles from "./header.module.css";
 import Link from "next/link";
+import { useState, useRef, useEffect } from "react";
 
 export default function Header() {
   const { project, isSaving, updateProjectMeta } = useProjectStore();
   const { activeTab, setActiveTab, setPreviewMode, isPreviewMode, setShareModalOpen, autoSaveEnabled, setAutoSaveEnabled } = useUiStore();
   const { user, logout } = useAuthStore();
   const { handleSave, isDirty, unsavedChanges } = useSaveManager();
+  
+  const [showSaveDropdown, setShowSaveDropdown] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setShowSaveDropdown(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   return (
     <header className={styles.header}>
@@ -103,43 +118,66 @@ export default function Header() {
               </svg>
               Share
             </button>
-             <div className="tooltip-wrapper">
-              <button
-                className={`btn btn-ghost btn-sm ${autoSaveEnabled ? styles["auto-save--enabled"] : ""}`}
-                onClick={() => setAutoSaveEnabled(!autoSaveEnabled)}
-                title={autoSaveEnabled ? "Auto-save enabled" : "Auto-save disabled"}
-              >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                  <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                </svg>
-              </button>
-              {/* <div className="tooltip">
-                {autoSaveEnabled ? "Auto-save enabled" : "Auto-save disabled"}
-              </div> */}
-            </div>
-            <button
-              className={`btn btn-primary btn-sm ${isSaving ? styles.saving : ""}`}
-              onClick={handleSave}
-              disabled={isSaving || !isDirty}
-              title={isDirty ? "Save project (Ctrl+S)" : "No unsaved changes"}
-            >
-              {isSaving ? (
-                <>
-                  <span className={styles.spinner} />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                    <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
-                    <polyline points="17 21 17 13 7 13 7 21" />
-                    <polyline points="7 3 7 8 15 8" />
+            <div className={styles["save-container"]} ref={dropdownRef}>
+              <div className={styles["save-split-btn"]}>
+                <button
+                  className={`btn btn-primary btn-sm ${styles["save-main-btn"]} ${isSaving ? styles.saving : ""}`}
+                  onClick={handleSave}
+                  disabled={isSaving || !isDirty}
+                  title={isDirty ? "Save project (Ctrl+S)" : "No unsaved changes"}
+                >
+                  {isSaving ? (
+                    <>
+                      <span className={styles.spinner} />
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z" />
+                        <polyline points="17 21 17 13 7 13 7 21" />
+                        <polyline points="7 3 7 8 15 8" />
+                      </svg>
+                      Save
+                    </>
+                  )}
+                </button>
+                <button 
+                  className={`btn btn-primary btn-sm ${styles["save-arrow-btn"]}`}
+                  onClick={() => setShowSaveDropdown(!showSaveDropdown)}
+                >
+                  <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3">
+                    <path d="M6 9l6 6 6-6" />
                   </svg>
-                  Save
-                </>
+                </button>
+              </div>
+
+              {showSaveDropdown && (
+                <div className={styles["save-dropdown"]}>
+                  <div 
+                    className={`${styles["dropdown-item"]} ${autoSaveEnabled ? styles["dropdown-item--active"] : ""}`}
+                    onClick={() => {
+                      setAutoSaveEnabled(!autoSaveEnabled);
+                      setShowSaveDropdown(false);
+                    }}
+                  >
+                    <div className={styles["dropdown-item-icon"]}>
+                      {autoSaveEnabled ? (
+                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#22c55e" strokeWidth="3">
+                          <polyline points="20 6 9 17 4 12" />
+                        </svg>
+                      ) : (
+                        <div className={styles["empty-check"]} />
+                      )}
+                    </div>
+                    <div className={styles["dropdown-item-content"]}>
+                      <span className={styles["dropdown-item-title"]}>Auto-save</span>
+                      <span className={styles["dropdown-item-desc"]}>Sync changes instantly</span>
+                    </div>
+                  </div>
+                </div>
               )}
-            </button>
+            </div>
           </>
         )}
         <ThemeToggle />
