@@ -95,6 +95,9 @@ export interface ChartConfig {
   xAxisLabel: string;
   yAxisLabel: string;
   colorScheme: string[];
+  mapRegion?: string; // "world" or "country"
+  mapCountry?: string; // e.g., "Nigeria", "USA"
+  customMapUrl?: string; // URL to a GeoJSON file
 }
 
 export interface SlicerConfig {

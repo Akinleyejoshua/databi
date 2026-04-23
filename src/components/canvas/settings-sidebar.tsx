@@ -102,6 +102,68 @@ export default function SettingsModal() {
                   </select>
                 </div>
 
+                {widget.chartConfig.chartType === "map" && (
+                  <>
+                    <div className={styles.field}>
+                      <label className="label">Map Type</label>
+                      <select className="select" value={widget.chartConfig.mapRegion || "world"} onChange={(e) =>
+                        updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, mapRegion: e.target.value } })
+                      }>
+                        <option value="world">World Map</option>
+                        <option value="country">Specific Country (States/Provinces)</option>
+                        <option value="custom">Custom GeoJSON URL</option>
+                      </select>
+                    </div>
+
+                    {widget.chartConfig.mapRegion === "country" && (
+                      <div className={styles.field}>
+                        <label className="label">Country</label>
+                        <select className="select" value={widget.chartConfig.mapCountry || ""} onChange={(e) =>
+                          updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, mapCountry: e.target.value } })
+                        }>
+                          <option value="">Select country...</option>
+                          <option value="nigeria">Nigeria</option>
+                          <option value="usa">USA</option>
+                          <option value="brazil">Brazil</option>
+                          <option value="canada">Canada</option>
+                          <option value="china">China</option>
+                          <option value="france">France</option>
+                          <option value="germany">Germany</option>
+                          <option value="india">India</option>
+                          <option value="uk">United Kingdom</option>
+                          <option value="other">Other (Custom Code)</option>
+                        </select>
+                        <p style={{ fontSize: "10px", opacity: 0.7, marginTop: "4px" }}>Select a country to plot its states/provinces.</p>
+                      </div>
+                    )}
+
+                    {widget.chartConfig.mapRegion === "country" && widget.chartConfig.mapCountry === "other" && (
+                      <div className={styles.field}>
+                        <label className="label">Country ISO Code (2-letter)</label>
+                        <input 
+                          className="input" 
+                          value={widget.chartConfig.mapCountry === 'other' ? (widget.chartConfig.customMapUrl || '') : ''} 
+                          onChange={(e) => updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, customMapUrl: e.target.value.toLowerCase() } })} 
+                          placeholder="e.g., au, mx, ru"
+                        />
+                        <p style={{ fontSize: "10px", opacity: 0.7, marginTop: "4px" }}>Enter the 2-letter ISO code for the country.</p>
+                      </div>
+                    )}
+
+                    {widget.chartConfig.mapRegion === "custom" && (
+                      <div className={styles.field}>
+                        <label className="label">GeoJSON URL</label>
+                        <input 
+                          className="input" 
+                          value={widget.chartConfig.customMapUrl || ""} 
+                          onChange={(e) => updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, customMapUrl: e.target.value } })} 
+                          placeholder="https://.../map.json"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
                 <div className={styles.field}>
                   <label className="label">Dimension (Category)</label>
                   <select className="select" value={

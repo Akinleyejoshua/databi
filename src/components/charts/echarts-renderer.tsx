@@ -36,6 +36,10 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     return () => resizeObserver.disconnect();
   }, []);
 
+  const currentMapKey = (config.mapRegion === "world" || !config.mapRegion) 
+    ? "world" 
+    : (config.mapRegion === "country" ? config.mapCountry : config.customMapUrl) || "world";
+
   const { option, hasData } = useMemo(() => {
     if (!config.fields.length || !config.values.length) return { option: null, hasData: false };
 
@@ -152,7 +156,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         itemStyle: { color: colors[i % colors.length] },
       };
 
-      return buildSeriesObject(base, config.chartType, categories, data, colors, i);
+      return buildSeriesObject(base, config.chartType, categories, data, colors, i, currentMapKey);
     });
 
     const showAsValueAxis = (config.chartType === "line" || config.chartType === "area" || config.chartType === "scatter") && xIsNumeric;
@@ -185,7 +189,12 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           trigger: isPie || isMap ? "item" : "axis",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderColor: "var(--color-border)",
-          textStyle: { color: "var(--color-text)", fontSize: 11 }
+          textStyle: { color: "var(--color-text)", fontSize: 11 },
+          formatter: isMap ? (params: any) => {
+            if (Array.isArray(params)) return params[0].name;
+            const data = params.data;
+            return `${data?.originalName || params.name}: ${params.value || 0}`;
+          } : undefined
         } : undefined,
         legend: config.showLegend && !isMap ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
         visualMap,
@@ -209,33 +218,78 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     };
   }, [config, tables, filters, measures, relationships]);
 
-  const [mapLoaded, setMapLoaded] = useState(false);
+  const [mapLoaded, setMapLoaded] = useState<string | null>(null);
 
   useEffect(() => {
-    if (config.chartType === "map" && !mapLoaded) {
+    if (config.chartType === "map") {
+      const type = config.mapRegion || "world";
+      const regionKey = type === "world" ? "world" : (type === "country" ? config.mapCountry : config.customMapUrl);
+      if (!regionKey || mapLoaded === regionKey) return;
+
       import("echarts").then((echarts) => {
-        // Only fetch if not already registered
-        if (!echarts.getMap('world')) {
-          fetch('https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/world.json')
+        if (echarts.getMap(regionKey)) {
+          setMapLoaded(regionKey);
+          return;
+        }
+
+        let mapUrl = "";
+        if (type === "world") {
+          mapUrl = "https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/world.json";
+        } else if (type === "country") {
+          const isoCodes: Record<string, string> = {
+            nigeria: "ng",
+            usa: "us",
+            brazil: "br",
+            canada: "ca",
+            china: "cn",
+            france: "fr",
+            germany: "de",
+            india: "in",
+            uk: "gb"
+          };
+          let code = isoCodes[config.mapCountry || ""] || config.mapCountry;
+          if (config.mapCountry === "other" && config.customMapUrl) {
+            code = config.customMapUrl;
+          }
+          if (code && code !== "other") {
+            mapUrl = `https://code.highcharts.com/mapdata/countries/${code.toLowerCase()}/${code.toLowerCase()}-all.geo.json`;
+          }
+        } else if (type === "custom") {
+          mapUrl = config.customMapUrl || "";
+        }
+
+        if (mapUrl) {
+          fetch(mapUrl)
             .then(res => res.json())
             .then(geoJson => {
-              echarts.registerMap('world', geoJson);
-              setMapLoaded(true);
+              // Normalize names in GeoJSON for better matching
+              if (geoJson.features) {
+                geoJson.features.forEach((f: any) => {
+                  if (f.properties && f.properties.name) {
+                    f.properties.name = normalizeStateName(f.properties.name);
+                  }
+                });
+              }
+              echarts.registerMap(regionKey, geoJson);
+              setMapLoaded(regionKey);
             })
-            .catch(console.error);
-        } else {
-          setMapLoaded(true);
+            .catch(err => {
+              console.error(`Failed to load map for ${regionKey}:`, err);
+            });
         }
       });
     }
-  }, [config.chartType, mapLoaded]);
+  }, [config.chartType, config.mapRegion, config.mapCountry, config.customMapUrl, mapLoaded]);
 
-  if (!hasData || (config.chartType === "map" && !mapLoaded)) {
+    
+  const isMapReady = config.chartType !== "map" || mapLoaded === currentMapKey;
+
+  if (!hasData || !isMapReady) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "12px", flexDirection: "column", gap: "10px", textAlign: "center", padding: "20px" }}>
         <div style={{ fontSize: "32px", opacity: 0.5 }}>📊</div>
         <div style={{ fontWeight: 500 }}>
-          {config.chartType === "map" && !mapLoaded ? "Loading Map..." : (!config.fields.length || !config.values.length) ? "Configure Chart Fields" : "No data available"}
+          {config.chartType === "map" && !isMapReady ? `Loading Map...` : (!config.fields.length || !config.values.length) ? "Configure Chart Fields" : "No data available"}
         </div>
         <div style={{ fontSize: "11px", opacity: 0.7 }}>Add dimensions to Fields and metrics to Values</div>
       </div>
@@ -254,7 +308,20 @@ export default function EChartsRenderer({ config, tables, filters, relationships
   );
 }
 
-function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number) {
+function normalizeStateName(name: string): string {
+  if (!name) return "";
+  return name
+    .toLowerCase()
+    .replace(/\bstate\b/g, "")
+    .replace(/\bprovince\b/g, "")
+    .replace(/\bterritory\b/g, "")
+    .replace(/\bdepartment\b/g, "")
+    .replace(/\bregion\b/g, "")
+    .replace(/\bgovernorate\b/g, "")
+    .trim();
+}
+
+function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number, mapName: string = "world") {
   switch (chartType) {
     case "bar": return { ...base, type: "bar", borderRadius: [0, 4, 4, 0] };
     case "column": return { ...base, type: "bar", borderRadius: [4, 4, 0, 0] };
@@ -264,10 +331,14 @@ function buildSeriesObject(base: any, chartType: string, categories: string[], d
     case "map": 
       return {
         type: "map",
-        map: "world",
+        map: mapName,
         name: base.name,
         roam: true,
-        data: categories.map((cat, j) => ({ name: cat, value: data[j] })),
+        data: categories.map((cat, j) => ({ 
+          name: normalizeStateName(cat), 
+          value: data[j],
+          originalName: cat
+        })),
         emphasis: { label: { show: true } }
       };
     case "pie": case "donut":
