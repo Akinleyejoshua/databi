@@ -323,6 +323,8 @@ interface Props {
 
 export default function EChartsRenderer({ config, tables, filters, relationships = [], measures = [], height = 300 }: Props) {
   const chartRef = useRef<ReactECharts>(null);
+  const [hoveredData, setHoveredData] = useState<any>(null);
+  const isMap = config.chartType === "map";
 
   // Resize when the container changes (handles canvas widget resizing)
   useEffect(() => {
@@ -343,12 +345,12 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     ? "world"
     : (config.mapRegion === "country" ? config.mapCountry : config.customMapUrl) || "world";
 
-  const { option, hasData } = useMemo(() => {
-    if (!config.fields.length || !config.values.length) return { option: null, hasData: false };
+  const { option, hasData, totalValue } = useMemo(() => {
+    if (!config.fields.length || !config.values.length) return { option: null, hasData: false, totalValue: 0 };
 
     const fieldDef = config.fields[0];
     const table = tables?.find((t) => t.id === fieldDef.tableId);
-    if (!table || !table.rows) return { option: null, hasData: false };
+    if (!table || !table.rows) return { option: null, hasData: false, totalValue: 0 };
 
     // Determine if we need to join tables
     const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
@@ -361,7 +363,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
       rows = applyFilters(table, filters || []);
     }
 
-    if (rows.length === 0) return { option: null, hasData: false };
+    if (rows.length === 0) return { option: null, hasData: false, totalValue: 0 };
 
     // Calculate Categories with optimized grouping
     const categoriesSet = new Set<string>();
@@ -470,6 +472,12 @@ export default function EChartsRenderer({ config, tables, filters, relationships
       return buildSeriesObject(base, config.chartType, categories, data, colors, i, currentMapKey, isMap);
     });
 
+    const totalValue = series.length > 0 && typeof series[0].data[0] === 'number' 
+      ? (series[0].data as number[]).reduce((a, b) => a + (Number(b) || 0), 0)
+      : (isMap && series.length > 0 
+          ? (series[0].data as any[]).reduce((a, b) => a + (Number(b?.value) || 0), 0) 
+          : 0);
+
     const showAsValueAxis = (config.chartType === "line" || config.chartType === "area" || config.chartType === "scatter") && xIsNumeric;
 
     let visualMap;
@@ -489,6 +497,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
     return {
       hasData: true,
+      totalValue,
       option: {
         title: {
           text: config.title,
@@ -610,6 +619,17 @@ export default function EChartsRenderer({ config, tables, filters, relationships
 
   const isMapReady = config.chartType !== "map" || mapLoaded === currentMapKey;
 
+  const onEvents = {
+    'mouseover': (params: any) => {
+      if (params.seriesType === 'map') {
+        setHoveredData(params.data);
+      }
+    },
+    'mouseout': () => {
+      setHoveredData(null);
+    }
+  };
+
   if (!hasData || !isMapReady) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "12px", flexDirection: "column", gap: "10px", textAlign: "center", padding: "20px" }}>
@@ -623,19 +643,77 @@ export default function EChartsRenderer({ config, tables, filters, relationships
   }
 
   return (
-    <ReactECharts
-      ref={chartRef}
-      option={option}
-      style={{ height: "100%", width: "100%" }}
-      opts={{ renderer: "svg" }}
-      notMerge={true}
-      lazyUpdate={true}
-    />
+    <div style={{ position: "relative", width: "100%", height: "100%" }}>
+      {isMap && (
+        <div style={{
+          position: "absolute",
+          top: "12px",
+          left: "12px",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backdropFilter: "blur(4px)",
+          padding: "12px",
+          borderRadius: "10px",
+          border: "1px solid var(--color-border)",
+          boxShadow: "0 8px 16px -4px rgba(0,0,0,0.1)",
+          zIndex: 50,
+          minWidth: "160px",
+          pointerEvents: "none",
+          transition: "all 0.2s ease",
+          opacity: hoveredData ? 1 : 0.4,
+          transform: hoveredData ? "translateY(0)" : "translateY(2px)"
+        }}>
+          <div style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "8px" }}>
+            <div style={{ width: "8px", height: "8px", borderRadius: "50%", background: "var(--color-primary)" }} />
+            <h4 style={{ margin: 0, fontSize: "10px", color: "var(--color-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em", fontWeight: 700 }}>
+              Region Insight
+            </h4>
+          </div>
+          
+          <div style={{ fontSize: "15px", fontWeight: 800, color: "var(--color-text)", marginBottom: "10px" }}>
+            {hoveredData ? (hoveredData.originalName || hoveredData.name) : (config.mapRegion === "world" ? "Global Summary" : `${config.mapCountry || "Map"} Overview`)}
+          </div>
+
+          <div style={{ display: "flex", flexDirection: "column", gap: "6px" }}>
+            <div>
+              <div style={{ fontSize: "10px", color: "var(--color-text-tertiary)", fontWeight: 600 }}>
+                {hoveredData ? (config.yAxisLabel || "Metric") : `Total ${config.yAxisLabel || "Metric"}`}
+              </div>
+              <div style={{ fontSize: "18px", fontWeight: 800, color: "var(--color-primary)" }}>
+                {hoveredData 
+                  ? formatWithCurrency(hoveredData.value, config.currency) 
+                  : formatWithCurrency(totalValue || 0, config.currency)
+                }
+              </div>
+            </div>
+            
+            {config.xAxisLabel && (
+              <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "6px", marginTop: "2px" }}>
+                <div style={{ fontSize: "10px", color: "var(--color-text-tertiary)", fontWeight: 600 }}>{config.xAxisLabel}</div>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-secondary)" }}>
+                  {hoveredData ? (hoveredData.originalName || hoveredData.name) : "Aggregated"}
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      
+      <ReactECharts
+        ref={chartRef}
+        option={option}
+        style={{ height: "100%", width: "100%" }}
+        onEvents={onEvents}
+        opts={{ renderer: "svg" }}
+        notMerge={true}
+        lazyUpdate={true}
+      />
+    </div>
   );
 }
 
 function formatWithCurrency(value: number, currency?: string) {
-  if (!currency) return value.toLocaleString();
+  if (value === undefined || value === null) return "-";
+  if (!currency) return typeof value === 'number' ? value.toLocaleString() : String(value);
   try {
     return new Intl.NumberFormat('en-US', {
       style: 'currency',
@@ -644,11 +722,12 @@ function formatWithCurrency(value: number, currency?: string) {
       maximumFractionDigits: 0
     }).format(value);
   } catch (e) {
-    return value.toLocaleString();
+    return typeof value === 'number' ? value.toLocaleString() : String(value);
   }
 }
 
 function formatAxisValue(v: number, currency?: string) {
+  if (v === undefined || v === null) return "0";
   const abbreviated = abbreviateNumber(v);
   if (!currency) return abbreviated;
   try {
