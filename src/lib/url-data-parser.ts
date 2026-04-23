@@ -284,10 +284,10 @@ export function parseCsvBuffer(buffer: Buffer, name: string) {
   
   const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
   const firstSheet = workbook.Sheets[workbook.SheetNames[0]];
-  const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+  const jsonData = XLSX.utils.sheet_to_json(
     firstSheet,
     { defval: null }
-  );
+  ) as Record<string, unknown>[];
 
   if (jsonData.length === 0) {
     throw new Error("CSV file is empty");
@@ -312,10 +312,10 @@ export function parseExcelBuffer(buffer: Buffer, url: string) {
 
   for (const sheetName of workbook.SheetNames) {
     const worksheet = workbook.Sheets[sheetName];
-    const jsonData = XLSX.utils.sheet_to_json<Record<string, unknown>>(
+    const jsonData = XLSX.utils.sheet_to_json(
       worksheet,
       { defval: null }
-    );
+    ) as Record<string, unknown>[];
 
     if (jsonData.length === 0) continue;
 
