@@ -34,14 +34,6 @@ export default function KpiWidget({ widget }: Props) {
     return computeAggregation(rows, kpi.valueColumn, kpi.aggregation);
   }, [project, kpi, activeFilters]);
 
-  if (value === null) {
-    return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "13px" }}>
-        Configure KPI settings
-      </div>
-    );
-  }
-
   // Get the display label (could be measure name or column name)
   const displayLabel = useMemo(() => {
     if (!kpi?.valueColumn || !project) return "Metric";
@@ -52,7 +44,15 @@ export default function KpiWidget({ widget }: Props) {
     }
     
     return kpi?.label || "Metric";
-  }, [kpi?.valueColumn, project, project?.measures]);
+  }, [kpi?.valueColumn, kpi?.label, project, project?.measures]);
+
+  if (value === null) {
+    return (
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: "100%", color: "var(--color-text-tertiary)", fontSize: "13px" }}>
+        Configure KPI settings
+      </div>
+    );
+  }
 
   // Format value with currency if specified
   const formatValue = (num: number) => {
