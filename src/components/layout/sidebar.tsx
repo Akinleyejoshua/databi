@@ -351,18 +351,230 @@ export default function Sidebar() {
           {sidebarPanel === "widgets" && (
             <div className={styles["widget-palette"]}>
               <div className={styles["widget-group"]}>
-                <span className={styles["widget-group-label"]}>Charts</span>
+                <span className={styles["widget-group-label"]}>Foundational</span>
                 <div className={styles["widget-grid"]}>
                   {([
                     { type: "chart" as WidgetType, chart: "bar" as ChartType, label: "Bar Chart", icon: <BarChart3 size={18} /> },
                     { type: "chart" as WidgetType, chart: "column" as ChartType, label: "Column Chart", icon: <Columns size={18} /> },
                     { type: "chart" as WidgetType, chart: "line" as ChartType, label: "Line Chart", icon: <LineChart size={18} /> },
-                    { type: "chart" as WidgetType, chart: "area" as ChartType, label: "Area Chart", icon: <AreaChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "histogram" as ChartType, label: "Histogram", icon: <BarChart3 size={18} /> },
                     { type: "chart" as WidgetType, chart: "pie" as ChartType, label: "Pie Chart", icon: <PieChart size={18} /> },
                     { type: "chart" as WidgetType, chart: "donut" as ChartType, label: "Donut Chart", icon: <CircleDot size={18} /> },
-                    { type: "chart" as WidgetType, chart: "scatter" as ChartType, label: "Scatter Chart", icon: <ScatterChart size={18} /> },
+                  ]).map((w) => (
+                    <div key={w.chart} className="tooltip-wrapper">
+                      <button
+                        className={styles["widget-btn"]}
+                        onClick={() => {
+                          addWidget({
+                            id: generateId(),
+                            type: w.type,
+                            title: w.label,
+                            layout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 4 },
+                            style: getDefaultWidgetStyle(),
+                            chartConfig: {
+                              chartType: w.chart,
+                              fields: [],
+                              values: [],
+                              showLegend: true,
+                              showTooltip: true,
+                              title: w.label,
+                              xAxisLabel: "",
+                              yAxisLabel: "",
+                              colorScheme: ["#4169E1", "#6C8EF2", "#2F52C7", "#8BA4F5", "#1A3A9E"],
+                            },
+                          });
+                        }}
+                      >
+                        <span className={styles["widget-icon"]}>{w.icon}</span>
+                        <span>{w.label}</span>
+                      </button>
+                      <div className="tooltip">{w.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles["widget-group"]}>
+                <span className={styles["widget-group-label"]}>Comparative & Value</span>
+                <div className={styles["widget-grid"]}>
+                  {([
+                    { type: "chart" as WidgetType, chart: "stacked-bar" as ChartType, label: "Stacked Bar", icon: <BarChart3 size={18} /> },
+                    { type: "chart" as WidgetType, chart: "stacked-column" as ChartType, label: "Stacked Col", icon: <Columns size={18} /> },
+                    { type: "chart" as WidgetType, chart: "treemap" as ChartType, label: "Treemap", icon: <BarChart3 size={18} /> },
+                    { type: "chart" as WidgetType, chart: "pareto" as ChartType, label: "Pareto", icon: <LineChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "radar" as ChartType, label: "Radar", icon: <ScatterChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "funnel" as ChartType, label: "Funnel", icon: <BarChart3 size={18} /> },
+                    { type: "chart" as WidgetType, chart: "waterfall" as ChartType, label: "Waterfall", icon: <BarChart3 size={18} /> },
+                  ]).map((w) => (
+                    <div key={w.chart} className="tooltip-wrapper">
+                      <button
+                        className={styles["widget-btn"]}
+                        onClick={() => {
+                          addWidget({
+                            id: generateId(),
+                            type: w.type,
+                            title: w.label,
+                            layout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 4 },
+                            style: getDefaultWidgetStyle(),
+                            chartConfig: {
+                              chartType: w.chart,
+                              fields: [],
+                              values: [],
+                              showLegend: true,
+                              showTooltip: true,
+                              title: w.label,
+                              xAxisLabel: "",
+                              yAxisLabel: "",
+                              colorScheme: ["#4169E1", "#6C8EF2", "#2F52C7", "#8BA4F5", "#1A3A9E"],
+                            },
+                          });
+                        }}
+                      >
+                        <span className={styles["widget-icon"]}>{w.icon}</span>
+                        <span>{w.label}</span>
+                      </button>
+                      <div className="tooltip">{w.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles["widget-group"]}>
+                <span className={styles["widget-group-label"]}>Relationship & Correlation</span>
+                <div className={styles["widget-grid"]}>
+                  {([
+                    { type: "chart" as WidgetType, chart: "scatter" as ChartType, label: "Scatter", icon: <ScatterChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "bubble" as ChartType, label: "Bubble", icon: <CircleDot size={18} /> },
+                    { type: "chart" as WidgetType, chart: "sankey" as ChartType, label: "Sankey", icon: <BarChart3 size={18} /> },
+                    { type: "chart" as WidgetType, chart: "area" as ChartType, label: "Area Chart", icon: <AreaChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "step" as ChartType, label: "Step Chart", icon: <LineChart size={18} /> },
+                  ]).map((w) => (
+                    <div key={w.chart} className="tooltip-wrapper">
+                      <button
+                        className={styles["widget-btn"]}
+                        onClick={() => {
+                          addWidget({
+                            id: generateId(),
+                            type: w.type,
+                            title: w.label,
+                            layout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 4 },
+                            style: getDefaultWidgetStyle(),
+                            chartConfig: {
+                              chartType: w.chart,
+                              fields: [],
+                              values: [],
+                              showLegend: true,
+                              showTooltip: true,
+                              title: w.label,
+                              xAxisLabel: "",
+                              yAxisLabel: "",
+                              colorScheme: ["#4169E1", "#6C8EF2", "#2F52C7", "#8BA4F5", "#1A3A9E"],
+                            },
+                          });
+                        }}
+                      >
+                        <span className={styles["widget-icon"]}>{w.icon}</span>
+                        <span>{w.label}</span>
+                      </button>
+                      <div className="tooltip">{w.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles["widget-group"]}>
+                <span className={styles["widget-group-label"]}>Time-Series & Trends</span>
+                <div className={styles["widget-grid"]}>
+                  {([
+                    { type: "chart" as WidgetType, chart: "candlestick" as ChartType, label: "Candlestick", icon: <BarChart3 size={18} /> },
+                    { type: "chart" as WidgetType, chart: "sparkline" as ChartType, label: "Sparkline", icon: <LineChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "gantt" as ChartType, label: "Gantt", icon: <BarChart3 size={18} /> },
+                    { type: "chart" as WidgetType, chart: "dot-plot" as ChartType, label: "Dot Plot", icon: <ScatterChart size={18} /> },
                     { type: "chart" as WidgetType, chart: "time-series" as ChartType, label: "Time Series", icon: <History size={18} /> },
+                  ]).map((w) => (
+                    <div key={w.chart} className="tooltip-wrapper">
+                      <button
+                        className={styles["widget-btn"]}
+                        onClick={() => {
+                          addWidget({
+                            id: generateId(),
+                            type: w.type,
+                            title: w.label,
+                            layout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 4 },
+                            style: getDefaultWidgetStyle(),
+                            chartConfig: {
+                              chartType: w.chart,
+                              fields: [],
+                              values: [],
+                              showLegend: true,
+                              showTooltip: true,
+                              title: w.label,
+                              xAxisLabel: "",
+                              yAxisLabel: "",
+                              colorScheme: ["#4169E1", "#6C8EF2", "#2F52C7", "#8BA4F5", "#1A3A9E"],
+                            },
+                          });
+                        }}
+                      >
+                        <span className={styles["widget-icon"]}>{w.icon}</span>
+                        <span>{w.label}</span>
+                      </button>
+                      <div className="tooltip">{w.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles["widget-group"]}>
+                <span className={styles["widget-group-label"]}>Geographic & Heat</span>
+                <div className={styles["widget-grid"]}>
+                  {([
+                    { type: "chart" as WidgetType, chart: "geo-scatter" as ChartType, label: "Geo Scatter", icon: <Map size={18} /> },
+                    { type: "chart" as WidgetType, chart: "geo-bubble" as ChartType, label: "Geo Bubble", icon: <Map size={18} /> },
+                    { type: "chart" as WidgetType, chart: "heatmap" as ChartType, label: "Heatmap", icon: <BarChart3 size={18} /> },
                     { type: "chart" as WidgetType, chart: "map" as ChartType, label: "Map Chart", icon: <Map size={18} /> },
+                  ]).map((w) => (
+                    <div key={w.chart} className="tooltip-wrapper">
+                      <button
+                        className={styles["widget-btn"]}
+                        onClick={() => {
+                          addWidget({
+                            id: generateId(),
+                            type: w.type,
+                            title: w.label,
+                            layout: { x: 0, y: 0, w: 12, h: 10, minW: 4, minH: 4 },
+                            style: getDefaultWidgetStyle(),
+                            chartConfig: {
+                              chartType: w.chart,
+                              fields: [],
+                              values: [],
+                              showLegend: true,
+                              showTooltip: true,
+                              title: w.label,
+                              xAxisLabel: "",
+                              yAxisLabel: "",
+                              colorScheme: ["#4169E1", "#6C8EF2", "#2F52C7", "#8BA4F5", "#1A3A9E"],
+                            },
+                          });
+                        }}
+                      >
+                        <span className={styles["widget-icon"]}>{w.icon}</span>
+                        <span>{w.label}</span>
+                      </button>
+                      <div className="tooltip">{w.label}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles["widget-group"]}>
+                <span className={styles["widget-group-label"]}>Other Visuals</span>
+                <div className={styles["widget-grid"]}>
+                  {([
+                    { type: "chart" as WidgetType, chart: "box-plot" as ChartType, label: "Box Plot", icon: <BarChart3 size={18} /> },
+                    { type: "chart" as WidgetType, chart: "pictograph" as ChartType, label: "Pictograph", icon: <CircleDot size={18} /> },
+                    { type: "chart" as WidgetType, chart: "gauge" as ChartType, label: "Gauge", icon: <ScatterChart size={18} /> },
+                    { type: "chart" as WidgetType, chart: "rag-status" as ChartType, label: "RAG Status", icon: <Target size={18} /> },
                   ]).map((w) => (
                     <div key={w.chart} className="tooltip-wrapper">
                       <button

@@ -799,6 +799,7 @@ function buildSeriesObject(base: any, chartType: string, categories: string[], d
     case "column": return { ...base, type: "bar", borderRadius: [4, 4, 0, 0] };
     case "line": case "time-series": return { ...base, type: "line", smooth: true, symbol: "circle", symbolSize: 6 };
     case "area": return { ...base, type: "line", smooth: true, areaStyle: { opacity: 0.2 }, symbol: "circle", symbolSize: 4 };
+    case "step": return { ...base, type: "line", step: "start", smooth: false, symbol: "circle", symbolSize: 6, lineStyle: { width: 2 } };
     case "scatter": return { ...base, type: "scatter", symbolSize: 10, itemStyle: { ...base.itemStyle, opacity: 0.7 } };
     case "map":
       return {
@@ -807,7 +808,7 @@ function buildSeriesObject(base: any, chartType: string, categories: string[], d
         name: base.name,
         roam: true,
         data: categories.map((cat, j) => ({
-          name: isMap ? cat : normalizeStateName(cat), // categories are already normalized for maps
+          name: isMap ? cat : normalizeStateName(cat),
           value: data[j],
           originalName: cat
         })),

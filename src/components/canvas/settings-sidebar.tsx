@@ -96,9 +96,50 @@ export default function SettingsModal() {
                   <select className="select" value={widget.chartConfig.chartType} onChange={(e) =>
                     updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, chartType: e.target.value as ChartType } })
                   }>
-                    {["bar","column","line","area","pie","donut","scatter","time-series","map"].map((t) => (
-                      <option key={t} value={t}>{t}</option>
-                    ))}
+                    <optgroup label="Foundational">
+                      <option value="bar">Bar Chart</option>
+                      <option value="column">Column Chart</option>
+                      <option value="line">Line Chart</option>
+                      <option value="histogram">Histogram</option>
+                      <option value="pie">Pie Chart</option>
+                      <option value="donut">Donut Chart</option>
+                      <option value="kpi">KPI</option>
+                    </optgroup>
+                    <optgroup label="Comparative & Value">
+                      <option value="stacked-bar">Stacked Bar</option>
+                      <option value="stacked-column">Stacked Column</option>
+                      <option value="treemap">Treemap</option>
+                      <option value="pareto">Pareto Chart</option>
+                      <option value="radar">Radar (Spider)</option>
+                      <option value="funnel">Funnel Chart</option>
+                      <option value="waterfall">Waterfall Chart</option>
+                    </optgroup>
+                    <optgroup label="Relationship & Correlation">
+                      <option value="scatter">Scatter Plot</option>
+                      <option value="bubble">Bubble Chart</option>
+                      <option value="sankey">Sankey Diagram</option>
+                      <option value="area">Area Chart</option>
+                      <option value="step">Step Chart</option>
+                    </optgroup>
+                    <optgroup label="Time-Series & Trends">
+                      <option value="candlestick">Candlestick Chart</option>
+                      <option value="sparkline">Sparkline</option>
+                      <option value="gantt">Gantt Chart</option>
+                      <option value="dot-plot">Dot Plot</option>
+                      <option value="time-series">Time Series</option>
+                    </optgroup>
+                    <optgroup label="Geographic & Heat">
+                      <option value="geo-scatter">Geo Scatter</option>
+                      <option value="geo-bubble">Geo Bubble</option>
+                      <option value="heatmap">Heatmap</option>
+                      <option value="map">Map</option>
+                    </optgroup>
+                    <optgroup label="Other Visuals">
+                      <option value="box-plot">Box Plot</option>
+                      <option value="pictograph">Pictograph</option>
+                      <option value="gauge">Gauge Chart</option>
+                      <option value="rag-status">RAG Status</option>
+                    </optgroup>
                   </select>
                 </div>
 

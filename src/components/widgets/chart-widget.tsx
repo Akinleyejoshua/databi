@@ -4,7 +4,7 @@
 "use client";
 
 import { useProjectStore } from "@/store/use-project-store";
-import EChartsRenderer from "@/components/charts/echarts-renderer";
+import AdvancedChartsRenderer from "@/components/charts/advanced-charts-renderer";
 import type { Widget } from "@/types";
 
 interface Props {
@@ -18,7 +18,7 @@ export default function ChartWidget({ widget }: Props) {
 
   return (
     <div style={{ width: "100%", height: "100%" }}>
-      <EChartsRenderer
+      <AdvancedChartsRenderer
         config={widget.chartConfig}
         tables={project.tables}
         filters={activeFilters}

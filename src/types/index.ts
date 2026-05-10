@@ -57,15 +57,42 @@ export type WidgetType =
   | "ai-summary";
 
 export type ChartType =
+  // Foundational Charts
   | "bar"
+  | "column"
   | "line"
-  | "area"
+  | "histogram"
   | "pie"
   | "donut"
+  | "kpi"
+  // Comparative & Value Charts
+  | "stacked-bar"
+  | "stacked-column"
+  | "treemap"
+  | "pareto"
+  | "radar"
+  | "funnel"
+  | "waterfall"
+  // Relationship & Correlation Charts
   | "scatter"
-  | "column"
-  | "time-series"
-  | "map";
+  | "bubble"
+  | "sankey"
+  | "area"
+  | "step"
+  // Time-Series & Trend Charts
+  | "candlestick"
+  | "sparkline"
+  | "gantt"
+  | "dot-plot"
+  // Geographic & Heat-Based Charts
+  | "geo-scatter"
+  | "geo-bubble"
+  | "heatmap"
+  // Other Dashboard Visuals
+  | "box-plot"
+  | "gauge"
+  | "rag-status"
+  | "table";
 
 export interface WidgetField {
   tableId: string;
