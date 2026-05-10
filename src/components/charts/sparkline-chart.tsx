@@ -1,7 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter } from "@/types";
+import { applyFilters, joinTables } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
@@ -11,72 +13,90 @@ interface Props {
 }
 
 export default function SparklineChart({ config, tables, filters, height = 300 }: Props) {
-  const { sparkData, hasData } = useMemo(() => {
-    if (!config.fields.length || !config.values.length) return { sparkData: [], hasData: false };
-
-    const table = tables?.find((t) => t.id === config.fields[0].tableId);
-    if (!table || !table.rows) return { sparkData: [], hasData: false };
-
+  const { option, hasData } = useMemo(() => {
+    if (!config.fields.length || !config.values.length) return { option: null, hasData: false };
+    
+    const fieldDef = config.fields[0];
+    const table = tables?.find((t) => t.id === fieldDef.tableId);
+    if (!table || !table.rows) return { option: null, hasData: false };
+    
+    // Get filtered and joined data
+    const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
+    let rows: Record<string, unknown>[] = [];
+    if (valueTableIds.length > 0) {
+      const tablesToJoin = tables.filter(t => t.id === fieldDef.tableId || valueTableIds.includes(t.id));
+      rows = joinTables(tablesToJoin, [], filters);
+    } else {
+      rows = applyFilters(table, filters || []);
+    }
+    
+    if (rows.length === 0) return { option: null, hasData: false };
+    
     const xField = config.fields[0];
     const yField = config.values[0];
-
-    const data = table.rows.map(row => ({
-      label: String(row[xField.columnName] ?? ""),
-      value: parseFloat(String(row[yField.columnName] ?? 0))
-    }));
-
-    return { sparkData: data, hasData: data.length > 0 };
+    
+    const data = rows.map(row => [String(row[xField.columnName] ?? ""), parseFloat(String(row[yField.columnName] ?? 0))]);
+    
+    return {
+      hasData: true,
+      option: {
+        title: {
+          text: config.title,
+          left: "center",
+          top: 8,
+          textStyle: {
+            fontSize: 13,
+            fontFamily: "inherit",
+            fontWeight: 600,
+            color: "var(--color-text)"
+          }
+        },
+        tooltip: config.showTooltip ? {
+          trigger: "axis",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          borderColor: "var(--color-border)",
+          textStyle: {
+            color: "var(--color-text)",
+            fontSize: 11
+          }
+        } : undefined,
+        grid: {
+          left: "4%",
+          right: "4%",
+          top: 45,
+          bottom: 30,
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          boundaryGap: false,
+          data: data.map(d => d[0])
+        },
+        yAxis: {
+          type: "value",
+          boundaryGap: [0, "100%"]
+        },
+        series: [{
+          name: yField.columnName,
+          type: "line",
+          smooth: true,
+          symbol: "none",
+          areaStyle: {
+            opacity: 0.3
+          },
+          data: data.map(d => d[1])
+        }]
+      }
+    };
   }, [config, tables, filters]);
 
   if (!hasData) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: `${height}px`, color: "var(--color-text-tertiary)" }}>
-        ✨ Configure category and value fields
+        📈 Configure date and value fields
       </div>
     );
   }
 
-  const minVal = Math.min(...sparkData.map(d => d.value));
-  const maxVal = Math.max(...sparkData.map(d => d.value));
-  const range = maxVal - minVal || 1;
-
-  const width = 100 / sparkData.length;
-  const baseHeight = height ? height * 0.6 : 60;
-
-  return (
-    <div style={{ padding: "16px" }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", marginBottom: "12px", textAlign: "center" }}>
-        {config.title}
-      </div>
-
-      <div style={{ display: "flex", alignItems: "flex-end", justifyContent: "space-around", height: `${baseHeight}px`, gap: "2px", marginBottom: "8px" }}>
-        {sparkData.map((item, idx) => {
-          const heightPercent = ((item.value - minVal) / range) * 100;
-          return (
-            <div
-              key={idx}
-              title={`${item.label}: ${item.value}`}
-              style={{
-                width: `${width - 0.5}%`,
-                height: `${Math.max(10, heightPercent)}%`,
-                backgroundColor: "#3b82f6",
-                borderRadius: "2px 2px 0 0",
-                opacity: 0.8,
-                transition: "opacity 0.2s ease",
-                cursor: "pointer"
-              }}
-              onMouseEnter={(e) => (e.currentTarget.style.opacity = "1")}
-              onMouseLeave={(e) => (e.currentTarget.style.opacity = "0.8")}
-            />
-          );
-        })}
-      </div>
-
-      <div style={{ display: "flex", justifyContent: "space-between", fontSize: "10px", color: "var(--color-text-secondary)" }}>
-        <span>{minVal.toFixed(1)}</span>
-        <span>{((minVal + maxVal) / 2).toFixed(1)}</span>
-        <span>{maxVal.toFixed(1)}</span>
-      </div>
-    </div>
-  );
+  return <ReactECharts option={option} style={{ height: `${height}px`, width: "100%" }} opts={{ renderer: "svg" }} />;
 }

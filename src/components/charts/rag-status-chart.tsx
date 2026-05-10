@@ -1,8 +1,9 @@
 "use client";
 
 import { useMemo } from "react";
+import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter } from "@/types";
-import { applyFilters } from "@/lib/utils";
+import { applyFilters, joinTables } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
@@ -11,31 +12,88 @@ interface Props {
   height?: number;
 }
 
-type RAGStatus = "red" | "amber" | "green";
-
 export default function RAGStatusChart({ config, tables, filters, height = 300 }: Props) {
-  const { statuses, hasData } = useMemo(() => {
-    if (!config.fields.length || !config.values.length) return { statuses: [], hasData: false };
-
+  const { option, hasData } = useMemo(() => {
+    if (!config.fields.length || !config.values.length) return { option: null, hasData: false };
+    
     const fieldDef = config.fields[0];
     const table = tables?.find((t) => t.id === fieldDef.tableId);
-    if (!table || !table.rows) return { statuses: [], hasData: false };
-
-    const rows = applyFilters(table, filters || []);
-    if (rows.length === 0) return { statuses: [], hasData: false };
-
-    const items = rows.slice(0, 10).map(row => {
-      const label = String(row[fieldDef.columnName] ?? "Item");
-      const value = parseFloat(String(row[config.values[0].columnName] ?? 0));
-
-      let status: RAGStatus = "green";
-      if (value < 33) status = "red";
-      else if (value < 67) status = "amber";
-
-      return { label, value, status };
+    if (!table || !table.rows) return { option: null, hasData: false };
+    
+    // Get filtered and joined data
+    const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
+    let rows: Record<string, unknown>[] = [];
+    if (valueTableIds.length > 0) {
+      const tablesToJoin = tables.filter(t => t.id === fieldDef.tableId || valueTableIds.includes(t.id));
+      rows = joinTables(tablesToJoin, [], filters);
+    } else {
+      rows = applyFilters(table, filters || []);
+    }
+    
+    if (rows.length === 0) return { option: null, hasData: false };
+    
+    const categoryField = config.fields[0];
+    const valueField = config.values[0];
+    
+    const ragData = rows.map(row => {
+      const value = parseFloat(String(row[valueField.columnName] ?? 0));
+      let color = "#ef4444"; // Red for bad
+      if (value >= 80) color = "#10b981"; // Green for good
+      else if (value >= 60) color = "#f59e0b"; // Amber for warning
+      
+      return {
+        name: String(row[categoryField.columnName] ?? ""),
+        value,
+        itemStyle: { color }
+      };
     });
-
-    return { statuses: items, hasData: items.length > 0 };
+    
+    return {
+      hasData: true,
+      option: {
+        title: {
+          text: config.title,
+          left: "center",
+          top: 8,
+          textStyle: {
+            fontSize: 13,
+            fontFamily: "inherit",
+            fontWeight: 600,
+            color: "var(--color-text)"
+          }
+        },
+        tooltip: config.showTooltip ? {
+          trigger: "item",
+          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          borderColor: "var(--color-border)",
+          textStyle: {
+            color: "var(--color-text)",
+            fontSize: 11
+          }
+        } : undefined,
+        grid: {
+          left: "4%",
+          right: "4%",
+          top: 45,
+          bottom: 30,
+          containLabel: true
+        },
+        xAxis: {
+          type: "category",
+          data: ragData.map(d => d.name)
+        },
+        yAxis: {
+          type: "value",
+          max: 100
+        },
+        series: [{
+          name: valueField.columnName,
+          type: "bar",
+          data: ragData,
+          barWidth: "60%"
+        }]
+      }
+    };
   }, [config, tables, filters]);
 
   if (!hasData) {
@@ -46,33 +104,5 @@ export default function RAGStatusChart({ config, tables, filters, height = 300 }
     );
   }
 
-  const statusColors = {
-    red: "#ef4444",
-    amber: "#f59e0b",
-    green: "#10b981"
-  };
-
-  return (
-    <div style={{ padding: "16px", height: `${height}px`, overflowY: "auto" }}>
-      <div style={{ fontSize: 13, fontWeight: 600, color: "var(--color-text)", marginBottom: "16px", textAlign: "center" }}>
-        {config.title}
-      </div>
-
-      <div style={{ display: "flex", flexDirection: "column", gap: "12px" }}>
-        {statuses.map(item => (
-          <div key={item.label}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "4px" }}>
-              <span style={{ fontSize: "12px", color: "var(--color-text)" }}>{item.label}</span>
-              <span style={{ fontSize: "12px", color: "var(--color-text-secondary)" }}>{item.value}%</span>
-            </div>
-            <div style={{ height: "8px", backgroundColor: "var(--color-border)", borderRadius: "4px", overflow: "hidden" }}>
-              <div
-                style={{ height: "100%", width: `${item.value}%`, backgroundColor: statusColors[item.status], transition: "width 0.3s ease" }}
-              />
-            </div>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
+  return <ReactECharts option={option} style={{ height: `${height}px`, width: "100%" }} opts={{ renderer: "svg" }} />;
 }

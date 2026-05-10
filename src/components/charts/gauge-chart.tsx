@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter } from "@/types";
-import { applyFilters } from "@/lib/utils";
+import { applyFilters, joinTables } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
@@ -20,7 +20,16 @@ export default function GaugeChart({ config, tables, filters, height = 300 }: Pr
     const table = tables?.find((t) => t.id === valueField.tableId);
     if (!table || !table.rows.length) return { option: null, hasData: false };
 
-    const rows = applyFilters(table, filters || []);
+    // Get filtered and joined data
+    const valueTableIds = [...new Set(config.values.map(v => v.tableId))];
+    let rows: Record<string, unknown>[] = [];
+    if (valueTableIds.length > 1) {
+      const tablesToJoin = tables.filter(t => valueTableIds.includes(t.id));
+      rows = joinTables(tablesToJoin, [], filters);
+    } else {
+      rows = applyFilters(table, filters || []);
+    }
+
     if (rows.length === 0) return { option: null, hasData: false };
 
     const value = parseFloat(String(rows[0][valueField.columnName] ?? 0));
@@ -79,7 +88,8 @@ export default function GaugeChart({ config, tables, filters, height = 300 }: Pr
             valueAnimation: true,
             formatter: "{value}%",
             color: "var(--color-text)",
-            fontSize: 16
+            fontSize: 16,
+            fontWeight: "bold"
           },
           data: [{ value, name: valueField.columnName }]
         }]
@@ -90,7 +100,7 @@ export default function GaugeChart({ config, tables, filters, height = 300 }: Pr
   if (!hasData) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: `${height}px`, color: "var(--color-text-tertiary)" }}>
-        🎯 Configure a value field
+        🎯 Configure value field
       </div>
     );
   }
