@@ -92,7 +92,9 @@ export type ChartType =
   | "box-plot"
   | "gauge"
   | "rag-status"
+  | "map"
   | "table";
+
 
 export interface WidgetField {
   tableId: string;
