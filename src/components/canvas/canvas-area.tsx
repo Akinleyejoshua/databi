@@ -530,7 +530,7 @@ export default function CanvasArea({ isSharePage }: Props) {
                   if (!isActive) setActiveSheet(sheet.id);
                 }}
                 onDoubleClick={() => {
-                  if (!isPreviewMode) {
+                  if (!isPreviewMode && !isSharePage) {
                     setEditingSheetId(sheet.id);
                     setEditingName(sheet.name);
                   }
@@ -632,9 +632,11 @@ export default function CanvasArea({ isSharePage }: Props) {
             </button>
           )}
         </div>
-        <div style={{ fontSize: "11px", color: "var(--color-text-tertiary)", fontWeight: 500 }}>
-          Double-click tab to rename
-        </div>
+        {!isPreviewMode && !isSharePage && (
+          <div style={{ fontSize: "11px", color: "var(--color-text-tertiary)", fontWeight: 500 }}>
+            Double-click tab to rename
+          </div>
+        )}
       </div>
     </div>
   );
