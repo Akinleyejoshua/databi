@@ -130,10 +130,10 @@ export default function Sidebar() {
                         <span className="badge">{target?.name}</span>
                       </div>
                       <span className={styles["rel-info"]}>{rel.sourceColumn} → {rel.targetColumn} ({rel.cardinality})</span>
-                      <div className="tooltip-wrapper" style={{ position: "absolute", top: "8px", right: "8px" }}>
+                      <div className="tooltip-wrapper" style={{ position: "absolute", top: "6px", right: "6px" }}>
                         <button 
                           className="btn btn-ghost btn-icon btn-sm" 
-                          style={{ height: "24px", width: "24px", color: "var(--color-danger)", background: "rgba(239, 68, 68, 0.1)" }}
+                          style={{ height: "32px", width: "32px", color: "var(--color-danger)", background: "rgba(239, 68, 68, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px" }}
                           onClick={async (e) => {
                             e.stopPropagation();
                             if (confirm(`Delete relationship between ${source?.name} and ${target?.name}?`)) {
@@ -143,7 +143,7 @@ export default function Sidebar() {
                             }
                           }}
                         >
-                          <Trash2 size={12} strokeWidth={2} style={{ display: "block" }} />
+                          <Trash2 size={16} strokeWidth={2} style={{ display: "block" }} />
                         </button>
                         <div className="tooltip" style={{ right: "100%", left: "auto", transform: "translateX(-8px)" }}>Delete Relationship</div>
                       </div>
@@ -153,7 +153,7 @@ export default function Sidebar() {
               )}
             </div>
           )}
-
+ 
           {dataPanel === "measures" && (
             <div className={styles["measures-panel"]}>
               <button className="btn btn-secondary btn-sm" style={{ width: "100%", marginBottom: "12px" }} onClick={() => setMeasureModalOpen(true)}>
@@ -169,27 +169,27 @@ export default function Sidebar() {
                   const table = project.tables.find((t) => t.id === m.tableId);
                   return (
                     <div key={m.id} className={styles["measure-item"]}>
-                      <div className={styles["measure-header"]} style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
+                      <div className={styles["measure-header"]} style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
                         <span className={styles["measure-name"]} style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" }}>{m.name}</span>
                         <div style={{ display: "flex", gap: "6px", flexShrink: 0, marginLeft: "8px" }}>
                           <div className="tooltip-wrapper">
                             <button 
                               className="btn btn-ghost btn-icon btn-sm" 
-                              style={{ height: "24px", width: "24px", color: "var(--color-primary)", background: "rgba(65, 105, 225, 0.1)" }}
+                              style={{ height: "32px", width: "32px", color: "var(--color-primary)", background: "rgba(65, 105, 225, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px" }}
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setEditingMeasureId(m.id);
                                 setMeasureModalOpen(true);
                               }}
                             >
-                              <Pencil size={12} strokeWidth={2} style={{ display: "block" }} />
+                              <Pencil size={16} strokeWidth={2} style={{ display: "block" }} />
                             </button>
                             <div className="tooltip" style={{ right: "0", left: "auto", transform: "translateY(0)" }}>Edit Measure</div>
                           </div>
                           <div className="tooltip-wrapper">
                             <button 
                               className="btn btn-ghost btn-icon btn-sm" 
-                              style={{ height: "24px", width: "24px", color: "var(--color-danger)", background: "rgba(239, 68, 68, 0.1)" }}
+                              style={{ height: "32px", width: "32px", color: "var(--color-danger)", background: "rgba(239, 68, 68, 0.15)", display: "flex", alignItems: "center", justifyContent: "center", borderRadius: "6px" }}
                               onClick={async (e) => {
                                 e.stopPropagation();
                                 if (confirm(`Delete measure "${m.name}"?`)) {
@@ -199,7 +199,7 @@ export default function Sidebar() {
                                 }
                               }}
                             >
-                              <Trash2 size={12} strokeWidth={2} style={{ display: "block" }} />
+                              <Trash2 size={16} strokeWidth={2} style={{ display: "block" }} />
                             </button>
                             <div className="tooltip" style={{ right: "0", left: "auto", transform: "translateY(0)" }}>Delete Measure</div>
                           </div>

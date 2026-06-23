@@ -38,7 +38,22 @@ export default function StackedChart({ config, tables, filters, relationships = 
     const groups = new Map<string, Record<string, unknown>[]>();
 
     rows.forEach(row => {
-      const val = String(row[fieldDef.columnName] ?? "Blank");
+      let val: string;
+      if (fieldDef.aggregation === "measure") {
+        const measure = measures.find(m => m.id === fieldDef.columnName);
+        if (measure) {
+          try {
+            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            val = String(evalFn(row, rows));
+          } catch (e) {
+            val = "Error";
+          }
+        } else {
+          val = "Unknown Measure";
+        }
+      } else {
+        val = String(row[fieldDef.columnName] ?? "Blank");
+      }
       categoriesSet.add(val);
       if (!groups.has(val)) groups.set(val, []);
       groups.get(val)!.push(row);
@@ -50,6 +65,18 @@ export default function StackedChart({ config, tables, filters, relationships = 
     const series = config.values.map((v, i) => {
       const data = categories.map((cat) => {
         const matching = groups.get(cat) || [];
+
+        if (v.aggregation === "measure") {
+          const measure = measures.find((m) => m.id === v.columnName);
+          if (!measure || matching.length === 0) return 0;
+          try {
+            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            return Number(evalFn(matching[0], matching)) || 0;
+          } catch (e) {
+            return 0;
+          }
+        }
+
         const vals = matching.map((r) => parseSafeNumber(r[v.columnName]));
         const agg = v.aggregation || "sum";
 
