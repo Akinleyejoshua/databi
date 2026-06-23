@@ -221,14 +221,14 @@ export default function SettingsModal() {
                     <optgroup label="Time-Series & Trends">
                       <option value="candlestick">Candlestick Chart</option>
                       <option value="sparkline">Sparkline</option>
-                      <option value="gantt">Gantt Chart</option>
+                      {/* <option value="gantt">Gantt Chart</option> */}
                       <option value="dot-plot">Dot Plot</option>
                       <option value="time-series">Time Series</option>
                     </optgroup>
                     <optgroup label="Geographic & Heat">
-                      <option value="geo-scatter">Geo Scatter</option>
+                      {/* <option value="geo-scatter">Geo Scatter</option>
                       <option value="geo-bubble">Geo Bubble</option>
-                      <option value="heatmap">Heatmap</option>
+                      <option value="heatmap">Heatmap</option> */}
                       <option value="map">Map</option>
                     </optgroup>
                     <optgroup label="Other Visuals">
@@ -236,6 +236,7 @@ export default function SettingsModal() {
                       <option value="pictograph">Pictograph</option>
                       <option value="gauge">Gauge Chart</option>
                       <option value="rag-status">RAG Status</option>
+                      <option value="table">Table Chart</option>
                     </optgroup>
                   </select>
                 </div>

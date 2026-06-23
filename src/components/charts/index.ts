@@ -43,6 +43,7 @@ export { default as BoxPlotChart } from "./box-plot-chart";
 export { default as PictographChart } from "./pictograph-chart";
 export { default as GaugeChart } from "./gauge-chart";
 export { default as RAGStatusChart } from "./rag-status-chart";
+export { default as TableChart } from "./table-chart";
 
 /**
  * ============================================================

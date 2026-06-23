@@ -25,6 +25,7 @@ import StepChart from "./step-chart";
 import PictographChart from "./pictograph-chart";
 import GeoScatterChart from "./geo-scatter-chart";
 import GeoBubbleChart from "./geo-bubble-chart";
+import TableChart from "./table-chart";
 import EChartsRenderer from "./echarts-renderer";
 
 interface Props {
@@ -121,6 +122,18 @@ export default function AdvancedChartsRenderer({
 
     case "geo-bubble":
       return <GeoBubbleChart config={config} tables={tables} filters={filters} height={height} />;
+
+    case "table":
+      return (
+        <TableChart
+          config={config}
+          tables={tables}
+          filters={filters}
+          relationships={relationships}
+          measures={measures}
+          height={height}
+        />
+      );
 
     // Route basic charts to EChartsRenderer
     case "bar":

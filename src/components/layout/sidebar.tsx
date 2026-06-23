@@ -488,7 +488,7 @@ export default function Sidebar() {
                   {([
                     { type: "chart" as WidgetType, chart: "candlestick" as ChartType, label: "Candlestick", icon: <BarChart3 size={18} /> },
                     { type: "chart" as WidgetType, chart: "sparkline" as ChartType, label: "Sparkline", icon: <LineChart size={18} /> },
-                    { type: "chart" as WidgetType, chart: "gantt" as ChartType, label: "Gantt", icon: <BarChart3 size={18} /> },
+                    // { type: "chart" as WidgetType, chart: "gantt" as ChartType, label: "Gantt", icon: <BarChart3 size={18} /> },
                     { type: "chart" as WidgetType, chart: "dot-plot" as ChartType, label: "Dot Plot", icon: <ScatterChart size={18} /> },
                     { type: "chart" as WidgetType, chart: "time-series" as ChartType, label: "Time Series", icon: <History size={18} /> },
                   ]).map((w) => (
@@ -529,9 +529,9 @@ export default function Sidebar() {
                 <span className={styles["widget-group-label"]}>Geographic & Heat</span>
                 <div className={styles["widget-grid"]}>
                   {([
-                    { type: "chart" as WidgetType, chart: "geo-scatter" as ChartType, label: "Geo Scatter", icon: <Map size={18} /> },
-                    { type: "chart" as WidgetType, chart: "geo-bubble" as ChartType, label: "Geo Bubble", icon: <Map size={18} /> },
-                    { type: "chart" as WidgetType, chart: "heatmap" as ChartType, label: "Heatmap", icon: <BarChart3 size={18} /> },
+                    // { type: "chart" as WidgetType, chart: "geo-scatter" as ChartType, label: "Geo Scatter", icon: <Map size={18} /> },
+                    // { type: "chart" as WidgetType, chart: "geo-bubble" as ChartType, label: "Geo Bubble", icon: <Map size={18} /> },
+                    // { type: "chart" as WidgetType, chart: "heatmap" as ChartType, label: "Heatmap", icon: <BarChart3 size={18} /> },
                     { type: "chart" as WidgetType, chart: "map" as ChartType, label: "Map Chart", icon: <Map size={18} /> },
                   ]).map((w) => (
                     <div key={w.chart} className="tooltip-wrapper">
@@ -575,6 +575,7 @@ export default function Sidebar() {
                     { type: "chart" as WidgetType, chart: "pictograph" as ChartType, label: "Pictograph", icon: <CircleDot size={18} /> },
                     { type: "chart" as WidgetType, chart: "gauge" as ChartType, label: "Gauge", icon: <ScatterChart size={18} /> },
                     { type: "chart" as WidgetType, chart: "rag-status" as ChartType, label: "RAG Status", icon: <Target size={18} /> },
+                    { type: "chart" as WidgetType, chart: "table" as ChartType, label: "Table Chart", icon: <Columns size={18} /> },
                   ]).map((w) => (
                     <div key={w.chart} className="tooltip-wrapper">
                       <button
