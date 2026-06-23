@@ -20,6 +20,17 @@ interface Props {
   isSharePage?: boolean;
 }
 
+function isColorDark(color: string): boolean {
+  if (!color) return false;
+  try {
+    const hex = color.replace("#", "").padEnd(6, "0");
+    const num = parseInt(hex, 16);
+    return num < 8947848;
+  } catch (e) {
+    return false;
+  }
+}
+
 export default function CanvasArea({ isSharePage }: Props) {
   const { 
     project, 
@@ -271,6 +282,94 @@ export default function CanvasArea({ isSharePage }: Props) {
               const w = widget.layout.w * colWidth;
               const h = widget.layout.h * rowHeight;
 
+              const settings = project.canvasSettings;
+              const preset = settings.containerPreset || "default";
+
+              let presetStyle: React.CSSProperties = {};
+              
+              const isDarkCanvas = isColorDark(settings.backgroundColor);
+
+              if (preset === "figma-flat") {
+                presetStyle = {
+                  backgroundColor: settings.containerBgColor || (isDarkCanvas ? "#1e1e24" : "#ffffff"),
+                  borderColor: settings.containerBorderColor || (isDarkCanvas ? "rgba(255,255,255,0.08)" : "rgba(0,0,0,0.08)"),
+                  borderWidth: `${settings.containerBorderWidth ?? 1}px`,
+                  borderStyle: "solid",
+                  borderRadius: `${settings.containerBorderRadius ?? 12}px`,
+                  boxShadow: settings.containerShadow === "none" ? "none" : "0 1px 3px rgba(0, 0, 0, 0.05), 0 20px 25px -5px rgba(0, 0, 0, 0.05)",
+                };
+              } else if (preset === "figma-glass") {
+                presetStyle = {
+                  backgroundColor: settings.containerBgColor || (isDarkCanvas ? "rgba(15, 15, 20, 0.65)" : "rgba(255, 255, 255, 0.65)"),
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
+                  borderColor: settings.containerBorderColor || (isDarkCanvas ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.4)"),
+                  borderWidth: `${settings.containerBorderWidth ?? 1}px`,
+                  borderStyle: "solid",
+                  borderRadius: `${settings.containerBorderRadius ?? 16}px`,
+                  boxShadow: settings.containerShadow === "none" ? "none" : "0 8px 32px 0 rgba(31, 38, 135, 0.04)",
+                };
+              } else if (preset === "figma-dark-glass") {
+                presetStyle = {
+                  backgroundColor: settings.containerBgColor || "rgba(15, 15, 20, 0.75)",
+                  backdropFilter: "blur(20px)",
+                  WebkitBackdropFilter: "blur(20px)",
+                  borderColor: settings.containerBorderColor || "rgba(255,255,255,0.08)",
+                  borderWidth: `${settings.containerBorderWidth ?? 1}px`,
+                  borderStyle: "solid",
+                  borderRadius: `${settings.containerBorderRadius ?? 16}px`,
+                  boxShadow: settings.containerShadow === "none" ? "none" : "0 8px 32px 0 rgba(0, 0, 0, 0.3)",
+                };
+              } else if (preset === "figma-neon") {
+                presetStyle = {
+                  backgroundColor: settings.containerBgColor || "#09090b",
+                  borderColor: settings.containerBorderColor || "var(--color-primary)",
+                  borderWidth: `${settings.containerBorderWidth ?? 1}px`,
+                  borderStyle: "solid",
+                  borderRadius: `${settings.containerBorderRadius ?? 14}px`,
+                  boxShadow: settings.containerShadow === "none" ? "none" : "0 0 15px rgba(59, 130, 246, 0.15)",
+                };
+              } else if (preset === "figma-bordered") {
+                presetStyle = {
+                  backgroundColor: settings.containerBgColor || "transparent",
+                  borderColor: settings.containerBorderColor || "var(--color-border)",
+                  borderWidth: `${settings.containerBorderWidth ?? 2}px`,
+                  borderStyle: "solid",
+                  borderRadius: `${settings.containerBorderRadius ?? 8}px`,
+                  boxShadow: "none",
+                };
+              }
+
+              if (settings.containerShadow && settings.containerShadow !== "none" && preset !== "figma-bordered") {
+                if (settings.containerShadow === "sm") presetStyle.boxShadow = "0 1px 2px 0 rgba(0, 0, 0, 0.05)";
+                else if (settings.containerShadow === "md") presetStyle.boxShadow = "0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)";
+                else if (settings.containerShadow === "lg") presetStyle.boxShadow = "0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)";
+                else if (settings.containerShadow === "figma-premium") presetStyle.boxShadow = "0 10px 30px -10px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.02)";
+                else if (settings.containerShadow === "glow") presetStyle.boxShadow = `0 0 20px ${settings.containerBorderColor || "rgba(99, 102, 241, 0.25)"}`;
+              }
+
+              const containerStyle: React.CSSProperties = preset === "default" ? {
+                backgroundColor: widget.style.backgroundColor,
+                color: widget.style.textColor,
+                borderRadius: `${widget.style.borderRadius}px`,
+                border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
+                padding: `${widget.style.padding}px`,
+                opacity: widget.style.opacity,
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column"
+              } : {
+                color: widget.style.textColor || "var(--color-text)",
+                padding: `${widget.style.padding ?? 16}px`,
+                opacity: widget.style.opacity ?? 1,
+                width: "100%",
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                ...presetStyle,
+              };
+
               return (
                 <Rnd
                   key={widget.id}
@@ -302,18 +401,7 @@ export default function CanvasArea({ isSharePage }: Props) {
                         setSelectedWidget(widget.id);
                       }
                     }}
-                    style={{
-                      backgroundColor: widget.style.backgroundColor,
-                      color: widget.style.textColor,
-                      borderRadius: `${widget.style.borderRadius}px`,
-                      border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
-                      padding: `${widget.style.padding}px`,
-                      opacity: widget.style.opacity,
-                      width: "100%",
-                      height: "100%",
-                      display: "flex",
-                      flexDirection: "column"
-                    }}
+                    style={containerStyle}
                   >
                     {(!isPreviewMode || isSharePage) && cursorMode === "select" && (
                       <div className={styles["drag-handle"]}>

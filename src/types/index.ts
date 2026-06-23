@@ -192,6 +192,12 @@ export interface CanvasSettings {
   width: number;
   cols: number;
   rowHeight: number;
+  containerPreset?: "default" | "figma-flat" | "figma-glass" | "figma-dark-glass" | "figma-neon" | "figma-bordered";
+  containerBorderRadius?: number;
+  containerShadow?: "none" | "sm" | "md" | "lg" | "figma-premium" | "glow";
+  containerBorderColor?: string;
+  containerBorderWidth?: number;
+  containerBgColor?: string;
 }
 
 export interface Sheet {

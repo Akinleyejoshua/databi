@@ -44,6 +44,103 @@ export default function SettingsModal() {
               <label className="label">Row Height (Pixels)</label>
               <input className="input" type="number" value={project?.canvasSettings.rowHeight || 30} onChange={(e) => updateCanvasSettings({ rowHeight: Number(e.target.value) })} min={10} max={100} />
             </div>
+
+            <div style={{ borderTop: "1px solid var(--color-border)", margin: "16px 0", paddingTop: "16px" }}>
+              <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "var(--color-text)" }}>Premium Container Styling Presets</h3>
+              
+              <div className={styles.field}>
+                <label className="label">Container Preset Style</label>
+                <select 
+                  className="select" 
+                  value={project?.canvasSettings.containerPreset || "default"} 
+                  onChange={(e) => updateCanvasSettings({ containerPreset: e.target.value as any })}
+                >
+                  <option value="default">Default Widget Style</option>
+                  <option value="figma-flat">Figma Sleek Flat</option>
+                  <option value="figma-glass">Figma Premium Glass (Glassmorphism)</option>
+                  <option value="figma-dark-glass">Figma Dark Glass (Premium Dark)</option>
+                  <option value="figma-neon">Figma Neon Glow</option>
+                  <option value="figma-bordered">Figma Minimal Bordered</option>
+                </select>
+              </div>
+
+              {project?.canvasSettings.containerPreset && project.canvasSettings.containerPreset !== "default" && (
+                <>
+                  <div className={styles.field}>
+                    <label className="label">Container Background</label>
+                    <div className={styles["color-input"]}>
+                      <input 
+                        type="color" 
+                        value={project?.canvasSettings.containerBgColor || "#ffffff"} 
+                        onChange={(e) => updateCanvasSettings({ containerBgColor: e.target.value })} 
+                      />
+                      <input 
+                        className="input" 
+                        value={project?.canvasSettings.containerBgColor || "#ffffff"} 
+                        onChange={(e) => updateCanvasSettings({ containerBgColor: e.target.value })} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className="label">Border Color</label>
+                    <div className={styles["color-input"]}>
+                      <input 
+                        type="color" 
+                        value={project?.canvasSettings.containerBorderColor || "rgba(0,0,0,0.08)"} 
+                        onChange={(e) => updateCanvasSettings({ containerBorderColor: e.target.value })} 
+                      />
+                      <input 
+                        className="input" 
+                        value={project?.canvasSettings.containerBorderColor || "rgba(0,0,0,0.08)"} 
+                        onChange={(e) => updateCanvasSettings({ containerBorderColor: e.target.value })} 
+                      />
+                    </div>
+                  </div>
+
+                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
+                    <div className={styles.field}>
+                      <label className="label">Border Width (px)</label>
+                      <input 
+                        className="input" 
+                        type="number" 
+                        value={project?.canvasSettings.containerBorderWidth ?? 1} 
+                        onChange={(e) => updateCanvasSettings({ containerBorderWidth: Number(e.target.value) })} 
+                        min={0} 
+                        max={10} 
+                      />
+                    </div>
+                    <div className={styles.field}>
+                      <label className="label">Border Radius (px)</label>
+                      <input 
+                        className="input" 
+                        type="number" 
+                        value={project?.canvasSettings.containerBorderRadius ?? 12} 
+                        onChange={(e) => updateCanvasSettings({ containerBorderRadius: Number(e.target.value) })} 
+                        min={0} 
+                        max={50} 
+                      />
+                    </div>
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className="label">Container Shadow</label>
+                    <select 
+                      className="select" 
+                      value={project?.canvasSettings.containerShadow || "figma-premium"} 
+                      onChange={(e) => updateCanvasSettings({ containerShadow: e.target.value as any })}
+                    >
+                      <option value="none">None</option>
+                      <option value="sm">Small Shadow</option>
+                      <option value="md">Medium Shadow</option>
+                      <option value="lg">Large Shadow</option>
+                      <option value="figma-premium">Figma Premium Soft Shadow</option>
+                      <option value="glow">Neon Glow Shadow</option>
+                    </select>
+                  </div>
+                </>
+              )}
+            </div>
           </div>
           <div className="modal-footer">
             <button className="btn btn-primary" onClick={handleClose}>Done</button>

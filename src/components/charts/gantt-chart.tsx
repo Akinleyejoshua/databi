@@ -45,19 +45,40 @@ export default function GanttChart({ config, tables, filters, height = 300 }: Pr
     
     const taskList = Array.from(tasks.keys());
     const colors = config.colorScheme?.length ? config.colorScheme : CHART_COLORS;
-    const series = [{
-      name: "Timeline",
-      type: "bar",
-      data: taskList.map((task, i) => {
-        const { start, end } = tasks.get(task)!;
-        return {
-          name: task,
-          value: [i, start, end - start],
-          itemStyle: { color: colors[i % colors.length] }
-        };
-      }),
-      stack: "total",
-    }];
+    const series = [
+      {
+        name: "Start",
+        type: "bar",
+        stack: "total",
+        itemStyle: {
+          borderColor: "rgba(0,0,0,0)",
+          color: "rgba(0,0,0,0)"
+        },
+        emphasis: {
+          itemStyle: {
+            borderColor: "rgba(0,0,0,0)",
+            color: "rgba(0,0,0,0)"
+          }
+        },
+        data: taskList.map((task, i) => {
+          const { start } = tasks.get(task)!;
+          return [start, i];
+        })
+      },
+      {
+        name: "Duration",
+        type: "bar",
+        stack: "total",
+        data: taskList.map((task, i) => {
+          const { start, end } = tasks.get(task)!;
+          return {
+            name: task,
+            value: [end - start, i],
+            itemStyle: { color: colors[i % colors.length] }
+          };
+        })
+      }
+    ];
     
     return {
       hasData: true,
@@ -74,7 +95,22 @@ export default function GanttChart({ config, tables, filters, height = 300 }: Pr
           }
         },
         tooltip: config.showTooltip ? {
-          trigger: "item",
+          trigger: "axis",
+          axisPointer: { type: "shadow" },
+          formatter: (params: any) => {
+            const durationParam = params.find((p: any) => p.seriesName === "Duration");
+            if (!durationParam) return "";
+            const taskIndex = durationParam.dataIndex;
+            const task = taskList[taskIndex];
+            const { start, end } = tasks.get(task)!;
+            return `<div style="padding: 4px 8px;">
+              <strong>${task}</strong><br/>
+              <span style="display:inline-block;margin-right:5px;border-radius:10px;width:9px;height:9px;background-color:${durationParam.color}"></span>
+              Start: ${start}<br/>
+              End: ${end}<br/>
+              Duration: ${end - start}
+            </div>`;
+          },
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderColor: "var(--color-border)",
           textStyle: { color: "var(--color-text)", fontSize: 11 }

@@ -84,6 +84,12 @@ const defaultCanvasSettings: CanvasSettings = {
   width: 1200,
   cols: 24,
   rowHeight: 30,
+  containerPreset: "default",
+  containerBorderRadius: 12,
+  containerShadow: "figma-premium",
+  containerBorderColor: "rgba(0, 0, 0, 0.08)",
+  containerBorderWidth: 1,
+  containerBgColor: "#ffffff",
 };
 
 const defaultProject: Project = {

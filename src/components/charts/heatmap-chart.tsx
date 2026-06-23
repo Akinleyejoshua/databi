@@ -14,7 +14,7 @@ interface Props {
 
 export default function HeatmapChart({ config, tables, filters, height = 300 }: Props) {
   const { option, hasData } = useMemo(() => {
-    if (!config.fields.length || config.values.length < 2) return { option: null, hasData: false };
+    if (!config.fields.length || !config.values.length) return { option: null, hasData: false };
 
     const xField = config.fields[0];
     const yField = config.fields.length > 1 ? config.fields[1] : config.fields[0];

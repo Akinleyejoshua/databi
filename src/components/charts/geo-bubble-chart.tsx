@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter } from "@/types";
 import { applyFilters, joinTables } from "@/lib/utils";
@@ -13,8 +13,28 @@ interface Props {
 }
 
 export default function GeoBubbleChart({ config, tables, filters, height = 300 }: Props) {
+  const [mapLoaded, setMapLoaded] = useState(false);
+
+  useEffect(() => {
+    import("echarts").then((echarts) => {
+      if (echarts.getMap("world")) {
+        setMapLoaded(true);
+        return;
+      }
+      fetch("https://cdn.jsdelivr.net/npm/echarts@4.9.0/map/json/world.json")
+        .then((res) => res.json())
+        .then((geoJson) => {
+          echarts.registerMap("world", geoJson);
+          setMapLoaded(true);
+        })
+        .catch((err) => {
+          console.error("Failed to load world map:", err);
+        });
+    });
+  }, []);
+
   const { option, hasData } = useMemo(() => {
-    if (!config.fields.length || config.values.length < 2) return { option: null, hasData: false };
+    if (config.fields.length < 2 || !config.values.length) return { option: null, hasData: false };
 
     const fieldDef = config.fields[0];
     const table = tables?.find((t) => t.id === fieldDef.tableId);
@@ -64,6 +84,15 @@ export default function GeoBubbleChart({ config, tables, filters, height = 300 }
           trigger: "item",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderColor: "var(--color-border)",
+          formatter: (params: any) => {
+            const val = params.value;
+            if (!val) return "";
+            return `<div style="padding: 4px 8px;">
+              <strong>Coordinates:</strong> [${val[0]}, ${val[1]}]<br/>
+              <strong>Size metric:</strong> ${val[2]}<br/>
+              <strong>Color metric:</strong> ${val[3]}
+            </div>`;
+          },
           textStyle: {
             color: "var(--color-text)",
             fontSize: 11
@@ -72,6 +101,11 @@ export default function GeoBubbleChart({ config, tables, filters, height = 300 }
         geo: {
           map: "world",
           roam: true,
+          label: {
+            emphasis: {
+              show: false
+            }
+          },
           itemStyle: {
             areaColor: "#f3f4f6",
             borderColor: "#d1d5db"
@@ -81,10 +115,14 @@ export default function GeoBubbleChart({ config, tables, filters, height = 300 }
           type: "scatter",
           coordinateSystem: "geo",
           data,
-          symbolSize: (val: number[]) => Math.sqrt(val[2]) * 3,
+          symbolSize: (val: number[]) => {
+            const size = Math.sqrt(val[2]) * 3;
+            return isNaN(size) ? 10 : Math.max(size, 8);
+          },
           itemStyle: {
             color: (params: any) => {
-              const colorVal = params.data[3];
+              const valArray = params.value || params.data;
+              const colorVal = Array.isArray(valArray) && valArray.length > 3 ? valArray[3] : 50;
               return colorVal > 70 ? "#10b981" : colorVal > 40 ? "#f59e0b" : "#ef4444";
             },
             opacity: 0.8
@@ -94,10 +132,10 @@ export default function GeoBubbleChart({ config, tables, filters, height = 300 }
     };
   }, [config, tables, filters]);
 
-  if (!hasData) {
+  if (!hasData || !mapLoaded) {
     return (
-      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: `${height}px`, color: "var(--color-text-tertiary)" }}>
-        🗺️ Configure longitude, latitude, size, and color fields
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: `${height}px`, color: "var(--color-text-tertiary)", flexDirection: "column", gap: "8px" }}>
+        🗺️ {!mapLoaded ? "Loading Map..." : "Configure longitude, latitude, size, and color fields"}
       </div>
     );
   }
