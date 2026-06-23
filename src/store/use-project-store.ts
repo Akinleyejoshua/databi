@@ -112,12 +112,23 @@ function cleanTableName(name: string): string {
 
 function sanitizeProjectTables(project: Project | null): Project | null {
   if (!project) return null;
+
+  const sheets = project.sheets && project.sheets.length > 0
+    ? project.sheets
+    : [{ id: "default", name: "Page 1", widgets: project.widgets || [] }];
+  
+  const activeSheetId = project.activeSheetId || sheets[0].id;
+  const activeWidgets = sheets.find(s => s.id === activeSheetId)?.widgets || sheets[0].widgets;
+
   return {
     ...project,
     tables: project.tables.map((t) => ({
       ...t,
       name: cleanTableName(t.name),
     })),
+    sheets,
+    activeSheetId,
+    widgets: activeWidgets
   };
 }
 
@@ -627,20 +638,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
       const saved = await res.json();
       
-      // Parse sheets from loaded project
-      const sheets = saved.sheets && saved.sheets.length > 0
-        ? saved.sheets
-        : [{ id: "default", name: "Page 1", widgets: saved.widgets || [] }];
-      const activeSheetId = saved.activeSheetId || sheets[0].id;
-      const activeWidgets = sheets.find((s: any) => s.id === activeSheetId)?.widgets || sheets[0].widgets;
-
       set({
-        project: sanitizeProjectTables({
-          ...saved,
-          sheets,
-          activeSheetId,
-          widgets: activeWidgets
-        }),
+        project: sanitizeProjectTables(saved),
         isDirty: false,
         isSaving: false
       });
@@ -660,20 +659,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
       const loaded = await res.json();
 
-      // Initialize sheets on load
-      const sheets = loaded.sheets && loaded.sheets.length > 0
-        ? loaded.sheets
-        : [{ id: "default", name: "Page 1", widgets: loaded.widgets || [] }];
-      const activeSheetId = loaded.activeSheetId || sheets[0].id;
-      const activeWidgets = sheets.find((s: any) => s.id === activeSheetId)?.widgets || sheets[0].widgets;
-
       set({
-        project: sanitizeProjectTables({
-          ...loaded,
-          sheets,
-          activeSheetId,
-          widgets: activeWidgets
-        }),
+        project: sanitizeProjectTables(loaded),
         activeFilters: [],
         selectedWidgetId: null,
         isDirty: false,

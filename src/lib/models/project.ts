@@ -16,6 +16,8 @@ const ProjectSchema = new Schema<IProject>(
     relationships: { type: Schema.Types.Mixed, default: [] },
     measures: { type: Schema.Types.Mixed, default: [] },
     widgets: { type: Schema.Types.Mixed, default: [] },
+    sheets: { type: Schema.Types.Mixed, default: [] },
+    activeSheetId: { type: String, default: "default" },
     canvasSettings: {
       type: Schema.Types.Mixed,
       default: {
