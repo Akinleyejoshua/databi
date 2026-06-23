@@ -59,6 +59,8 @@ export async function POST(req: NextRequest) {
       relationships: body.relationships || [],
       measures: body.measures || [],
       widgets: body.widgets || [],
+      sheets: body.sheets || [],
+      activeSheetId: body.activeSheetId || "",
       canvasSettings: body.canvasSettings || {
         backgroundColor: "#ffffff",
         width: 1200,
