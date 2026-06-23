@@ -45,6 +45,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
+function cleanTableName(name: string): string {
+  try {
+    return decodeURIComponent(name).replace(/%20/g, " ").trim();
+  } catch {
+    return name.replace(/%20/g, " ").trim();
+  }
+}
+
 function parseExcel(buffer: Buffer, fileName: string): DataTable[] {
   const workbook = XLSX.read(buffer, { type: "buffer", cellDates: true });
   const tables: DataTable[] = [];
@@ -62,7 +70,7 @@ function parseExcel(buffer: Buffer, fileName: string): DataTable[] {
 
     tables.push({
       id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-      name: sheetName || fileName.replace(/\.[^/.]+$/, ""),
+      name: cleanTableName(sheetName || fileName.replace(/\.[^/.]+$/, "")),
       columns,
       rows: jsonData,
       rowCount: jsonData.length,
@@ -84,7 +92,7 @@ function parseCsv(buffer: Buffer, fileName: string): DataTable {
 
   return {
     id: `${Date.now()}-${Math.random().toString(36).substring(2, 7)}`,
-    name: fileName.replace(/\.[^/.]+$/, ""),
+    name: cleanTableName(fileName.replace(/\.[^/.]+$/, "")),
     columns,
     rows: jsonData,
     rowCount: jsonData.length,

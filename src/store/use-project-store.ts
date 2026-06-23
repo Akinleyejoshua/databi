@@ -102,6 +102,24 @@ const defaultProject: Project = {
   canvasSettings: defaultCanvasSettings,
   filters: {},
 };
+function cleanTableName(name: string): string {
+  try {
+    return decodeURIComponent(name).replace(/%20/g, " ").trim();
+  } catch {
+    return name.replace(/%20/g, " ").trim();
+  }
+}
+
+function sanitizeProjectTables(project: Project | null): Project | null {
+  if (!project) return null;
+  return {
+    ...project,
+    tables: project.tables.map((t) => ({
+      ...t,
+      name: cleanTableName(t.name),
+    })),
+  };
+}
 
 export const useProjectStore = create<ProjectStore>((set, get) => ({
   project: null,
@@ -112,7 +130,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
   isLoading: false,
 
   /* --- Project Actions --- */
-  setProject: (project) => set({ project, activeFilters: [], selectedWidgetId: null, isDirty: false }),
+  setProject: (project) => set({ project: sanitizeProjectTables(project), activeFilters: [], selectedWidgetId: null, isDirty: false }),
 
   updateProjectMeta: (name, description) =>
     set((state) => ({
@@ -122,7 +140,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   resetProject: () =>
     set({
-      project: { ...defaultProject },
+      project: sanitizeProjectTables({ ...defaultProject }),
       activeFilters: [],
       selectedWidgetId: null,
       isDirty: false,
@@ -130,12 +148,24 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   /* --- Table Actions --- */
   addTable: (table) =>
-    set((state) => ({
-      project: state.project
-        ? { ...state.project, tables: [...state.project.tables, table] }
-        : null,
-      isDirty: true,
-    })),
+    set((state) => {
+      const cleanedTable = {
+        ...table,
+        name: cleanTableName(table.name),
+      };
+      return {
+        project: state.project
+          ? {
+              ...state.project,
+              tables: [
+                ...state.project.tables.filter((t) => t.id !== table.id),
+                cleanedTable,
+              ],
+            }
+          : null,
+        isDirty: true,
+      };
+    }),
 
   updateTable: (tableId, updates) =>
     set((state) => ({
@@ -605,12 +635,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const activeWidgets = sheets.find((s: any) => s.id === activeSheetId)?.widgets || sheets[0].widgets;
 
       set({
-        project: {
+        project: sanitizeProjectTables({
           ...saved,
           sheets,
           activeSheetId,
           widgets: activeWidgets
-        },
+        }),
         isDirty: false,
         isSaving: false
       });
@@ -638,12 +668,12 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const activeWidgets = sheets.find((s: any) => s.id === activeSheetId)?.widgets || sheets[0].widgets;
 
       set({
-        project: {
+        project: sanitizeProjectTables({
           ...loaded,
           sheets,
           activeSheetId,
           widgets: activeWidgets
-        },
+        }),
         activeFilters: [],
         selectedWidgetId: null,
         isDirty: false,

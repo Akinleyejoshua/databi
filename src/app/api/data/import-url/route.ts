@@ -145,6 +145,14 @@ export async function POST(req: NextRequest) {
   }
 }
 
+function cleanTableName(name: string): string {
+  try {
+    return decodeURIComponent(name).replace(/%20/g, " ").trim();
+  } catch {
+    return name.replace(/%20/g, " ").trim();
+  }
+}
+
 /**
  * Extracts a readable name from a URL
  */
@@ -156,10 +164,10 @@ function extractNameFromUrl(url: string): string {
 
     if (filename) {
       // Remove file extensions
-      return filename.replace(/\.[^/.]+$/, "");
+      return cleanTableName(filename.replace(/\.[^/.]+$/, ""));
     }
 
-    return urlObj.hostname || "Imported Data";
+    return cleanTableName(urlObj.hostname || "Imported Data");
   } catch {
     return "Imported Data";
   }

@@ -238,6 +238,14 @@ export async function fetchDataFromUrl(url: string): Promise<{ buffer: Buffer; c
   }
 }
 
+function cleanTableName(name: string): string {
+  try {
+    return decodeURIComponent(name).replace(/%20/g, " ").trim();
+  } catch {
+    return name.replace(/%20/g, " ").trim();
+  }
+}
+
 /**
  * Parses CSV data from buffer
  */
@@ -263,7 +271,7 @@ export function parseCsvBuffer(buffer: Buffer, name: string) {
   }
 
   return {
-    name,
+    name: cleanTableName(name),
     columns: buildColumns(jsonData),
     rows: jsonData,
     rowCount: jsonData.length,
@@ -296,7 +304,7 @@ export function parseExcelBuffer(buffer: Buffer, url: string) {
     if (jsonData.length === 0) continue;
 
     tables.push({
-      name: sheetName,
+      name: cleanTableName(sheetName),
       columns: buildColumns(jsonData),
       rows: jsonData,
       rowCount: jsonData.length,
@@ -354,7 +362,7 @@ export function parseJsonBuffer(buffer: Buffer, name: string) {
     const flattenedRows = rows.map(row => flattenObject(row));
 
     return {
-      name,
+      name: cleanTableName(name),
       columns: buildColumns(flattenedRows),
       rows: flattenedRows,
       rowCount: flattenedRows.length,
