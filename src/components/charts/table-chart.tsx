@@ -160,6 +160,16 @@ export default function TableChart({
     return String(val);
   };
 
+  const totals = useMemo(() => {
+    if (!hasData || !rows.length) return {};
+    const totalsObj: Record<string, number> = {};
+    config.values.forEach(v => {
+      const sum = rows.reduce((acc, row) => acc + (Number(row[v.columnName]) || 0), 0);
+      totalsObj[v.columnName] = sum;
+    });
+    return totalsObj;
+  }, [rows, config.values, hasData]);
+
   if (!hasData) {
     return (
       <div style={{ display: "flex", alignItems: "center", justifyContent: "center", height: `${height}px`, color: "var(--color-text-tertiary)" }}>
@@ -197,6 +207,16 @@ export default function TableChart({
             </tr>
           ))}
         </tbody>
+        <tfoot>
+          <tr style={{ background: "var(--color-bg-secondary)", borderTop: "2px solid var(--color-border)", fontWeight: "bold", position: "sticky", bottom: 0 }}>
+            <td style={{ padding: "10px 14px", color: "var(--color-text)" }}>Total</td>
+            {config.values.map(v => (
+              <td key={v.columnName} style={{ padding: "10px 14px", color: "var(--color-text)" }}>
+                {formatValue(totals[v.columnName], v.columnName)}
+              </td>
+            ))}
+          </tr>
+        </tfoot>
       </table>
     </div>
   );
