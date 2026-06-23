@@ -8,6 +8,7 @@ import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import type { DataType } from "@/types";
 import { generateKPIs, convertToJs, convertToDAX, type SuggestedKPI } from "@/lib/kpi-engine";
+import { executeMeasure } from "@/lib/measure-engine";
 
 export default function MeasuresModal() {
   const { isMeasureModalOpen, setMeasureModalOpen, addToast, selectedTableId, editingMeasureId, setEditingMeasureId } = useUiStore();
@@ -93,10 +94,10 @@ export default function MeasuresModal() {
     try {
       const table = project.tables?.find((t) => t.id === tableId);
       if (table && table.rows?.length > 0) {
-        const testFn = new Function("row", "rows", `try { return ${executableJs}; } catch(e) { return null; }`);
-        testFn(table.rows[0], table.rows);
+        const testFn = new Function("row", "rows", "measures", "executeMeasure", `try { return ${executableJs}; } catch(e) { return null; }`);
+        testFn(table.rows[0], table.rows, project.measures, executeMeasure);
       } else {
-        new Function("row", "rows", `return ${executableJs}`);
+        new Function("row", "rows", "measures", "executeMeasure", `return ${executableJs}`);
       }
     } catch (e) {
       addToast("Invalid formula syntax", "error");

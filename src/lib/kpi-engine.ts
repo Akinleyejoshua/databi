@@ -60,6 +60,14 @@ export function convertToJs(formula: string): string {
   return `(() => {
     const _get = (r, c) => {
       if (!r) return 0;
+      if (typeof measures !== 'undefined' && Array.isArray(measures)) {
+        const m = measures.find(x => x.name === c || x.id === c);
+        if (m) {
+          if (typeof executeMeasure === 'function') {
+            return executeMeasure(m, null, rows) || 0;
+          }
+        }
+      }
       if (r[c] !== undefined) return Number(r[c]) || 0;
       const s = '.' + c;
       for (const k in r) { if (k.endsWith(s)) return Number(r[k]) || 0; }

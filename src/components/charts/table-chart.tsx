@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import type { ChartConfig, DataTable, ActiveFilter, Relationship, Measure } from "@/types";
 import { applyFilters, joinTables, formatWithCurrency } from "@/lib/utils";
 import { convertToJs } from "@/lib/kpi-engine";
+import { executeMeasure } from "@/lib/measure-engine";
 
 interface Props {
   config: ChartConfig;
@@ -48,8 +49,8 @@ export default function TableChart({
         if (measure) {
           try {
             const formulaJs = convertToJs(measure.originalFormula || measure.formula);
-            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
-            val = String(evalFn(row, joinedRows));
+            const evalFn = new Function("row", "rows", "measures", "executeMeasure", `return ${formulaJs}`);
+            val = String(evalFn(row, joinedRows, measures, executeMeasure));
           } catch (e) {
             console.error("Error evaluating dimension measure in table:", e);
             val = "Error";
@@ -90,8 +91,8 @@ export default function TableChart({
           if (measure && matching.length > 0) {
             try {
               const formulaJs = convertToJs(measure.originalFormula || measure.formula);
-              const evalFn = new Function("row", "rows", `return ${formulaJs}`);
-              val = Number(evalFn(matching[0], matching)) || 0;
+              const evalFn = new Function("row", "rows", "measures", "executeMeasure", `return ${formulaJs}`);
+              val = Number(evalFn(matching[0], matching, measures, executeMeasure)) || 0;
             } catch (e) {
               console.error("Error evaluating value measure in table:", e);
             }

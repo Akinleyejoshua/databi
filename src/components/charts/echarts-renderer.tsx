@@ -15,6 +15,7 @@ import {
   CHART_COLORS 
 } from "@/lib/utils";
 import { convertToJs } from "@/lib/kpi-engine";
+import { executeMeasure } from "@/lib/measure-engine";
 
 const LOCATION_MAPPING: Record<string, Record<string, string>> = {
   nigeria: {
@@ -385,8 +386,8 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         if (measure) {
           try {
             const formulaJs = convertToJs(measure.originalFormula || measure.formula);
-            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
-            val = String(evalFn(row, rows));
+            const evalFn = new Function("row", "rows", "measures", "executeMeasure", `return ${formulaJs}`);
+            val = String(evalFn(row, rows, measures, executeMeasure));
           } catch (e) {
             console.error("Error evaluating dimension measure:", e);
             val = "Error";
@@ -428,8 +429,8 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           if (measure && matching.length > 0) {
             try {
               const formulaJs = convertToJs(measure.originalFormula || measure.formula);
-              const evalFn = new Function("row", "rows", `return ${formulaJs}`);
-              val = Number(evalFn(matching[0], matching)) || 0;
+              const evalFn = new Function("row", "rows", "measures", "executeMeasure", `return ${formulaJs}`);
+              val = Number(evalFn(matching[0], matching, measures, executeMeasure)) || 0;
             } catch (e) {
               console.error("Error evaluating sorting measure:", e);
             }
@@ -504,8 +505,8 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           if (!measureObj || matching.length === 0) return 0;
           try {
             const formulaJs = convertToJs(measureObj.originalFormula || measureObj.formula);
-            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
-            return Number(evalFn(matching[0], matching)) || 0;
+            const evalFn = new Function("row", "rows", "measures", "executeMeasure", `return ${formulaJs}`);
+            return Number(evalFn(matching[0], matching, measures, executeMeasure)) || 0;
           } catch (e) {
             console.error("Error evaluating value measure in chart:", e, measureObj.originalFormula || measureObj.formula);
             return 0;

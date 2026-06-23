@@ -5,6 +5,7 @@ import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter, Measure, Relationship } from "@/types";
 import { applyFilters, joinTables, abbreviateNumber, getCurrencySymbol, parseSafeNumber, CHART_COLORS, formatWithCurrency, formatAxisValue } from "@/lib/utils";
 import { convertToJs } from "@/lib/kpi-engine";
+import { executeMeasure } from "@/lib/measure-engine";
 
 interface Props {
   config: ChartConfig;
@@ -43,8 +44,8 @@ export default function StackedChart({ config, tables, filters, relationships = 
         if (measure) {
           try {
             const formulaJs = convertToJs(measure.originalFormula || measure.formula);
-            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
-            val = String(evalFn(row, rows));
+            const evalFn = new Function("row", "rows", "measures", "executeMeasure", `return ${formulaJs}`);
+            val = String(evalFn(row, rows, measures, executeMeasure));
           } catch (e) {
             console.error("Error evaluating dimension measure in stacked chart:", e);
             val = "Error";
@@ -74,8 +75,8 @@ export default function StackedChart({ config, tables, filters, relationships = 
           if (!measureObj || matching.length === 0) return 0;
           try {
             const formulaJs = convertToJs(measureObj.originalFormula || measureObj.formula);
-            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
-            return Number(evalFn(matching[0], matching)) || 0;
+            const evalFn = new Function("row", "rows", "measures", "executeMeasure", `return ${formulaJs}`);
+            return Number(evalFn(matching[0], matching, measures, executeMeasure)) || 0;
           } catch (e) {
             console.error("Error evaluating value measure in stacked chart:", e);
             return 0;

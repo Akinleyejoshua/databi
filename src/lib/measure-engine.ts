@@ -5,6 +5,7 @@
 
 import type { DataTable, Measure } from "@/types";
 import { convertToJs } from "@/lib/kpi-engine";
+import { useProjectStore } from "@/store/use-project-store";
 
 /**
  * Execute a measure formula against table data
@@ -20,10 +21,15 @@ export const executeMeasure = (
   }
 
   try {
+    const project = useProjectStore.getState().project;
+    const measures = project ? project.measures : [];
+
     const formulaJs = convertToJs(measure.originalFormula || measure.formula);
     const formulaFn = new Function(
       "row",
       "rows",
+      "measures",
+      "executeMeasure",
       `try { return ${formulaJs}; } catch(e) { console.error('Measure error:', e); return 0; }`
     );
 
@@ -33,7 +39,7 @@ export const executeMeasure = (
 
     // Try to execute as an aggregate function first
     try {
-      result = formulaFn(null, rows);
+      result = formulaFn(null, rows, measures, executeMeasure);
       if (result !== null && result !== undefined) {
         return Number(result);
       }
@@ -46,7 +52,7 @@ export const executeMeasure = (
     const values: number[] = [];
     for (const row of rows) {
       try {
-        const rowResult = formulaFn(row, rows);
+        const rowResult = formulaFn(row, rows, measures, executeMeasure);
         if (rowResult !== null && rowResult !== undefined) {
           values.push(Number(rowResult));
         }
