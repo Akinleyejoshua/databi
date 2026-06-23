@@ -108,15 +108,13 @@ export function convertToDAX(formula: string, tableName: string = "Table"): stri
 export function generateKPIs(table: DataTable): SuggestedKPI[] {
   const kpis: SuggestedKPI[] = [];
   const numericCols = table.columns.filter(c => c.type === "number");
-  const allCols = table.columns;
-  const colNames = allCols.map(c => c.name.toLowerCase());
 
   // --- 1. Business Logic Detection (Revenue, COGS, Profit, etc.) ---
 
   // REVENUE
-  const salesCol = allCols.find(c => /sales|revenue|amount|turnover|total_price|price_total/i.test(c.name));
-  const priceCol = allCols.find(c => /unit_price|price|rate|selling_price/i.test(c.name));
-  const qtyCol = allCols.find(c => /qty|quantity|count|volume|units_sold|units/i.test(c.name));
+  const salesCol = numericCols.find(c => /sales|revenue|amount|turnover|total_price|price_total/i.test(c.name));
+  const priceCol = numericCols.find(c => /unit_price|price|rate|selling_price/i.test(c.name));
+  const qtyCol = numericCols.find(c => /qty|quantity|count|volume|units_sold|units/i.test(c.name));
 
   if (salesCol) {
     kpis.push({
@@ -129,7 +127,7 @@ export function generateKPIs(table: DataTable): SuggestedKPI[] {
   } else if (priceCol && qtyCol) {
     kpis.push({
       name: "Total Revenue",
-      formula: `SUM([${priceCol.name}] * [${qtyCol.name}])`,
+      formula: `SUMX('${table.name}', [${priceCol.name}] * [${qtyCol.name}])`,
       dax: `SUMX('${table.name}', [${priceCol.name}] * [${qtyCol.name}])`,
       type: "number",
       description: "Total Revenue calculated as Price * Quantity"
@@ -137,8 +135,8 @@ export function generateKPIs(table: DataTable): SuggestedKPI[] {
   }
 
   // COGS & TOTAL COST
-  const costCol = allCols.find(c => /unit_cost|cost_per_unit|purchase_price|buy_price/i.test(c.name));
-  const totalCostCol = allCols.find(c => /total_cost|cogs|total_expense|cost_total/i.test(c.name));
+  const costCol = numericCols.find(c => /unit_cost|cost_per_unit|purchase_price|buy_price/i.test(c.name));
+  const totalCostCol = numericCols.find(c => /total_cost|cogs|total_expense|cost_total/i.test(c.name));
 
   if (totalCostCol) {
     kpis.push({
@@ -151,7 +149,7 @@ export function generateKPIs(table: DataTable): SuggestedKPI[] {
   } else if (costCol && qtyCol) {
     kpis.push({
       name: "Total Cost",
-      formula: `SUM([${costCol.name}] * [${qtyCol.name}])`,
+      formula: `SUMX('${table.name}', [${costCol.name}] * [${qtyCol.name}])`,
       dax: `SUMX('${table.name}', [${costCol.name}] * [${qtyCol.name}])`,
       type: "number",
       description: "Total Cost calculated as Unit Cost * Quantity"
@@ -159,8 +157,8 @@ export function generateKPIs(table: DataTable): SuggestedKPI[] {
   }
 
   // PROFIT (Calculated if Revenue and Cost are available)
-  const revenueRef = salesCol ? `SUM([${salesCol.name}])` : (priceCol && qtyCol ? `SUM([${priceCol.name}] * [${qtyCol.name}])` : null);
-  const costRef = totalCostCol ? `SUM([${totalCostCol.name}])` : (costCol && qtyCol ? `SUM([${costCol.name}] * [${qtyCol.name}])` : null);
+  const revenueRef = salesCol ? `SUM([${salesCol.name}])` : (priceCol && qtyCol ? `SUMX('${table.name}', [${priceCol.name}] * [${qtyCol.name}])` : null);
+  const costRef = totalCostCol ? `SUM([${totalCostCol.name}])` : (costCol && qtyCol ? `SUMX('${table.name}', [${costCol.name}] * [${qtyCol.name}])` : null);
 
   if (revenueRef && costRef) {
     kpis.push({
@@ -170,17 +168,13 @@ export function generateKPIs(table: DataTable): SuggestedKPI[] {
       type: "number",
       description: "Total Revenue minus Total Cost"
     });
-  }
 
-  // TOTAL CUSTOMERS
-  const customerCol = allCols.find(c => /customer|client|user_id|buyer|email/i.test(c.name));
-  if (customerCol) {
     kpis.push({
-      name: "Total Customers",
-      formula: `DISTINCTCOUNT([${customerCol.name}])`,
-      dax: `DISTINCTCOUNT('${table.name}'[${customerCol.name}])`,
+      name: "Gross Profit Margin",
+      formula: `DIVIDE(${revenueRef} - ${costRef}, ${revenueRef})`,
+      dax: `DIVIDE([Gross Profit], [Total Revenue])`,
       type: "number",
-      description: "Count of unique customers"
+      description: "Gross Profit margin percentage"
     });
   }
 
@@ -195,17 +189,6 @@ export function generateKPIs(table: DataTable): SuggestedKPI[] {
       dax: `SUM('${table.name}'[${col.name}])`,
       type: "number",
       description: `Sum of all values in ${col.name}`
-    });
-  });
-
-  // --- 3. Distinct counts for Categorical columns (limited) ---
-  allCols.filter(c => c.type === "string" && !kpis.some(k => k.formula.includes(`[${c.name}]`))).slice(0, 2).forEach(col => {
-    kpis.push({
-      name: `Unique ${col.name}s`,
-      formula: `DISTINCTCOUNT([${col.name}])`,
-      dax: `DISTINCTCOUNT('${table.name}'[${col.name}])`,
-      type: "number",
-      description: `Number of unique values in ${col.name}`
     });
   });
 
