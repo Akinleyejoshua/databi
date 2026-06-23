@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter, Measure, Relationship } from "@/types";
-import { applyFilters, joinTables, abbreviateNumber, getCurrencySymbol, parseSafeNumber, CHART_COLORS } from "@/lib/utils";
+import { applyFilters, joinTables, abbreviateNumber, getCurrencySymbol, parseSafeNumber, CHART_COLORS, formatWithCurrency, formatAxisValue } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
@@ -88,16 +88,30 @@ export default function StackedChart({ config, tables, filters, relationships = 
           trigger: "axis",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderColor: "var(--color-border)",
-          textStyle: { color: "var(--color-text)", fontSize: 11 }
+          textStyle: { color: "var(--color-text)", fontSize: 11 },
+          formatter: (params: any) => {
+            if (!params) return "";
+            if (Array.isArray(params)) {
+              return `<strong>${params[0].name}</strong><br/>` + params.map((p: any) => {
+                const val = Array.isArray(p.value) ? p.value[0] : p.value;
+                const formatted = typeof val === "number" ? formatWithCurrency(val, config.currency) : val;
+                return `${p.marker} ${p.seriesName}: ${formatted}`;
+              }).join("<br/>");
+            } else {
+              const val = Array.isArray(params.value) ? params.value[0] : params.value;
+              const formatted = typeof val === "number" ? formatWithCurrency(val, config.currency) : val;
+              return `${params.marker} ${params.name}: ${formatted}`;
+            }
+          }
         } : undefined,
         legend: config.showLegend ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
         grid: { left: "4%", right: "4%", top: 45, bottom: config.showLegend ? 45 : 30, containLabel: true },
-        xAxis: isHorizontalBar ? { type: "value", axisLabel: { fontSize: 10 } } : {
+        xAxis: isHorizontalBar ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency) } } : {
           type: "category",
           data: categories,
           axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10 }
         },
-        yAxis: isHorizontalBar ? { type: "category", data: categories } : { type: "value", axisLabel: { fontSize: 10 } },
+        yAxis: isHorizontalBar ? { type: "category", data: categories } : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency) } },
         series,
         animation: true,
         animationDuration: 1000,

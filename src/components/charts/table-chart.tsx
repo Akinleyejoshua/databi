@@ -2,7 +2,7 @@
 
 import { useMemo } from "react";
 import type { ChartConfig, DataTable, ActiveFilter, Relationship, Measure } from "@/types";
-import { applyFilters, joinTables } from "@/lib/utils";
+import { applyFilters, joinTables, formatWithCurrency } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
@@ -141,23 +141,12 @@ export default function TableChart({
     };
   }, [config, tables, filters, measures, relationships]);
 
-  const getCurrencySymbol = (currency?: string) => {
-    if (!currency) return "";
-    const symbols: Record<string, string> = {
-      USD: "$", EUR: "€", GBP: "£", NGN: "₦", INR: "₹", JPY: "¥", CNY: "¥", AUD: "$", CAD: "$", BRL: "R$"
-    };
-    return symbols[currency] || "";
-  };
-
-  const formatValue = (val: any, columnName: string) => {
-    if (typeof val === "number") {
-      const currency = config.currency;
-      const symbol = getCurrencySymbol(currency);
-      const isInteger = Number.isInteger(val);
-      const formatted = isInteger ? val.toLocaleString() : val.toFixed(2);
-      return `${symbol}${formatted}`;
-    }
-    return String(val);
+  const formatValue = (val: any) => {
+    if (val === undefined || val === null) return "-";
+    // Check if the value is actually numeric before formatting
+    const num = Number(val);
+    if (isNaN(num)) return String(val);
+    return formatWithCurrency(num, config.currency);
   };
 
   const totals = useMemo(() => {
@@ -201,7 +190,7 @@ export default function TableChart({
             >
               {columns.map(col => (
                 <td key={col} style={{ padding: "10px 14px", color: "var(--color-text-secondary)" }}>
-                  {formatValue(row[col], col)}
+                  {formatValue(row[col])}
                 </td>
               ))}
             </tr>
@@ -212,7 +201,7 @@ export default function TableChart({
             <td style={{ padding: "10px 14px", color: "var(--color-text)" }}>Total</td>
             {config.values.map(v => (
               <td key={v.columnName} style={{ padding: "10px 14px", color: "var(--color-text)" }}>
-                {formatValue(totals[v.columnName], v.columnName)}
+                {formatValue(totals[v.columnName])}
               </td>
             ))}
           </tr>

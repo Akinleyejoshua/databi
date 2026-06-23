@@ -275,3 +275,26 @@ export function debounce<T extends (...args: unknown[]) => unknown>(
 export function clamp(value: number, min: number, max: number): number {
   return Math.min(Math.max(value, min), max);
 }
+
+/**
+ * Format a number with currency symbol
+ */
+export function formatWithCurrency(value: number, currency?: string): string {
+  if (value === undefined || value === null) return "-";
+  if (!currency) return typeof value === 'number' ? value.toLocaleString() : String(value);
+  
+  const symbol = getCurrencySymbol(currency);
+  const formattedValue = typeof value === 'number' ? value.toLocaleString() : String(value);
+  return `${symbol}${formattedValue}`;
+}
+
+/**
+ * Format an axis value with optional abbreviation and currency
+ */
+export function formatAxisValue(v: number, currency?: string): string {
+  if (v === undefined || v === null) return "0";
+  const abbreviated = abbreviateNumber(v);
+  if (!currency) return abbreviated;
+  const symbol = getCurrencySymbol(currency);
+  return `${symbol}${abbreviated}`;
+}

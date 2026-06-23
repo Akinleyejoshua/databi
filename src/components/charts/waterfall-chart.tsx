@@ -3,7 +3,7 @@
 import { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter } from "@/types";
-import { CHART_COLORS, applyFilters, joinTables } from "@/lib/utils";
+import { CHART_COLORS, applyFilters, joinTables, formatWithCurrency, formatAxisValue } from "@/lib/utils";
 
 interface Props {
   config: ChartConfig;
@@ -68,11 +68,17 @@ export default function WaterfallChart({ config, tables, filters, height = 300 }
           trigger: "axis",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderColor: "var(--color-border)",
-          textStyle: { color: "var(--color-text)", fontSize: 11 }
+          textStyle: { color: "var(--color-text)", fontSize: 11 },
+          formatter: (params: any) => {
+            if (!params || !params.length) return "";
+            const p = params[0];
+            const formatted = typeof p.value === "number" ? formatWithCurrency(p.value, config.currency) : p.value;
+            return `${p.name}: <strong>${formatted}</strong>`;
+          }
         } : undefined,
         grid: { left: "4%", right: "4%", top: 45, bottom: 30, containLabel: true },
         xAxis: { type: "category", data: items.map(i => i.name) },
-        yAxis: { type: "value" },
+        yAxis: { type: "value", axisLabel: { formatter: (v: number) => formatAxisValue(v, config.currency) } },
         series: [{
           name: "Waterfall",
           type: "bar",
