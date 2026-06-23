@@ -88,19 +88,50 @@ export default function MeasuresModal() {
       return;
     }
 
+    const table = project.tables?.find((t) => t.id === tableId);
+    if (!table) {
+      addToast("Selected table not found", "error");
+      return;
+    }
+
+    // Gather all valid references
+    const availableColumns = new Set<string>();
+    table.columns.forEach(c => availableColumns.add(c.name.toLowerCase()));
+    
+    // Add columns from related tables to support relationships
+    if (project.relationships && project.relationships.length > 0) {
+      project.tables.forEach(t => {
+        t.columns.forEach(c => {
+          availableColumns.add(c.name.toLowerCase());
+          availableColumns.add(`${t.name.toLowerCase()}.${c.name.toLowerCase()}`);
+        });
+      });
+    }
+
+    const availableMeasures = new Set(project.measures.map(m => m.name.toLowerCase()));
+
+    // Verify all [ref] match a valid column or measure
+    const references = [...formula.matchAll(/\[([^"']+?)\]/g)].map(m => m[1].trim().toLowerCase());
+    for (const ref of references) {
+      if (!availableColumns.has(ref) && !availableMeasures.has(ref)) {
+        addToast(`Reference [${ref}] not found in table columns or measures`, "error");
+        return;
+      }
+    }
+
     const executableJs = convertToJs(formula);
 
-    // Validation
+    // Syntax and Execution Validation
     try {
-      const table = project.tables?.find((t) => t.id === tableId);
-      if (table && table.rows?.length > 0) {
-        const testFn = new Function("row", "rows", "measures", "executeMeasure", `try { return ${executableJs}; } catch(e) { return null; }`);
+      if (table.rows?.length > 0) {
+        // Run without internal try-catch to propagate column reference or math errors
+        const testFn = new Function("row", "rows", "measures", "executeMeasure", `return ${executableJs}`);
         testFn(table.rows[0], table.rows, project.measures, executeMeasure);
       } else {
         new Function("row", "rows", "measures", "executeMeasure", `return ${executableJs}`);
       }
     } catch (e) {
-      addToast("Invalid formula syntax", "error");
+      addToast("Invalid formula syntax or runtime error during test evaluation", "error");
       console.error("Formula validation error:", e);
       return;
     }

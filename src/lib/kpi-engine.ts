@@ -18,6 +18,14 @@ export interface SuggestedKPI {
 export function convertToJs(formula: string): string {
   let js = formula;
 
+  // 0. Support PowerBI SUMX, AVERAGEX, and DIVIDE
+  js = js.replace(/SUMX\(\s*['"]?.*?['"]?\s*,\s*(.*?)\s*\)/gi, "SUM($1)");
+  js = js.replace(/AVERAGEX\(\s*['"]?.*?['"]?\s*,\s*(.*?)\s*\)/gi, "AVG($1)");
+  js = js.replace(/DIVIDE\(\s*([^,]+?)\s*,\s*([^,)]+?)\s*(?:,\s*([^)]+?)\s*)?\)/gi, (_, num, den, alt) => {
+    const fallback = alt ? alt.trim() : "0";
+    return `((${den.trim()}) === 0 ? ${fallback} : (${num.trim()}) / (${den.trim()}))`;
+  });
+
   // Helper to replace [Col] with _get(rowVar, "Col") inside a string
   const replaceCols = (str: string, rowVar: string = "r") => {
     return str.replace(/\[([^"']+?)\]/g, (_, col) => `_get(${rowVar}, "${col.trim()}")`);
