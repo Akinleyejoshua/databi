@@ -14,6 +14,7 @@ import type {
   CanvasSettings,
   ActiveFilter,
   WidgetStyle,
+  Sheet,
 } from "@/types";
 import { generateId, getDefaultWidgetStyle } from "@/lib/utils";
 
@@ -57,6 +58,12 @@ interface ProjectStore {
   updateLayouts: (
     layouts: { id: string; x: number; y: number; w: number; h: number }[]
   ) => void;
+
+  /* --- Sheet / Page Actions --- */
+  addSheet: (name: string) => void;
+  renameSheet: (sheetId: string, newName: string) => void;
+  removeSheet: (sheetId: string) => void;
+  setActiveSheet: (sheetId: string) => void;
 
   /* --- Canvas Settings --- */
   updateCanvasSettings: (settings: Partial<CanvasSettings>) => void;
@@ -266,81 +273,260 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   /* --- Widget Actions --- */
   addWidget: (widget) =>
-    set((state) => ({
-      project: state.project
-        ? { ...state.project, widgets: [...state.project.widgets, widget] }
-        : null,
-      isDirty: true,
-      selectedWidgetId: widget.id,
-    })),
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+      const activeId = state.project.activeSheetId || "default";
+
+      const updatedSheets = sheets.map(s => {
+        if (s.id === activeId) {
+          return { ...s, widgets: [...s.widgets, widget] };
+        }
+        return s;
+      });
+
+      const activeWidgets = updatedSheets.find(s => s.id === activeId)?.widgets || [];
+
+      return {
+        project: {
+          ...state.project,
+          sheets: updatedSheets,
+          widgets: activeWidgets
+        },
+        isDirty: true,
+        selectedWidgetId: widget.id,
+      };
+    }),
 
   updateWidget: (widgetId, updates) =>
-    set((state) => ({
-      project: state.project
-        ? {
-            ...state.project,
-            widgets: state.project.widgets.map((w) =>
-              w.id === widgetId ? { ...w, ...updates } : w
-            ),
-          }
-        : null,
-      isDirty: true,
-    })),
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+      const activeId = state.project.activeSheetId || "default";
+
+      const updatedSheets = sheets.map(s => {
+        if (s.id === activeId) {
+          return {
+            ...s,
+            widgets: s.widgets.map((w) => (w.id === widgetId ? { ...w, ...updates } : w))
+          };
+        }
+        return s;
+      });
+
+      const activeWidgets = updatedSheets.find(s => s.id === activeId)?.widgets || [];
+
+      return {
+        project: {
+          ...state.project,
+          sheets: updatedSheets,
+          widgets: activeWidgets
+        },
+        isDirty: true,
+      };
+    }),
 
   updateWidgetStyle: (widgetId, styleUpdates) =>
-    set((state) => ({
-      project: state.project
-        ? {
-            ...state.project,
-            widgets: state.project.widgets.map((w) =>
-              w.id === widgetId
-                ? { ...w, style: { ...w.style, ...styleUpdates } }
-                : w
-            ),
-          }
-        : null,
-      isDirty: true,
-    })),
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+      const activeId = state.project.activeSheetId || "default";
+
+      const updatedSheets = sheets.map(s => {
+        if (s.id === activeId) {
+          return {
+            ...s,
+            widgets: s.widgets.map((w) => (w.id === widgetId ? { ...w, style: { ...w.style, ...styleUpdates } } : w))
+          };
+        }
+        return s;
+      });
+
+      const activeWidgets = updatedSheets.find(s => s.id === activeId)?.widgets || [];
+
+      return {
+        project: {
+          ...state.project,
+          sheets: updatedSheets,
+          widgets: activeWidgets
+        },
+        isDirty: true,
+      };
+    }),
 
   removeWidget: (widgetId) =>
-    set((state) => ({
-      project: state.project
-        ? {
-            ...state.project,
-            widgets: state.project.widgets.filter((w) => w.id !== widgetId),
-          }
-        : null,
-      selectedWidgetId:
-        state.selectedWidgetId === widgetId ? null : state.selectedWidgetId,
-      isDirty: true,
-    })),
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+      const activeId = state.project.activeSheetId || "default";
+
+      const updatedSheets = sheets.map(s => {
+        if (s.id === activeId) {
+          return {
+            ...s,
+            widgets: s.widgets.filter((w) => w.id !== widgetId)
+          };
+        }
+        return s;
+      });
+
+      const activeWidgets = updatedSheets.find(s => s.id === activeId)?.widgets || [];
+
+      return {
+        project: {
+          ...state.project,
+          sheets: updatedSheets,
+          widgets: activeWidgets
+        },
+        selectedWidgetId: state.selectedWidgetId === widgetId ? null : state.selectedWidgetId,
+        isDirty: true,
+      };
+    }),
 
   setSelectedWidget: (widgetId) => set({ selectedWidgetId: widgetId }),
 
   updateLayouts: (layouts) =>
-    set((state) => ({
-      project: state.project
-        ? {
-            ...state.project,
-            widgets: state.project.widgets.map((w) => {
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+      const activeId = state.project.activeSheetId || "default";
+
+      const updatedSheets = sheets.map(s => {
+        if (s.id === activeId) {
+          return {
+            ...s,
+            widgets: s.widgets.map((w) => {
               const layout = layouts.find((l) => l.id === w.id);
               return layout
                 ? {
                     ...w,
-                    layout: {
-                      ...w.layout,
-                      x: layout.x,
-                      y: layout.y,
-                      w: layout.w,
-                      h: layout.h,
-                    },
+                    layout: { ...w.layout, x: layout.x, y: layout.y, w: layout.w, h: layout.h }
                   }
                 : w;
-            }),
-          }
-        : null,
-      isDirty: true,
-    })),
+            })
+          };
+        }
+        return s;
+      });
+
+      const activeWidgets = updatedSheets.find(s => s.id === activeId)?.widgets || [];
+
+      return {
+        project: {
+          ...state.project,
+          sheets: updatedSheets,
+          widgets: activeWidgets
+        },
+        isDirty: true,
+      };
+    }),
+
+  /* --- Sheet / Page Actions --- */
+  addSheet: (name) =>
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+      
+      const newSheetId = generateId();
+      const newSheet: Sheet = {
+        id: newSheetId,
+        name: name || `Page ${sheets.length + 1}`,
+        widgets: []
+      };
+
+      const updatedSheets = [...sheets, newSheet];
+
+      return {
+        project: {
+          ...state.project,
+          sheets: updatedSheets,
+          activeSheetId: newSheetId,
+          widgets: []
+        },
+        selectedWidgetId: null,
+        isDirty: true,
+      };
+    }),
+
+  renameSheet: (sheetId, newName) =>
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+      
+      const updatedSheets = sheets.map(s => s.id === sheetId ? { ...s, name: newName } : s);
+
+      return {
+        project: {
+          ...state.project,
+          sheets: updatedSheets
+        },
+        isDirty: true,
+      };
+    }),
+
+  removeSheet: (sheetId) =>
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+      
+      // Prevent deleting the last sheet
+      if (sheets.length <= 1) return {};
+
+      const updatedSheets = sheets.filter(s => s.id !== sheetId);
+      
+      let nextActiveId = state.project.activeSheetId || "default";
+      if (nextActiveId === sheetId) {
+        nextActiveId = updatedSheets[0].id;
+      }
+
+      const activeWidgets = updatedSheets.find(s => s.id === nextActiveId)?.widgets || [];
+
+      return {
+        project: {
+          ...state.project,
+          sheets: updatedSheets,
+          activeSheetId: nextActiveId,
+          widgets: activeWidgets
+        },
+        selectedWidgetId: null,
+        isDirty: true,
+      };
+    }),
+
+  setActiveSheet: (sheetId) =>
+    set((state) => {
+      if (!state.project) return {};
+      const sheets = state.project.sheets && state.project.sheets.length > 0
+        ? state.project.sheets
+        : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
+
+      const targetSheet = sheets.find(s => s.id === sheetId) || sheets[0];
+      
+      return {
+        project: {
+          ...state.project,
+          activeSheetId: targetSheet.id,
+          widgets: targetSheet.widgets
+        },
+        selectedWidgetId: null,
+      };
+    }),
 
   /* --- Canvas Settings --- */
   updateCanvasSettings: (settings) =>
@@ -404,7 +590,24 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       if (!res.ok) throw new Error("Failed to save project");
 
       const saved = await res.json();
-      set({ project: saved, isDirty: false, isSaving: false });
+      
+      // Parse sheets from loaded project
+      const sheets = saved.sheets && saved.sheets.length > 0
+        ? saved.sheets
+        : [{ id: "default", name: "Page 1", widgets: saved.widgets || [] }];
+      const activeSheetId = saved.activeSheetId || sheets[0].id;
+      const activeWidgets = sheets.find((s: any) => s.id === activeSheetId)?.widgets || sheets[0].widgets;
+
+      set({
+        project: {
+          ...saved,
+          sheets,
+          activeSheetId,
+          widgets: activeWidgets
+        },
+        isDirty: false,
+        isSaving: false
+      });
     } catch (error) {
       console.error("Save error:", error);
       set({ isSaving: false });
@@ -419,8 +622,27 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       const res = await fetch(`/api/projects/${id}`, { cache: "no-store" });
       if (!res.ok) throw new Error("Failed to load project");
 
-      const project = await res.json();
-      set({ project, activeFilters: [], selectedWidgetId: null, isDirty: false, isLoading: false });
+      const loaded = await res.json();
+
+      // Initialize sheets on load
+      const sheets = loaded.sheets && loaded.sheets.length > 0
+        ? loaded.sheets
+        : [{ id: "default", name: "Page 1", widgets: loaded.widgets || [] }];
+      const activeSheetId = loaded.activeSheetId || sheets[0].id;
+      const activeWidgets = sheets.find((s: any) => s.id === activeSheetId)?.widgets || sheets[0].widgets;
+
+      set({
+        project: {
+          ...loaded,
+          sheets,
+          activeSheetId,
+          widgets: activeWidgets
+        },
+        activeFilters: [],
+        selectedWidgetId: null,
+        isDirty: false,
+        isLoading: false
+      });
     } catch (error) {
       console.error("Load error:", error);
       set({ isLoading: false });

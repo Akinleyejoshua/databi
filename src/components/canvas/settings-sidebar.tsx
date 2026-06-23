@@ -340,6 +340,33 @@ export default function SettingsModal() {
                 </div>
 
                 <div className={styles.field}>
+                  <label className="label">Row Filter / Limit</label>
+                  <select className="select" value={widget.chartConfig.limitType || "all"} onChange={(e) =>
+                    updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, limitType: e.target.value as any } })
+                  }>
+                    <option value="all">All Values (No Limit)</option>
+                    <option value="top">Top Values</option>
+                    <option value="bottom">Bottom Values</option>
+                    <option value="first">First Values</option>
+                    <option value="last">Last Values</option>
+                  </select>
+                </div>
+
+                {widget.chartConfig.limitType && widget.chartConfig.limitType !== "all" && (
+                  <div className={styles.field}>
+                    <label className="label">Limit Count</label>
+                    <input 
+                      type="number" 
+                      className="input" 
+                      min="1" 
+                      max="1000" 
+                      value={widget.chartConfig.limitCount ?? 10} 
+                      onChange={(e) => updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, limitCount: parseInt(e.target.value) || 10 } })} 
+                    />
+                  </div>
+                )}
+
+                <div className={styles.field}>
                   <label className="label" style={{ display: "flex", gap: "8px", alignItems: "center" }}>
                     <input type="checkbox" checked={widget.chartConfig.showLegend} onChange={(e) =>
                       updateWidget(widget.id, { chartConfig: { ...widget.chartConfig!, showLegend: e.target.checked } })
@@ -430,7 +457,42 @@ export default function SettingsModal() {
                       max="10" 
                       value={widget.kpiConfig.decimalPlaces ?? 2} 
                       onChange={(e) => updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, decimalPlaces: parseInt(e.target.value) || 2 } })} 
-                    />
+                      />
+                  </div>
+                )}
+
+                <div className={styles.field}>
+                  <label className="label">Comparison Column (Optional Trend)</label>
+                  <select 
+                    className="select" 
+                    value={widget.kpiConfig.comparisonColumn || ""} 
+                    onChange={(e) => updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, comparisonColumn: e.target.value || undefined } })}
+                  >
+                    <option value="">No Comparison (No Trend)</option>
+                    {project?.tables
+                      .find((t) => t.id === widget.kpiConfig?.tableId)
+                      ?.columns.filter((c) => c.type === "number")
+                      .map((c) => (
+                        <option key={c.name} value={c.name}>{c.name}</option>
+                      ))
+                    }
+                  </select>
+                </div>
+
+                {widget.kpiConfig.comparisonColumn && (
+                  <div className={styles.field}>
+                    <label className="label">Comparison Aggregation</label>
+                    <select 
+                      className="select" 
+                      value={widget.kpiConfig.comparisonAggregation || widget.kpiConfig.aggregation} 
+                      onChange={(e) => updateWidget(widget.id, { kpiConfig: { ...widget.kpiConfig!, comparisonAggregation: e.target.value as any } })}
+                    >
+                      <option value="sum">Sum</option>
+                      <option value="average">Average</option>
+                      <option value="count">Count</option>
+                      <option value="min">Min</option>
+                      <option value="max">Max</option>
+                    </select>
                   </div>
                 )}
               </>

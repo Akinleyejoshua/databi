@@ -411,7 +411,58 @@ export default function EChartsRenderer({ config, tables, filters, relationships
       groups.get(groupKey)!.push(row);
     });
 
-    const categories = Array.from(categoriesSet);
+    let categories = Array.from(categoriesSet);
+
+    // Apply Top / Bottom / First / Last limits and sorting
+    const limitType = config.limitType || "all";
+    const limitCount = config.limitCount || 10;
+
+    if (limitType !== "all" && config.values.length > 0) {
+      const sortingValueField = config.values[0];
+      let categoryValues = categories.map((cat) => {
+        const matching = groups.get(cat) || [];
+        let val = 0;
+
+        if (sortingValueField.aggregation === "measure") {
+          const measure = measures.find((m) => m.id === sortingValueField.columnName);
+          if (measure && matching.length > 0) {
+            try {
+              const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+              val = Number(evalFn(matching[0], matching)) || 0;
+            } catch (e) {}
+          }
+        } else {
+          const vals = matching.map((r) => parseSafeNumber(r[sortingValueField.columnName]));
+          const sampleVal = matching[0]?.[sortingValueField.columnName];
+          const isActuallyNumeric = typeof sampleVal === "number" || (!isNaN(parseFloat(String(sampleVal))) && String(sampleVal).length > 0);
+          const agg = (!isActuallyNumeric && (sortingValueField.aggregation === "sum" || sortingValueField.aggregation === "average")) ? "count" : (sortingValueField.aggregation || "sum");
+          switch (agg) {
+            case "sum": val = vals.reduce((a, b) => a + b, 0); break;
+            case "average": val = vals.length ? vals.reduce((a, b) => a + b, 0) / vals.length : 0; break;
+            case "count": val = matching.length; break;
+            case "min": val = vals.length ? Math.min(...vals) : 0; break;
+            case "max": val = vals.length ? Math.max(...vals) : 0; break;
+            default: val = vals[0] || 0;
+          }
+        }
+        return { category: cat, metricValue: val };
+      });
+
+      if (limitType === "top") {
+        categoryValues.sort((a, b) => b.metricValue - a.metricValue);
+        categoryValues = categoryValues.slice(0, limitCount);
+      } else if (limitType === "bottom") {
+        categoryValues.sort((a, b) => a.metricValue - b.metricValue);
+        categoryValues = categoryValues.slice(0, limitCount);
+      } else if (limitType === "first") {
+        categoryValues = categoryValues.slice(0, limitCount);
+      } else if (limitType === "last") {
+        categoryValues = categoryValues.slice(-limitCount);
+      }
+
+      categories = categoryValues.map((item) => item.category);
+    }
+
     const colors = config.colorScheme?.length ? config.colorScheme : CHART_COLORS;
 
     // Determine Axis Types (PowerBI style)
@@ -517,7 +568,11 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           trigger: isPie || isMap ? "item" : "axis",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
           borderColor: "var(--color-border)",
-          textStyle: { color: "var(--color-text)", fontSize: 11 },
+          borderWidth: 1,
+          borderRadius: 10,
+          padding: [10, 14],
+          extraCssText: "backdrop-filter: blur(8px); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05);",
+          textStyle: { color: "var(--color-text)", fontSize: 11, fontFamily: "inherit" },
           formatter: isMap ? (params: any) => {
             if (Array.isArray(params)) return params[0].name;
             const data = params.data;
@@ -528,22 +583,51 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         } : undefined,
         legend: config.showLegend && !isMap ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
         visualMap,
-        grid: isPie || isMap ? undefined : { left: "4%", right: "4%", top: 45, bottom: config.showLegend ? 45 : 30, containLabel: true },
+        grid: isPie || isMap ? undefined : { left: "4%", right: "4%", top: 50, bottom: config.showLegend ? 50 : 35, containLabel: true },
         xAxis: isPie || isMap ? undefined : (isHorizontalBar
-          ? { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency) }, axisName: config.xAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
+          ? { 
+              type: "value", 
+              axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency), color: "var(--color-text-secondary)" }, 
+              axisName: config.xAxisLabel || undefined, 
+              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 },
+              axisLine: { show: false },
+              axisTick: { show: false },
+              splitLine: { show: true, lineStyle: { type: "dashed", color: "var(--color-border-light)", width: 0.8 } }
+            }
           : {
-            type: showAsValueAxis ? "value" : "category",
-            data: showAsValueAxis ? undefined : categories,
-            axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: "var(--color-text-secondary)" },
-            axisName: config.xAxisLabel || undefined,
-            axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 }
-          }),
+              type: showAsValueAxis ? "value" : "category",
+              data: showAsValueAxis ? undefined : categories,
+              axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: "var(--color-text-secondary)" },
+              axisName: config.xAxisLabel || undefined,
+              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 },
+              axisLine: { show: true, lineStyle: { color: "var(--color-border)" } },
+              axisTick: { show: false },
+              splitLine: { show: false }
+            }),
         yAxis: isPie || isMap ? undefined : (isHorizontalBar
-          ? { type: "category", data: categories, axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }
-          : { type: "value", axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency), color: "var(--color-text-secondary)" }, axisName: config.yAxisLabel || undefined, axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 } }),
+          ? { 
+              type: "category", 
+              data: categories, 
+              axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" }, 
+              axisName: config.yAxisLabel || undefined, 
+              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 },
+              axisLine: { show: true, lineStyle: { color: "var(--color-border)" } },
+              axisTick: { show: false },
+              splitLine: { show: false }
+            }
+          : { 
+              type: "value", 
+              axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency), color: "var(--color-text-secondary)" }, 
+              axisName: config.yAxisLabel || undefined, 
+              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 },
+              axisLine: { show: false },
+              axisTick: { show: false },
+              splitLine: { show: true, lineStyle: { type: "dashed", color: "var(--color-border-light)", width: 0.8 } }
+            }),
         series,
         animation: true,
-        animationDuration: 1000,
+        animationDuration: 1200,
+        animationEasing: "cubicOut"
       }
     };
   }, [config, tables, filters, measures, relationships]);
@@ -793,14 +877,90 @@ function normalizeStateName(name: string): string {
     .trim();
 }
 
+function getGradientColor(color: string, horizontal = false) {
+  if (!color || !color.startsWith('#')) return color;
+  const hex = color.replace('#', '');
+  const r = parseInt(hex.substring(0, 2), 16);
+  const g = parseInt(hex.substring(2, 4), 16);
+  const b = parseInt(hex.substring(4, 6), 16);
+  return {
+    type: 'linear',
+    x: 0,
+    y: 0,
+    x2: horizontal ? 1 : 0,
+    y2: horizontal ? 0 : 1,
+    colorStops: [
+      { offset: 0, color: `rgba(${r}, ${g}, ${b}, 0.9)` },
+      { offset: 1, color: `rgba(${r}, ${g}, ${b}, 0.25)` }
+    ]
+  };
+}
+
 function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number, mapName: string = "world", isMap: boolean = false) {
+  const currentColor = colors[index % colors.length] || "var(--color-primary)";
+
   switch (chartType) {
-    case "bar": return { ...base, type: "bar", borderRadius: [0, 4, 4, 0] };
-    case "column": return { ...base, type: "bar", borderRadius: [4, 4, 0, 0] };
-    case "line": case "time-series": return { ...base, type: "line", smooth: true, symbol: "circle", symbolSize: 6 };
-    case "area": return { ...base, type: "line", smooth: true, areaStyle: { opacity: 0.2 }, symbol: "circle", symbolSize: 4 };
-    case "step": return { ...base, type: "line", step: "start", smooth: false, symbol: "circle", symbolSize: 6, lineStyle: { width: 2 } };
-    case "scatter": return { ...base, type: "scatter", symbolSize: 10, itemStyle: { ...base.itemStyle, opacity: 0.7 } };
+    case "bar": 
+      return { 
+        ...base, 
+        type: "bar", 
+        itemStyle: { 
+          color: getGradientColor(currentColor, true),
+          borderRadius: [0, 6, 6, 0] 
+        },
+        barGap: "20%",
+        barCategoryGap: "30%"
+      };
+    case "column": 
+      return { 
+        ...base, 
+        type: "bar", 
+        itemStyle: { 
+          color: getGradientColor(currentColor, false),
+          borderRadius: [6, 6, 0, 0] 
+        },
+        barGap: "20%",
+        barCategoryGap: "30%"
+      };
+    case "line": case "time-series": 
+      return { 
+        ...base, 
+        type: "line", 
+        smooth: true, 
+        symbol: "circle", 
+        symbolSize: 6,
+        lineStyle: { width: 3, shadowColor: "rgba(0,0,0,0.1)", shadowBlur: 6, shadowOffsetY: 3 }
+      };
+    case "area": 
+      return { 
+        ...base, 
+        type: "line", 
+        smooth: true, 
+        areaStyle: { 
+          color: getGradientColor(currentColor, false),
+          opacity: 0.8
+        }, 
+        symbol: "circle", 
+        symbolSize: 5,
+        lineStyle: { width: 3, shadowColor: "rgba(0,0,0,0.1)", shadowBlur: 6, shadowOffsetY: 3 }
+      };
+    case "step": 
+      return { 
+        ...base, 
+        type: "line", 
+        step: "start", 
+        smooth: false, 
+        symbol: "circle", 
+        symbolSize: 6, 
+        lineStyle: { width: 2.5 } 
+      };
+    case "scatter": 
+      return { 
+        ...base, 
+        type: "scatter", 
+        symbolSize: 10, 
+        itemStyle: { ...base.itemStyle, opacity: 0.7 } 
+      };
     case "map":
       return {
         type: "map",
@@ -818,13 +978,17 @@ function buildSeriesObject(base: any, chartType: string, categories: string[], d
       return {
         type: "pie",
         name: base.name,
-        radius: chartType === "donut" ? ["45%", "75%"] : "75%",
+        radius: chartType === "donut" ? ["48%", "72%"] : "72%",
         avoidLabelOverlap: true,
-        itemStyle: { borderRadius: 6, borderColor: "#fff", borderWidth: 2 },
+        itemStyle: { borderRadius: 8, borderColor: "var(--color-bg)", borderWidth: 2 },
         data: categories.map((cat, j) => ({ name: cat, value: data[j], itemStyle: { color: colors[j % colors.length] } })),
-        label: { show: true, fontSize: 10, formatter: "{b}: {d}%" },
-        emphasis: { label: { show: true, fontSize: 12, fontWeight: "bold" } }
+        label: { show: true, fontSize: 10, formatter: "{b}: {d}%", color: "var(--color-text-secondary)" },
+        emphasis: { 
+          label: { show: true, fontSize: 12, fontWeight: "bold" },
+          itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: "rgba(0,0,0,0.15)" }
+        }
       };
-    default: return { ...base, type: "bar" };
+    default: 
+      return { ...base, type: "bar" };
   }
 }

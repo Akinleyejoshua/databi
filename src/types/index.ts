@@ -93,7 +93,9 @@ export type ChartType =
   | "gauge"
   | "rag-status"
   | "map"
-  | "table";
+  | "table"
+  | "pictograph"
+  | "time-series";
 
 
 export interface WidgetField {
@@ -128,6 +130,8 @@ export interface ChartConfig {
   mapCountry?: string; // e.g., "Nigeria", "USA"
   customMapUrl?: string; // URL to a GeoJSON file
   currency?: string; // e.g., "USD", "EUR", "GBP", etc.
+  limitType?: "all" | "top" | "bottom" | "first" | "last";
+  limitCount?: number;
 }
 
 export interface SlicerConfig {
@@ -190,6 +194,12 @@ export interface CanvasSettings {
   rowHeight: number;
 }
 
+export interface Sheet {
+  id: string;
+  name: string;
+  widgets: Widget[];
+}
+
 /* ---------- Project ---------- */
 
 export interface Project {
@@ -201,6 +211,8 @@ export interface Project {
   relationships: Relationship[];
   measures: Measure[];
   widgets: Widget[];
+  sheets?: Sheet[];
+  activeSheetId?: string;
   canvasSettings: CanvasSettings;
   filters: Record<string, unknown>;
   shareToken?: string;

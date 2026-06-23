@@ -13,7 +13,7 @@ import TextWidget from "@/components/widgets/text-widget";
 import KpiWidget from "@/components/widgets/kpi-widget";
 import SlicerWidget from "@/components/widgets/slicer-widget";
 import AiSummaryWidget from "@/components/widgets/ai-summary-widget";
-import { Settings, GripHorizontal, BarChart3, Target, Filter, Bot, Type, MousePointer2, Hand, RotateCcw, RotateCw } from "lucide-react";
+import { Settings, GripHorizontal, BarChart3, Target, Filter, Bot, Type, MousePointer2, Hand, RotateCcw, RotateCw, Plus, X } from "lucide-react";
 import styles from "./canvas-area.module.css";
 
 interface Props {
@@ -21,14 +21,32 @@ interface Props {
 }
 
 export default function CanvasArea({ isSharePage }: Props) {
-  const { project, selectedWidgetId, setSelectedWidget, updateLayouts } = useProjectStore();
+  const { 
+    project, 
+    selectedWidgetId, 
+    setSelectedWidget, 
+    updateLayouts,
+    addSheet,
+    renameSheet,
+    removeSheet,
+    setActiveSheet
+  } = useProjectStore();
   const { isPreviewMode, setSettingsModalOpen, cursorMode, setCursorMode } = useUiStore();
   const { undo, redo, canUndo, canRedo } = useHistoryShortcuts();
   const [hasMounted, setHasMounted] = useState(false);
+  const [editingSheetId, setEditingSheetId] = useState<string | null>(null);
+  const [editingName, setEditingName] = useState("");
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerWidth, setContainerWidth] = useState(1200);
   const [canvasHeight, setCanvasHeight] = useState<number | string>("calc(100vh - 100px)");
   const [canvasWidth, setCanvasWidth] = useState<number | string>("100%");
+
+  const sheets = useMemo(() => {
+    if (!project) return [];
+    return project.sheets && project.sheets.length > 0
+      ? project.sheets
+      : [{ id: "default", name: "Page 1", widgets: project.widgets || [] }];
+  }, [project?.sheets, project?.widgets]);
 
   // Pan state
   const isPanning = useRef(false);
@@ -179,6 +197,19 @@ export default function CanvasArea({ isSharePage }: Props) {
     }
   };
 
+  const activeSheetId = project.activeSheetId || "default";
+
+  const handleAddPage = () => {
+    addSheet(`Page ${sheets.length + 1}`);
+  };
+
+  const handleRenameSubmit = (sheetId: string) => {
+    if (editingName.trim()) {
+      renameSheet(sheetId, editingName.trim());
+    }
+    setEditingSheetId(null);
+  };
+
   return (
     <div 
       className={styles["canvas-viewport"]} 
@@ -203,7 +234,7 @@ export default function CanvasArea({ isSharePage }: Props) {
           top: 0,
           left: 0,
           right: 0,
-          bottom: 0,
+          bottom: "40px", // leave space for sheets bar
           overflow: "auto",
           cursor: cursorMode === "pan" ? "grab" : "default"
         }}
@@ -326,7 +357,7 @@ export default function CanvasArea({ isSharePage }: Props) {
 
       {/* Figma-style Floating Toolbar */}
       {(!isPreviewMode || isSharePage) && (
-        <div className={styles["canvas-toolbar"]} onMouseDown={(e) => e.stopPropagation()}>
+        <div className={styles["canvas-toolbar"]} onMouseDown={(e) => e.stopPropagation()} style={{ bottom: "56px" }}>
           <div className="tooltip-wrapper">
             <button 
               className={`${styles["tool-btn"]} ${cursorMode === "select" ? styles["tool-btn--active"] : ""}`}
@@ -379,6 +410,144 @@ export default function CanvasArea({ isSharePage }: Props) {
           </span>
         </div>
       )}
+
+      {/* Sheets / Pages Bar (PowerBI-style) */}
+      <div 
+        className={styles["sheets-bar"]}
+        style={{
+          position: "absolute",
+          bottom: 0,
+          left: 0,
+          right: 0,
+          height: "40px",
+          backgroundColor: "var(--color-bg-secondary)",
+          borderTop: "1px solid var(--color-border)",
+          display: "flex",
+          alignItems: "center",
+          padding: "0 16px",
+          gap: "12px",
+          zIndex: 10,
+          userSelect: "none"
+        }}
+      >
+        <div style={{ display: "flex", overflowX: "auto", gap: "4px", height: "100%", alignItems: "flex-end", flex: 1 }}>
+          {sheets.map((sheet) => {
+            const isActive = sheet.id === activeSheetId;
+            const isEditing = sheet.id === editingSheetId;
+
+            return (
+              <div
+                key={sheet.id}
+                onClick={() => {
+                  if (!isActive) setActiveSheet(sheet.id);
+                }}
+                onDoubleClick={() => {
+                  if (!isPreviewMode) {
+                    setEditingSheetId(sheet.id);
+                    setEditingName(sheet.name);
+                  }
+                }}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "6px",
+                  height: "32px",
+                  padding: "0 12px",
+                  borderRadius: "6px 6px 0 0",
+                  backgroundColor: isActive ? "var(--color-surface)" : "transparent",
+                  border: isActive ? "1px solid var(--color-border)" : "1px solid transparent",
+                  borderBottom: isActive ? "1px solid var(--color-surface)" : "none",
+                  cursor: "pointer",
+                  fontSize: "12px",
+                  fontWeight: isActive ? 600 : 500,
+                  color: isActive ? "var(--color-text)" : "var(--color-text-secondary)",
+                  transition: "all var(--transition-fast)",
+                  position: "relative",
+                  bottom: "-1px"
+                }}
+              >
+                {isEditing ? (
+                  <input
+                    type="text"
+                    value={editingName}
+                    onChange={(e) => setEditingName(e.target.value)}
+                    onBlur={() => handleRenameSubmit(sheet.id)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleRenameSubmit(sheet.id);
+                      if (e.key === "Escape") setEditingSheetId(null);
+                    }}
+                    autoFocus
+                    style={{
+                      border: "none",
+                      background: "transparent",
+                      outline: "none",
+                      width: "80px",
+                      fontSize: "12px",
+                      fontWeight: 600,
+                      color: "var(--color-text)",
+                      padding: 0
+                    }}
+                  />
+                ) : (
+                  <span>{sheet.name}</span>
+                )}
+
+                {isActive && sheets.length > 1 && !isPreviewMode && !isEditing && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeSheet(sheet.id);
+                    }}
+                    style={{
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      border: "none",
+                      background: "transparent",
+                      padding: 0,
+                      cursor: "pointer",
+                      opacity: 0.5,
+                      borderRadius: "50%",
+                      width: "14px",
+                      height: "14px"
+                    }}
+                    onMouseEnter={(e) => e.currentTarget.style.opacity = "1"}
+                    onMouseLeave={(e) => e.currentTarget.style.opacity = "0.5"}
+                  >
+                    <X size={10} />
+                  </button>
+                )}
+              </div>
+            );
+          })}
+
+          {!isPreviewMode && (
+            <button
+              onClick={handleAddPage}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                height: "32px",
+                width: "32px",
+                borderRadius: "6px 6px 0 0",
+                cursor: "pointer",
+                color: "var(--color-text-secondary)",
+                transition: "all var(--transition-fast)",
+                border: "none",
+                background: "transparent"
+              }}
+              onMouseEnter={(e) => e.currentTarget.style.backgroundColor = "var(--color-surface-hover)"}
+              onMouseLeave={(e) => e.currentTarget.style.backgroundColor = "transparent"}
+            >
+              <Plus size={16} />
+            </button>
+          )}
+        </div>
+        <div style={{ fontSize: "11px", color: "var(--color-text-tertiary)", fontWeight: 500 }}>
+          Double-click tab to rename
+        </div>
+      </div>
     </div>
   );
 }
