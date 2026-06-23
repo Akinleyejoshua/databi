@@ -18,14 +18,12 @@ export interface SuggestedKPI {
 export function convertToJs(formula: string): string {
   let js = formula;
 
-  // Helper to replace [Col] with r["Col"] inside a string
-  // Using [^"']+ prevents matching already replaced JS array notation like r["Col"]
+  // Helper to replace [Col] with _get(rowVar, "Col") inside a string
   const replaceCols = (str: string, rowVar: string = "r") => {
-    return str.replace(/\[([^"']+?)\]/g, (_, col) => `(Number(${rowVar}["${col.trim()}"]) || 0)`);
+    return str.replace(/\[([^"']+?)\]/g, (_, col) => `_get(${rowVar}, "${col.trim()}")`);
   };
 
   // 1. Handle Aggregations with complex expressions
-  // SUM([Price] * [Qty]) -> rows.reduce((s, r) => s + ((Number(r["Price"])||0) * (Number(r["Qty"])||0)), 0)
   js = js.replace(/SUM\(\s*(.*?)\s*\)/gi, (_, inner) => {
     return `rows.reduce((s, r) => s + ${replaceCols(inner, "r")}, 0)`;
   });
@@ -41,7 +39,7 @@ export function convertToJs(formula: string): string {
   // DISTINCTCOUNT([Col])
   js = js.replace(/DISTINCTCOUNT\(\s*\[?(.*?)\]?\s*\)/gi, (_, col) => {
     const cleanCol = col.trim().replace(/^\[|\]$/g, "").replace(/["']/g, "");
-    return `new Set(rows.map(r => r["${cleanCol}"])).size`;
+    return `new Set(rows.map(r => _get(r, "${cleanCol}"))).size`;
   });
 
   // MIN([Col])
@@ -54,12 +52,21 @@ export function convertToJs(formula: string): string {
     return `(rows.length ? Math.max(...rows.map(r => ${replaceCols(inner, "r")})) : 0)`;
   });
 
-  // 2. Handle standalone column references [Col] -> (Number(row["Col"]) || 0)
+  // 2. Handle standalone column references [Col] -> _get(row, "Col")
   js = js.replace(/\[([^"']+?)\]/g, (_, col) => {
-    return `(Number(row["${col.trim()}"]) || 0)`;
+    return `_get(row, "${col.trim()}")`;
   });
 
-  return js;
+  return `(() => {
+    const _get = (r, c) => {
+      if (!r) return 0;
+      if (r[c] !== undefined) return Number(r[c]) || 0;
+      const s = '.' + c;
+      for (const k in r) { if (k.endsWith(s)) return Number(r[k]) || 0; }
+      return 0;
+    };
+    return ${js};
+  })()`;
 }
 
 /**

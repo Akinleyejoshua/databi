@@ -4,6 +4,7 @@
    ============================================================ */
 
 import type { DataTable, Measure } from "@/types";
+import { convertToJs } from "@/lib/kpi-engine";
 
 /**
  * Execute a measure formula against table data
@@ -19,12 +20,11 @@ export const executeMeasure = (
   }
 
   try {
-    // Create a function that can execute the measure formula
-    // The formula has access to individual row data and the entire rows array
+    const formulaJs = convertToJs(measure.originalFormula || measure.formula);
     const formulaFn = new Function(
       "row",
       "rows",
-      `try { return ${measure.formula}; } catch(e) { console.error('Measure error:', e); return 0; }`
+      `try { return ${formulaJs}; } catch(e) { console.error('Measure error:', e); return 0; }`
     );
 
     // For aggregate measures, we need to calculate across all rows

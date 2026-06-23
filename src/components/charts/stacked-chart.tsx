@@ -4,6 +4,7 @@ import { useMemo } from "react";
 import ReactECharts from "echarts-for-react";
 import type { ChartConfig, DataTable, ActiveFilter, Measure, Relationship } from "@/types";
 import { applyFilters, joinTables, abbreviateNumber, getCurrencySymbol, parseSafeNumber, CHART_COLORS, formatWithCurrency, formatAxisValue } from "@/lib/utils";
+import { convertToJs } from "@/lib/kpi-engine";
 
 interface Props {
   config: ChartConfig;
@@ -22,12 +23,10 @@ export default function StackedChart({ config, tables, filters, relationships = 
     const table = tables?.find((t) => t.id === fieldDef.tableId);
     if (!table || !table.rows) return { option: null, hasData: false };
 
-    const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
     let rows: Record<string, unknown>[] = [];
-
-    if (valueTableIds.length > 0 && relationships?.length > 0) {
-      const tablesToJoin = tables.filter(t => t.id === fieldDef.tableId || valueTableIds.includes(t.id));
-      rows = joinTables(tablesToJoin, relationships, filters);
+    if (relationships?.length > 0 && tables?.length > 1) {
+      const otherTables = tables.filter(t => t.id !== table.id);
+      rows = joinTables([table, ...otherTables], relationships, filters);
     } else {
       rows = applyFilters(table, filters || []);
     }
@@ -43,9 +42,11 @@ export default function StackedChart({ config, tables, filters, relationships = 
         const measure = measures.find(m => m.id === fieldDef.columnName);
         if (measure) {
           try {
-            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            const formulaJs = convertToJs(measure.originalFormula || measure.formula);
+            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
             val = String(evalFn(row, rows));
           } catch (e) {
+            console.error("Error evaluating dimension measure in stacked chart:", e);
             val = "Error";
           }
         } else {
@@ -63,16 +64,20 @@ export default function StackedChart({ config, tables, filters, relationships = 
     const colors = config.colorScheme?.length ? config.colorScheme : CHART_COLORS;
 
     const series = config.values.map((v, i) => {
+      const measureObj = v.aggregation === "measure" ? measures.find(m => m.id === v.columnName) : null;
+      const displayName = measureObj ? measureObj.name : v.columnName;
+
       const data = categories.map((cat) => {
         const matching = groups.get(cat) || [];
 
         if (v.aggregation === "measure") {
-          const measure = measures.find((m) => m.id === v.columnName);
-          if (!measure || matching.length === 0) return 0;
+          if (!measureObj || matching.length === 0) return 0;
           try {
-            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            const formulaJs = convertToJs(measureObj.originalFormula || measureObj.formula);
+            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
             return Number(evalFn(matching[0], matching)) || 0;
           } catch (e) {
+            console.error("Error evaluating value measure in stacked chart:", e);
             return 0;
           }
         }
@@ -91,7 +96,7 @@ export default function StackedChart({ config, tables, filters, relationships = 
       });
 
       return {
-        name: v.columnName,
+        name: displayName,
         type: config.chartType === "stacked-bar" ? "bar" : "bar",
         data,
         stack: "total",

@@ -104,44 +104,60 @@ export function joinTables(
     return applyFilters(sourceTables[0], filters);
   }
 
+  const joinedTableIds = new Set<string>([sourceTables[0].id]);
   let result = applyFilters(sourceTables[0], filters);
 
-  for (let i = 1; i < sourceTables.length; i++) {
-    const nextTable = sourceTables[i];
-    const nextRows = applyFilters(nextTable, filters);
+  const remainingTables = [...sourceTables.slice(1)];
+  let added = true;
 
-    const rel = relationships.find(
-      (r) =>
-        (r.sourceTableId === sourceTables[0].id &&
-          r.targetTableId === nextTable.id) ||
-        (r.targetTableId === sourceTables[0].id &&
-          r.sourceTableId === nextTable.id)
-    );
+  while (added && remainingTables.length > 0) {
+    added = false;
+    for (let i = 0; i < remainingTables.length; i++) {
+      const nextTable = remainingTables[i];
+      const rel = relationships.find(
+        (r) =>
+          (joinedTableIds.has(r.sourceTableId) && r.targetTableId === nextTable.id) ||
+          (joinedTableIds.has(r.targetTableId) && r.sourceTableId === nextTable.id)
+      );
 
-    if (!rel) continue;
+      if (rel) {
+        const nextRows = applyFilters(nextTable, filters);
+        const connectedTableId = joinedTableIds.has(rel.sourceTableId) ? rel.sourceTableId : rel.targetTableId;
+        const leftCol = rel.sourceTableId === connectedTableId ? rel.sourceColumn : rel.targetColumn;
+        const rightCol = rel.sourceTableId === connectedTableId ? rel.targetColumn : rel.sourceColumn;
 
-    const isForward = rel.sourceTableId === sourceTables[0].id;
-    const leftCol = isForward ? rel.sourceColumn : rel.targetColumn;
-    const rightCol = isForward ? rel.targetColumn : rel.sourceColumn;
+        const connectedTable = sourceTables.find(t => t.id === connectedTableId);
+        const connectedTableName = connectedTable ? connectedTable.name : "";
 
-    const joined: Record<string, unknown>[] = [];
-    for (const leftRow of result) {
-      for (const rightRow of nextRows) {
-        if (String(leftRow[leftCol]) === String(rightRow[rightCol])) {
-          joined.push({
-            ...leftRow,
-            ...Object.fromEntries(
-              Object.entries(rightRow).map(([k, v]) => [
-                k === leftCol ? k : `${nextTable.name}.${k}`,
-                v,
-              ])
-            ),
-          });
+        const joined: Record<string, unknown>[] = [];
+        for (const leftRow of result) {
+          let leftVal = leftRow[leftCol];
+          if (leftVal === undefined && connectedTableName) {
+            leftVal = leftRow[`${connectedTableName}.${leftCol}`];
+          }
+
+          for (const rightRow of nextRows) {
+            if (String(leftVal) === String(rightRow[rightCol])) {
+              joined.push({
+                ...leftRow,
+                ...Object.fromEntries(
+                  Object.entries(rightRow).map(([k, v]) => [
+                    k === rightCol ? k : `${nextTable.name}.${k}`,
+                    v,
+                  ])
+                ),
+              });
+            }
+          }
         }
+
+        result = joined;
+        joinedTableIds.add(nextTable.id);
+        remainingTables.splice(i, 1);
+        added = true;
+        break;
       }
     }
-
-    result = joined;
   }
 
   return result;

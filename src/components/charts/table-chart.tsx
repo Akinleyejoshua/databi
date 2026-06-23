@@ -3,6 +3,7 @@
 import { useMemo } from "react";
 import type { ChartConfig, DataTable, ActiveFilter, Relationship, Measure } from "@/types";
 import { applyFilters, joinTables, formatWithCurrency } from "@/lib/utils";
+import { convertToJs } from "@/lib/kpi-engine";
 
 interface Props {
   config: ChartConfig;
@@ -28,13 +29,10 @@ export default function TableChart({
     const table = tables?.find((t) => t.id === fieldDef.tableId);
     if (!table || !table.rows) return { columns: [], rows: [], hasData: false };
 
-    // Determine if we need to join tables
-    const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
     let joinedRows: Record<string, unknown>[] = [];
-
-    if (valueTableIds.length > 0 && relationships?.length > 0) {
-      const tablesToJoin = tables.filter(t => t.id === fieldDef.tableId || valueTableIds.includes(t.id));
-      joinedRows = joinTables(tablesToJoin, relationships, filters);
+    if (relationships?.length > 0 && tables?.length > 1) {
+      const otherTables = tables.filter(t => t.id !== table.id);
+      joinedRows = joinTables([table, ...otherTables], relationships, filters);
     } else {
       joinedRows = applyFilters(table, filters || []);
     }
@@ -49,9 +47,11 @@ export default function TableChart({
         const measure = measures.find(m => m.id === fieldDef.columnName);
         if (measure) {
           try {
-            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            const formulaJs = convertToJs(measure.originalFormula || measure.formula);
+            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
             val = String(evalFn(row, joinedRows));
           } catch (e) {
+            console.error("Error evaluating dimension measure in table:", e);
             val = "Error";
           }
         } else {
@@ -69,8 +69,11 @@ export default function TableChart({
 
     // Setup columns header
     const headers = [
-      fieldDef.columnName,
-      ...config.values.map(v => v.columnName)
+      { key: fieldDef.columnName, label: fieldDef.aggregation === "measure" ? (measures.find(m => m.id === fieldDef.columnName)?.name || fieldDef.columnName) : fieldDef.columnName },
+      ...config.values.map(v => ({
+        key: v.columnName,
+        label: v.aggregation === "measure" ? (measures.find(m => m.id === v.columnName)?.name || v.columnName) : v.columnName
+      }))
     ];
 
     // Compute metric values
@@ -86,9 +89,12 @@ export default function TableChart({
           const measure = measures.find((m) => m.id === v.columnName);
           if (measure && matching.length > 0) {
             try {
-              const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+              const formulaJs = convertToJs(measure.originalFormula || measure.formula);
+              const evalFn = new Function("row", "rows", `return ${formulaJs}`);
               val = Number(evalFn(matching[0], matching)) || 0;
-            } catch (e) {}
+            } catch (e) {
+              console.error("Error evaluating value measure in table:", e);
+            }
           }
         } else {
           const parseSafeNumber = (num: any): number => {
@@ -173,8 +179,8 @@ export default function TableChart({
         <thead>
           <tr style={{ background: "var(--color-bg-secondary)", borderBottom: "2px solid var(--color-border)" }}>
             {columns.map((col, idx) => (
-              <th key={col} style={{ padding: "10px 14px", fontWeight: 600, color: "var(--color-text)", textTransform: "capitalize" }}>
-                {col}
+              <th key={col.key} style={{ padding: "10px 14px", fontWeight: 600, color: "var(--color-text)", textTransform: "capitalize" }}>
+                {col.label}
               </th>
             ))}
           </tr>
@@ -189,8 +195,8 @@ export default function TableChart({
               }}
             >
               {columns.map(col => (
-                <td key={col} style={{ padding: "10px 14px", color: "var(--color-text-secondary)" }}>
-                  {formatValue(row[col])}
+                <td key={col.key} style={{ padding: "10px 14px", color: "var(--color-text-secondary)" }}>
+                  {formatValue(row[col.key])}
                 </td>
               ))}
             </tr>

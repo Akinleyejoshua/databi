@@ -14,6 +14,7 @@ import {
   parseSafeNumber,
   CHART_COLORS 
 } from "@/lib/utils";
+import { convertToJs } from "@/lib/kpi-engine";
 
 const LOCATION_MAPPING: Record<string, Record<string, string>> = {
   nigeria: {
@@ -360,13 +361,10 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     const table = tables?.find((t) => t.id === fieldDef.tableId);
     if (!table || !table.rows) return { option: null, hasData: false, totalValue: 0 };
 
-    // Determine if we need to join tables
-    const valueTableIds = [...new Set(config.values.map(v => v.tableId))].filter(id => id !== fieldDef.tableId);
     let rows: Record<string, unknown>[] = [];
-
-    if (valueTableIds.length > 0 && relationships?.length > 0) {
-      const tablesToJoin = tables.filter(t => t.id === fieldDef.tableId || valueTableIds.includes(t.id));
-      rows = joinTables(tablesToJoin, relationships, filters);
+    if (relationships?.length > 0 && tables?.length > 1) {
+      const otherTables = tables.filter(t => t.id !== table.id);
+      rows = joinTables([table, ...otherTables], relationships, filters);
     } else {
       rows = applyFilters(table, filters || []);
     }
@@ -386,9 +384,11 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         const measure = measures.find(m => m.id === fieldDef.columnName);
         if (measure) {
           try {
-            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            const formulaJs = convertToJs(measure.originalFormula || measure.formula);
+            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
             val = String(evalFn(row, rows));
           } catch (e) {
+            console.error("Error evaluating dimension measure:", e);
             val = "Error";
           }
         } else {
@@ -427,9 +427,12 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           const measure = measures.find((m) => m.id === sortingValueField.columnName);
           if (measure && matching.length > 0) {
             try {
-              const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+              const formulaJs = convertToJs(measure.originalFormula || measure.formula);
+              const evalFn = new Function("row", "rows", `return ${formulaJs}`);
               val = Number(evalFn(matching[0], matching)) || 0;
-            } catch (e) {}
+            } catch (e) {
+              console.error("Error evaluating sorting measure:", e);
+            }
           }
         } else {
           const vals = matching.map((r) => parseSafeNumber(r[sortingValueField.columnName]));
@@ -474,6 +477,9 @@ export default function EChartsRenderer({ config, tables, filters, relationships
     const isHorizontalBar = config.chartType === "bar";
 
     const series = config.values.map((v, i) => {
+      const measure = v.aggregation === "measure" ? measures.find(m => m.id === v.columnName) : null;
+      const displayName = measure ? measure.name : v.columnName;
+
       // Logic for raw data (Scatter plots with raw values)
       if (isScatter && (!v.aggregation || v.aggregation === "none")) {
         const data = rows.map(r => {
@@ -482,7 +488,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           return [x, y];
         });
         return {
-          name: v.columnName,
+          name: displayName,
           type: "scatter",
           data,
           itemStyle: { color: colors[i % colors.length] }
@@ -494,12 +500,14 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         const matching = groups.get(cat) || [];
 
         if (v.aggregation === "measure") {
-          const measure = measures.find((m) => m.id === v.columnName);
-          if (!measure || matching.length === 0) return 0;
+          const measureObj = measures.find((m) => m.id === v.columnName);
+          if (!measureObj || matching.length === 0) return 0;
           try {
-            const evalFn = new Function("row", "rows", `return ${measure.formula}`);
+            const formulaJs = convertToJs(measureObj.originalFormula || measureObj.formula);
+            const evalFn = new Function("row", "rows", `return ${formulaJs}`);
             return Number(evalFn(matching[0], matching)) || 0;
           } catch (e) {
+            console.error("Error evaluating value measure in chart:", e, measureObj.originalFormula || measureObj.formula);
             return 0;
           }
         }
@@ -523,7 +531,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
       });
 
       const base: Record<string, unknown> = {
-        name: v.columnName,
+        name: displayName,
         data,
         itemStyle: { color: colors[i % colors.length] },
       };
