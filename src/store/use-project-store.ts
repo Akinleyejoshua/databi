@@ -461,7 +461,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
 
   setSelectedWidget: (widgetId) =>
     set((state) => {
-      if (state.project) saveProjectUiState(state.project.id, { selectedWidgetId: widgetId });
+      if (state.project) saveProjectUiState(state.project._id ?? "", { selectedWidgetId: widgetId });
       return { selectedWidgetId: widgetId };
     }),
 
@@ -519,7 +519,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       };
 
       const updatedSheets = [...sheets, newSheet];
-      saveProjectUiState(state.project.id, { activeSheetId: newSheetId, selectedWidgetId: null });
+      saveProjectUiState(state.project._id ?? "", { activeSheetId: newSheetId, selectedWidgetId: null });
 
       return {
         project: {
@@ -569,7 +569,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       }
 
       const activeWidgets = updatedSheets.find(s => s.id === nextActiveId)?.widgets || [];
-      saveProjectUiState(state.project.id, { activeSheetId: nextActiveId, selectedWidgetId: null });
+      saveProjectUiState(state.project._id ?? "", { activeSheetId: nextActiveId, selectedWidgetId: null });
 
       return {
         project: {
@@ -591,7 +591,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
 
       const targetSheet = sheets.find(s => s.id === sheetId) || sheets[0];
-      saveProjectUiState(state.project.id, { activeSheetId: targetSheet.id, selectedWidgetId: null });
+      saveProjectUiState(state.project._id ?? "", { activeSheetId: targetSheet.id, selectedWidgetId: null });
 
       return {
         project: {
