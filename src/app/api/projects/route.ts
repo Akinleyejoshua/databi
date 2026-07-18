@@ -70,7 +70,7 @@ export async function POST(req: NextRequest) {
       filters: body.filters || {},
     });
 
-    return NextResponse.json(project.toJSON(), { status: 201 });
+    return NextResponse.json({ ok: true, _id: project._id.toString() }, { status: 201 });
   } catch (error) {
     console.error("POST /api/projects error:", error);
     return NextResponse.json(

@@ -48,5 +48,19 @@ export async function connectDB(): Promise<typeof mongoose> {
     throw e;
   }
 
+  // Build indexes once per process. In production `autoIndex` is disabled, so we
+  // explicitly ensure indexes here to guarantee the compound indexes exist and
+  // the queries stay covered. `createIndexes` is idempotent and cheap if they
+  // already exist.
+  try {
+    await Promise.all([
+      cached.conn.model("Project").createIndexes(),
+      cached.conn.model("User").createIndexes(),
+    ]);
+  } catch (e) {
+    // Index creation must not break the request path; log and continue.
+    console.error("Index creation warning:", e);
+  }
+
   return cached.conn;
 }

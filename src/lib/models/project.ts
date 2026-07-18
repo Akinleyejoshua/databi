@@ -42,6 +42,15 @@ const ProjectSchema = new Schema<IProject>(
   }
 );
 
+// Compound indexes for the most common query patterns.
+// 1. List projects by owner, newest first — covers GET /api/projects
+//    (filter on userId + sort on updatedAt) with a single indexed, sorted scan.
+// 2. Ownership-checked lookup by _id — covers GET/PUT/DELETE /api/projects/[id].
+// 3. Share lookup by token — already unique, declared explicitly for clarity.
+ProjectSchema.index({ userId: 1, updatedAt: -1 });
+ProjectSchema.index({ _id: 1, userId: 1 });
+ProjectSchema.index({ shareToken: 1 }, { unique: true, sparse: true });
+
 export const ProjectModel =
   mongoose.models.Project ||
   mongoose.model<IProject>("Project", ProjectSchema);

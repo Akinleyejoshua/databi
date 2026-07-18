@@ -57,20 +57,24 @@ export async function PUT(
     // Remove _id from body to avoid MongoDB immutable field error
     const { _id, ...updateData } = body;
 
-    const project = await ProjectModel.findOneAndUpdate(
+    // Use a lightweight update: we only need to confirm the write succeeded.
+    // Returning the full document (which can contain thousands of table rows,
+    // widgets, sheets, etc.) over the wire is the main source of save latency,
+    // so we return a minimal ack instead. The client already holds the project
+    // state and only reads `_id` from the response.
+    const result = await ProjectModel.updateOne(
       { _id: id, userId: userEmail },
-      { $set: updateData },
-      { returnDocument: "after", runValidators: true }
-    ).lean();
+      { $set: updateData }
+    );
 
-    if (!project) {
+    if (result.matchedCount === 0) {
       return NextResponse.json(
         { error: "Project not found" },
         { status: 404 }
       );
     }
 
-    return NextResponse.json({ ...project, _id: project._id.toString() });
+    return NextResponse.json({ ok: true, _id: id });
   } catch (error) {
     console.error("PUT /api/projects/[id] error:", error);
     return NextResponse.json(
