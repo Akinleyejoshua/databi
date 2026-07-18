@@ -86,6 +86,18 @@ export default function SettingsModal() {
               <label className="label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                 <input
                   type="checkbox"
+                  checked={!!project?.canvasSettings.removeWidgetBg}
+                  onChange={(e) => updateCanvasSettings({ removeWidgetBg: e.target.checked })}
+                  style={{ width: "16px", height: "16px", accentColor: "var(--color-primary)" }}
+                />
+                Remove all backgrounds from widgets
+              </label>
+            </div>
+
+            <div className={styles.field}>
+              <label className="label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
                   checked={project?.canvasSettings.showGrid !== false}
                   onChange={(e) => updateCanvasSettings({ showGrid: e.target.checked })}
                   style={{ width: "16px", height: "16px", accentColor: "var(--color-primary)" }}

@@ -375,7 +375,7 @@ export default function CanvasArea({ isSharePage }: Props) {
               const useGlassBlur = bgAlpha < 1 && !String(resolvedBg).startsWith("var(");
 
               const containerStyle: React.CSSProperties = preset === "default" ? {
-                backgroundColor: widget.style.backgroundColor,
+                backgroundColor: settings.removeWidgetBg ? "transparent" : widget.style.backgroundColor,
                 color: widget.style.textColor,
                 borderRadius: `${widget.style.borderRadius}px`,
                 border: `${widget.style.borderWidth}px solid ${widget.style.borderColor}`,
@@ -396,6 +396,7 @@ export default function CanvasArea({ isSharePage }: Props) {
                 display: "flex",
                 flexDirection: "column",
                 ...presetStyle,
+                ...(settings.removeWidgetBg ? { backgroundColor: "transparent" } : {}),
                 ...(useGlassBlur && !presetStyle.backdropFilter ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } : {}),
                 ...(settings.removeShadows ? { boxShadow: "none" } : {}),
               };

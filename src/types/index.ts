@@ -193,6 +193,7 @@ export interface CanvasSettings {
   backgroundGradient?: string;
   canvasBlur?: boolean;
   removeShadows?: boolean;
+  removeWidgetBg?: boolean;
   showGrid?: boolean;
   width: number;
   cols: number;
