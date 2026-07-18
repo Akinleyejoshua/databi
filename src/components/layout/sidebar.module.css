@@ -85,6 +85,7 @@
   justify-content: center;
   min-width: 32px;
   min-height: 32px;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .panel-tab svg {
@@ -129,6 +130,7 @@
   cursor: pointer;
   transition: all var(--transition-fast);
   overflow: hidden;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .table-item::before {
@@ -417,6 +419,7 @@
   color: var(--color-text-secondary);
   transition: all var(--transition-fast);
   cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .widget-btn span:not(.widget-icon) {
