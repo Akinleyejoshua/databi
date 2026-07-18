@@ -328,9 +328,13 @@ interface Props {
   measures?: Measure[];
   width?: number;
   height?: number;
+  textColor?: string;
 }
 
-export default function EChartsRenderer({ config, tables, filters, relationships = [], measures = [], height = 300 }: Props) {
+export default function EChartsRenderer({ config, tables, filters, relationships = [], measures = [], height = 300, textColor }: Props) {
+  // Fall back to the theme text color when the widget has no explicit text color.
+  const chartTextColor = textColor || "var(--color-text)";
+  const chartTextSecondary = textColor || "var(--color-text-secondary)";
   const chartRef = useRef<ReactECharts>(null);
   const [hoveredData, setHoveredData] = useState<any>(null);
   const [clickedData, setClickedData] = useState<any>(null);
@@ -537,7 +541,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         itemStyle: { color: colors[i % colors.length] },
       };
 
-      return buildSeriesObject(base, config.chartType, categories, data, colors, i, currentMapKey, isMap);
+      return buildSeriesObject(base, config.chartType, categories, data, colors, i, currentMapKey, isMap, chartTextSecondary);
     });
 
     const totalValue = series.length > 0 && typeof series[0].data[0] === 'number' 
@@ -571,7 +575,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           text: config.title,
           left: "center",
           top: 8,
-          textStyle: { fontSize: 13, fontFamily: "inherit", fontWeight: 600, color: "var(--color-text)" }
+          textStyle: { fontSize: 13, fontFamily: "inherit", fontWeight: 600, color: chartTextColor }
         },
         tooltip: config.showTooltip ? {
           trigger: isPie || isMap ? "item" : "axis",
@@ -581,7 +585,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           borderRadius: 10,
           padding: [10, 14],
           extraCssText: "backdrop-filter: blur(8px); background: var(--color-bg-secondary);",
-          textStyle: { color: "var(--color-text)", fontSize: 11, fontFamily: "inherit" },
+          textStyle: { color: chartTextColor, fontSize: 11, fontFamily: "inherit" },
           formatter: isMap ? (params: any) => {
             if (Array.isArray(params)) return params[0].name;
             const data = params.data;
@@ -590,15 +594,15 @@ export default function EChartsRenderer({ config, tables, filters, relationships
             return `${data?.originalName || params.name}: ${formattedValue}`;
           } : undefined
         } : undefined,
-        legend: config.showLegend && !isMap ? { bottom: 4, textStyle: { fontSize: 10, color: "var(--color-text-secondary)" } } : undefined,
+        legend: config.showLegend && !isMap ? { bottom: 4, textStyle: { fontSize: 10, color: chartTextSecondary } } : undefined,
         visualMap,
         grid: isPie || isMap ? undefined : { left: "4%", right: "4%", top: 50, bottom: config.showLegend ? 50 : 35, containLabel: true },
         xAxis: isPie || isMap ? undefined : (isHorizontalBar
           ? { 
               type: "value", 
-              axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency), color: "var(--color-text-secondary)" }, 
-              axisName: config.xAxisLabel || undefined, 
-              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 },
+              axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency), color: chartTextSecondary },
+              axisName: config.xAxisLabel || undefined,
+              axisNameTextStyle: { color: chartTextSecondary, fontSize: 11, fontWeight: 500 },
               axisLine: { show: false },
               axisTick: { show: false },
               splitLine: { show: true, lineStyle: { type: "dashed", color: "var(--color-border-light)", width: 0.8 } }
@@ -606,9 +610,9 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           : {
               type: showAsValueAxis ? "value" : "category",
               data: showAsValueAxis ? undefined : categories,
-              axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: "var(--color-text-secondary)" },
+              axisLabel: { rotate: categories.length > 8 ? 30 : 0, fontSize: 10, color: chartTextSecondary },
               axisName: config.xAxisLabel || undefined,
-              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 },
+              axisNameTextStyle: { color: chartTextSecondary, fontSize: 11, fontWeight: 500 },
               axisLine: { show: true, lineStyle: { color: "var(--color-border)" } },
               axisTick: { show: false },
               splitLine: { show: false }
@@ -617,18 +621,18 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           ? { 
               type: "category", 
               data: categories, 
-              axisLabel: { fontSize: 10, color: "var(--color-text-secondary)" }, 
-              axisName: config.yAxisLabel || undefined, 
-              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 },
+              axisLabel: { fontSize: 10, color: chartTextSecondary },
+              axisName: config.yAxisLabel || undefined,
+              axisNameTextStyle: { color: chartTextSecondary, fontSize: 11, fontWeight: 500 },
               axisLine: { show: true, lineStyle: { color: "var(--color-border)" } },
               axisTick: { show: false },
               splitLine: { show: false }
             }
           : { 
               type: "value", 
-              axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency), color: "var(--color-text-secondary)" }, 
-              axisName: config.yAxisLabel || undefined, 
-              axisNameTextStyle: { color: "var(--color-text-secondary)", fontSize: 11, fontWeight: 500 },
+              axisLabel: { fontSize: 10, formatter: (v: number) => formatAxisValue(v, config.currency), color: chartTextSecondary },
+              axisName: config.yAxisLabel || undefined,
+              axisNameTextStyle: { color: chartTextSecondary, fontSize: 11, fontWeight: 500 },
               axisLine: { show: false },
               axisTick: { show: false },
               splitLine: { show: true, lineStyle: { type: "dashed", color: "var(--color-border-light)", width: 0.8 } }
@@ -802,7 +806,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
             {config.xAxisLabel && (
               <div style={{ borderTop: "1px solid var(--color-border)", paddingTop: "6px", marginTop: "2px" }}>
                 <div style={{ fontSize: "10px", color: "var(--color-text-tertiary)", fontWeight: 600 }}>{config.xAxisLabel}</div>
-                <div style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-secondary)" }}>
+                <div style={{ fontSize: "12px", fontWeight: 600, color: chartTextSecondary }}>
                   {clickedData 
                     ? (clickedData.originalName || clickedData.name) 
                     : (hoveredData ? (hoveredData.originalName || hoveredData.name) : "Aggregated")
@@ -903,7 +907,7 @@ function getGradientColor(color: string, horizontal = false) {
   };
 }
 
-function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number, mapName: string = "world", isMap: boolean = false) {
+function buildSeriesObject(base: any, chartType: string, categories: string[], data: number[], colors: string[], index: number, mapName: string = "world", isMap: boolean = false, textColor: string = "var(--color-text-secondary)") {
   const currentColor = colors[index % colors.length] || "var(--color-primary)";
 
   switch (chartType) {
@@ -989,7 +993,7 @@ function buildSeriesObject(base: any, chartType: string, categories: string[], d
         avoidLabelOverlap: true,
         itemStyle: { borderRadius: 8, borderColor: "var(--color-bg)", borderWidth: 2 },
         data: categories.map((cat, j) => ({ name: cat, value: data[j], itemStyle: { color: colors[j % colors.length] } })),
-        label: { show: true, fontSize: 10, formatter: "{b}: {d}%", color: "var(--color-text-secondary)" },
+        label: { show: true, fontSize: 10, formatter: "{b}: {d}%", color: textColor },
         emphasis: { 
           label: { show: true, fontSize: 12, fontWeight: "bold" },
           itemStyle: { shadowBlur: 10, shadowOffsetX: 0, shadowColor: "rgba(0,0,0,0.15)" }

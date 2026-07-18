@@ -36,6 +36,7 @@ interface Props {
   measures?: Measure[];
   width?: number;
   height?: number;
+  textColor?: string;
 }
 
 export default function AdvancedChartsRenderer({
@@ -44,7 +45,8 @@ export default function AdvancedChartsRenderer({
   filters,
   relationships = [],
   measures = [],
-  height = 300
+  height = 300,
+  textColor
 }: Props) {
   const chartType = config.chartType;
 
@@ -155,6 +157,7 @@ export default function AdvancedChartsRenderer({
           relationships={relationships}
           measures={measures}
           height={height}
+          textColor={textColor}
         />
       );
   }

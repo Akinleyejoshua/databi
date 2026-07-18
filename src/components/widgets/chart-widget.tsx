@@ -39,6 +39,7 @@ export default function ChartWidget({ widget }: Props) {
         filters={activeFilters}
         measures={project.measures}
         relationships={project.relationships}
+        textColor={textColor}
       />
     </div>
   );
