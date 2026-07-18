@@ -148,6 +148,26 @@
   backdrop-filter: blur(8px);
 }
 
+@media (max-width: 640px) {
+  .canvas-toolbar {
+    bottom: 52px;
+    right: 8px;
+    left: 8px;
+    justify-content: center;
+    padding: 4px;
+    gap: 2px;
+  }
+
+  .tool-btn {
+    width: 32px;
+    height: 32px;
+  }
+
+  .tool-divider {
+    margin: 0 2px;
+  }
+}
+
 .tool-btn {
   display: flex;
   align-items: center;

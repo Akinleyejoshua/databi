@@ -57,6 +57,10 @@ interface UiStore {
   cursorMode: "select" | "pan";
   setCursorMode: (mode: "select" | "pan") => void;
 
+  /* --- Mobile Nav --- */
+  mobileNavOpen: boolean;
+  setMobileNavOpen: (open: boolean) => void;
+
   /* --- AI Insights --- */
   globalAnalysis: string | null;
   setGlobalAnalysis: (analysis: string | null) => void;
@@ -138,6 +142,10 @@ export const useUiStore = create<UiStore>()(
 
   cursorMode: "select",
   setCursorMode: (mode) => set({ cursorMode: mode }),
+
+  /* --- Mobile Nav --- */
+  mobileNavOpen: false,
+  setMobileNavOpen: (open) => set({ mobileNavOpen: open }),
 
   /* --- AI Insights --- */
   globalAnalysis: null,
