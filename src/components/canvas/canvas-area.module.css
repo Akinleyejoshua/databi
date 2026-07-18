@@ -152,8 +152,10 @@
   .canvas-toolbar {
     bottom: 52px;
     right: 8px;
-    left: 8px;
-    justify-content: center;
+    left: auto;
+    width: max-content;
+    max-width: calc(100vw - 16px);
+    justify-content: flex-start;
     padding: 4px;
     gap: 2px;
   }
