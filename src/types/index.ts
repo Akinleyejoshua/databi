@@ -203,6 +203,7 @@ export interface CanvasSettings {
   containerBorderColor?: string;
   containerBorderWidth?: number;
   containerBgColor?: string;
+  containerBlur?: boolean;
 }
 
 export interface Sheet {

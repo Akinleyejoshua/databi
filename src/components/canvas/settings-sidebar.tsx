@@ -179,6 +179,18 @@ export default function SettingsModal() {
                       <option value="glow">Neon Glow Shadow</option>
                     </select>
                   </div>
+
+                  <div className={styles.field}>
+                    <label className="label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                      <input
+                        type="checkbox"
+                        checked={!!project?.canvasSettings.containerBlur}
+                        onChange={(e) => updateCanvasSettings({ containerBlur: e.target.checked })}
+                        style={{ width: "16px", height: "16px", accentColor: "var(--color-primary)" }}
+                      />
+                      Apply Backdrop Blur (glass over canvas)
+                    </label>
+                  </div>
                 </>
               )}
             </div>
