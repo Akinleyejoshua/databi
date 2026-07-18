@@ -58,10 +58,12 @@ export default function SlicerWidget({ widget }: Props) {
     clearFilter(slicer.tableId, slicer.columnName);
   };
 
+  const presetTextColor = widget.style.textColor;
+
   return (
-    <div className={styles.slicer}>
+    <div className={styles.slicer} style={{ color: presetTextColor }}>
       <div className={styles["slicer-header"]}>
-        <span className={styles["slicer-title"]}>{slicer.columnName}</span>
+        <span className={styles["slicer-title"]} style={{ color: presetTextColor || "var(--color-text-secondary)" }}>{slicer.columnName}</span>
         {selected.size > 0 && (
           <button className="btn btn-ghost btn-sm" onClick={clearAll} style={{ fontSize: "11px" }}>Clear</button>
         )}
@@ -71,6 +73,7 @@ export default function SlicerWidget({ widget }: Props) {
           <label 
             key={i} 
             className={`${styles["slicer-item"]} ${selected.has(String(val)) ? styles["slicer-item--selected"] : ""}`}
+            style={{ color: presetTextColor || "var(--color-text-secondary)" }}
             onClick={(e) => e.stopPropagation()}
           >
             <input type="checkbox" checked={selected.has(String(val))} onChange={() => toggle(val)} style={{ display: "none" }} />

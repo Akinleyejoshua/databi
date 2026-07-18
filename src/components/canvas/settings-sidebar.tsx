@@ -117,14 +117,14 @@ export default function SettingsModal() {
                 onClick={() => {
                   const color = project?.canvasSettings.canvasTextColor || "#1a1a1a";
                   project?.widgets
-                    .filter((w) => w.type === "chart" || w.type === "kpi")
+                    .filter((w) => w.type === "chart" || w.type === "kpi" || w.type === "slicer" || w.type === "text")
                     .forEach((w) => updateWidgetStyle(w.id, { textColor: color }));
                 }}
               >
-                Auto Text Color All Charts & KPIs
+                Auto Text Color All Widgets
               </button>
               <p style={{ fontSize: "10px", opacity: 0.7, marginTop: "4px" }}>
-                Applies the canvas text color preset to every chart and KPI widget for a consistent look.
+                Applies the canvas text color preset to every chart, KPI, slicer and text widget for a consistent look.
               </p>
             </div>
 
