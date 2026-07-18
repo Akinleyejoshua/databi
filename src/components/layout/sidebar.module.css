@@ -100,7 +100,7 @@
 
 .panel-tab--active {
   color: var(--color-primary) !important;
-  background: var(--color-primary-glow) !important;
+  background: var(--color-surface-active) !important;
 }
 
 .sidebar-content {
@@ -149,7 +149,7 @@
 }
 
 .table-item--active {
-  background: var(--color-primary-glow);
+  background: var(--color-surface-active);
 }
 
 .table-item--active::before {
@@ -356,7 +356,7 @@
 }
 
 .transform-action:hover {
-  background: var(--color-primary-glow);
+  background: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
@@ -439,7 +439,7 @@
 }
 
 .widget-btn:hover {
-  background: var(--color-primary-glow);
+  background: var(--color-surface-hover);
   color: var(--color-primary);
 }
 
@@ -494,6 +494,7 @@
   .sidebar {
     width: 100%;
     height: auto;
-    max-height: 40vh;
+    flex: 1;
+    min-height: 0;
   }
 }
