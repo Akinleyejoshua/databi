@@ -476,7 +476,7 @@ export default function CanvasArea({ isSharePage }: Props) {
 
       {/* Figma-style Floating Toolbar */}
       {(!isPreviewMode || isSharePage) && (
-        <div className={styles["canvas-toolbar"]} onMouseDown={(e) => e.stopPropagation()} style={{ bottom: "56px" }}>
+        <div className={styles["canvas-toolbar"]} onMouseDown={(e) => e.stopPropagation()}>
           <div className="tooltip-wrapper">
             <button 
               className={`${styles["tool-btn"]} ${cursorMode === "select" ? styles["tool-btn--active"] : ""}`}
