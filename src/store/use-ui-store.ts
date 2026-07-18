@@ -156,7 +156,7 @@ export const useUiStore = create<UiStore>((set) => ({
     set((state) => ({ toasts: state.toasts.filter((t) => t.id !== id) })),
 
   /* --- Auto-Save --- */
-  autoSaveEnabled: false,
+  autoSaveEnabled: true,
   setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
   unsavedChanges: false,
   setUnsavedChanges: (unsaved) => set({ unsavedChanges: unsaved }),

@@ -103,7 +103,7 @@ export default function DataTableView() {
   }
 
   // Persist a single cell edit immediately (on blur / Enter).
-  const commitCellEdit = (rowIndex: number, colName: string, value: string) => {
+  const commitCellEdit = async (rowIndex: number, colName: string, value: string) => {
     const targetRow = filteredRows[rowIndex];
     if (!targetRow) return;
     const rowId = targetRow.__id as number | undefined;
@@ -126,6 +126,8 @@ export default function DataTableView() {
     });
 
     updateTable(table.id, { rows: updatedRows, rowCount: updatedRows.length });
+    // Persist immediately so the edit is saved to the DB.
+    await useProjectStore.getState().saveProject();
     addToast("Cell updated", "success");
   };
 
@@ -134,9 +136,9 @@ export default function DataTableView() {
     setDraft(current === null || current === undefined ? "" : String(current));
   };
 
-  const finishEdit = (save: boolean) => {
+  const finishEdit = async (save: boolean) => {
     if (!editing) return;
-    if (save) commitCellEdit(editing.row, editing.col, draft);
+    if (save) await commitCellEdit(editing.row, editing.col, draft);
     setEditing(null);
     setDraft("");
   };
@@ -185,6 +187,9 @@ export default function DataTableView() {
         rowCount: data.table.rowCount,
         columns: data.table.columns,
       });
+
+      // Persist immediately so the change is saved to the DB.
+      await useProjectStore.getState().saveProject();
 
       addToast(`Transform "${action}" applied successfully`, "success");
     } catch (error) {

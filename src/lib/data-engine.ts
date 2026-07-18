@@ -46,6 +46,13 @@ function removeNulls(table: DataTable, column?: string): DataTable {
 }
 
 function removeDuplicates(table: DataTable, column?: string): DataTable {
+  // Build a stable key for a row, ignoring the internal __id field so that
+  // whole-table deduplication actually detects duplicate data rows.
+  const rowKey = (row: Record<string, unknown>): string => {
+    const { __id, ...rest } = row;
+    return JSON.stringify(rest);
+  };
+
   if (column) {
     const seen = new Set();
     table.rows = table.rows.filter((row) => {
@@ -57,7 +64,7 @@ function removeDuplicates(table: DataTable, column?: string): DataTable {
   } else {
     const seen = new Set();
     table.rows = table.rows.filter((row) => {
-      const key = JSON.stringify(row);
+      const key = rowKey(row);
       if (seen.has(key)) return false;
       seen.add(key);
       return true;
