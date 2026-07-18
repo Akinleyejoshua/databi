@@ -7,6 +7,7 @@ import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import type { Widget, ChartType } from "@/types";
 import { X, Trash2 } from "lucide-react";
+import { ColorPicker } from "./color-picker";
 import styles from "./settings-sidebar.module.css";
 
 export default function SettingsModal() {
@@ -31,10 +32,10 @@ export default function SettingsModal() {
           <div className="modal-body">
             <div className={styles.field}>
               <label className="label">Background Color</label>
-              <div className={styles["color-input"]}>
-                <input type="color" value={project?.canvasSettings.backgroundColor || "#ffffff"} onChange={(e) => updateCanvasSettings({ backgroundColor: e.target.value })} />
-                <input className="input" value={project?.canvasSettings.backgroundColor || "#ffffff"} onChange={(e) => updateCanvasSettings({ backgroundColor: e.target.value })} />
-              </div>
+              <ColorPicker
+                value={project?.canvasSettings.backgroundColor || "#ffffff"}
+                onChange={(v) => updateCanvasSettings({ backgroundColor: v })}
+              />
             </div>
             <div className={styles.field}>
               <label className="label">Columns (Grid)</label>
@@ -68,34 +69,18 @@ export default function SettingsModal() {
                 <>
                   <div className={styles.field}>
                     <label className="label">Container Background</label>
-                    <div className={styles["color-input"]}>
-                      <input 
-                        type="color" 
-                        value={project?.canvasSettings.containerBgColor || "#ffffff"} 
-                        onChange={(e) => updateCanvasSettings({ containerBgColor: e.target.value })} 
-                      />
-                      <input 
-                        className="input" 
-                        value={project?.canvasSettings.containerBgColor || "#ffffff"} 
-                        onChange={(e) => updateCanvasSettings({ containerBgColor: e.target.value })} 
-                      />
-                    </div>
+                    <ColorPicker
+                      value={project?.canvasSettings.containerBgColor || "#ffffff"}
+                      onChange={(v) => updateCanvasSettings({ containerBgColor: v })}
+                    />
                   </div>
 
                   <div className={styles.field}>
                     <label className="label">Border Color</label>
-                    <div className={styles["color-input"]}>
-                      <input 
-                        type="color" 
-                        value={project?.canvasSettings.containerBorderColor || "rgba(0,0,0,0.08)"} 
-                        onChange={(e) => updateCanvasSettings({ containerBorderColor: e.target.value })} 
-                      />
-                      <input 
-                        className="input" 
-                        value={project?.canvasSettings.containerBorderColor || "rgba(0,0,0,0.08)"} 
-                        onChange={(e) => updateCanvasSettings({ containerBorderColor: e.target.value })} 
-                      />
-                    </div>
+                    <ColorPicker
+                      value={project?.canvasSettings.containerBorderColor || "rgba(0,0,0,0.08)"}
+                      onChange={(v) => updateCanvasSettings({ containerBorderColor: v })}
+                    />
                   </div>
 
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "12px" }}>
@@ -676,50 +661,18 @@ export default function SettingsModal() {
             <span className={styles["section-label"]}>Visual Style</span>
             <div className={styles.field}>
               <label className="label">Background</label>
-              <div className={styles["premium-color-picker"]}>
-                <div 
-                  className={styles["color-swatch"]} 
-                  style={{ backgroundColor: widget.style.backgroundColor.startsWith("var") ? "var(--color-bg-secondary)" : widget.style.backgroundColor }}
-                  onClick={() => document.getElementById(`bg-color-${widget.id}`)?.click()}
-                />
-                <input 
-                  id={`bg-color-${widget.id}`}
-                  type="color" 
-                  value={widget.style.backgroundColor.startsWith("var") ? "#ffffff" : widget.style.backgroundColor} 
-                  onChange={(e) => updateWidgetStyle(widget.id, { backgroundColor: e.target.value })} 
-                  style={{ visibility: "hidden", position: "absolute", width: 0 }}
-                />
-                <input 
-                  className="input" 
-                  value={widget.style.backgroundColor} 
-                  onChange={(e) => updateWidgetStyle(widget.id, { backgroundColor: e.target.value })} 
-                  style={{ flex: 1, height: "32px", fontSize: "12px" }}
-                />
-              </div>
+              <ColorPicker
+                value={widget.style.backgroundColor}
+                onChange={(v) => updateWidgetStyle(widget.id, { backgroundColor: v })}
+              />
             </div>
 
             <div className={styles.field}>
               <label className="label">Text Color</label>
-              <div className={styles["premium-color-picker"]}>
-                <div 
-                  className={styles["color-swatch"]} 
-                  style={{ backgroundColor: widget.style.textColor.startsWith("var") ? "var(--color-text)" : widget.style.textColor }}
-                  onClick={() => document.getElementById(`text-color-${widget.id}`)?.click()}
-                />
-                <input 
-                  id={`text-color-${widget.id}`}
-                  type="color" 
-                  value={widget.style.textColor.startsWith("var") ? "#000000" : widget.style.textColor} 
-                  onChange={(e) => updateWidgetStyle(widget.id, { textColor: e.target.value })} 
-                  style={{ visibility: "hidden", position: "absolute", width: 0 }}
-                />
-                <input 
-                  className="input" 
-                  value={widget.style.textColor} 
-                  onChange={(e) => updateWidgetStyle(widget.id, { textColor: e.target.value })} 
-                  style={{ flex: 1, height: "32px", fontSize: "12px" }}
-                />
-              </div>
+              <ColorPicker
+                value={widget.style.textColor}
+                onChange={(v) => updateWidgetStyle(widget.id, { textColor: v })}
+              />
             </div>
 
             <div className={styles.field}>

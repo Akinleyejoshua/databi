@@ -348,6 +348,17 @@ export default function CanvasArea({ isSharePage }: Props) {
                 else if (settings.containerShadow === "glow") presetStyle.boxShadow = `0 0 20px ${settings.containerBorderColor || "rgba(99, 102, 241, 0.25)"}`;
               }
 
+              // Resolve the effective background so we can enable a real
+              // glassmorphism blur whenever it has transparency.
+              const resolvedBg =
+                preset === "default"
+                  ? widget.style.backgroundColor
+                  : (presetStyle.backgroundColor as string) || widget.style.backgroundColor;
+
+              const bgAlphaMatch = String(resolvedBg).match(/rgba?\([^)]*,\s*([0-9.]+)\s*\)/);
+              const bgAlpha = bgAlphaMatch ? parseFloat(bgAlphaMatch[1]) : 1;
+              const useGlassBlur = bgAlpha < 1 && !String(resolvedBg).startsWith("var(");
+
               const containerStyle: React.CSSProperties = preset === "default" ? {
                 backgroundColor: widget.style.backgroundColor,
                 color: widget.style.textColor,
@@ -358,7 +369,8 @@ export default function CanvasArea({ isSharePage }: Props) {
                 width: "100%",
                 height: "100%",
                 display: "flex",
-                flexDirection: "column"
+                flexDirection: "column",
+                ...(useGlassBlur ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } : {}),
               } : {
                 color: widget.style.textColor || "var(--color-text)",
                 padding: `${widget.style.padding ?? 16}px`,
@@ -368,6 +380,7 @@ export default function CanvasArea({ isSharePage }: Props) {
                 display: "flex",
                 flexDirection: "column",
                 ...presetStyle,
+                ...(useGlassBlur && !presetStyle.backdropFilter ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } : {}),
               };
 
               return (
