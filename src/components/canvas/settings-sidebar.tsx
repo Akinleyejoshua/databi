@@ -8,6 +8,7 @@ import { useUiStore } from "@/store/use-ui-store";
 import type { Widget, ChartType } from "@/types";
 import { X, Trash2 } from "lucide-react";
 import { ColorPicker } from "./color-picker";
+import { GradientPicker } from "./gradient-picker";
 import styles from "./settings-sidebar.module.css";
 
 export default function SettingsModal() {
@@ -31,11 +32,42 @@ export default function SettingsModal() {
           </div>
           <div className="modal-body">
             <div className={styles.field}>
-              <label className="label">Background Color</label>
-              <ColorPicker
-                value={project?.canvasSettings.backgroundColor || "#ffffff"}
-                onChange={(v) => updateCanvasSettings({ backgroundColor: v })}
+              <label className="label">Background Type</label>
+              <select
+                className="select"
+                value={project?.canvasSettings.backgroundType || "solid"}
+                onChange={(e) => updateCanvasSettings({ backgroundType: e.target.value as "solid" | "gradient" })}
+              >
+                <option value="solid">Solid Color</option>
+                <option value="gradient">Gradient</option>
+              </select>
+            </div>
+
+            {project?.canvasSettings.backgroundType === "gradient" ? (
+              <GradientPicker
+                value={project?.canvasSettings.backgroundGradient || "linear-gradient(135deg, #4169e1, #2f52c7)"}
+                onChange={(v) => updateCanvasSettings({ backgroundGradient: v })}
               />
+            ) : (
+              <div className={styles.field}>
+                <label className="label">Background Color</label>
+                <ColorPicker
+                  value={project?.canvasSettings.backgroundColor || "#ffffff"}
+                  onChange={(v) => updateCanvasSettings({ backgroundColor: v })}
+                />
+              </div>
+            )}
+
+            <div className={styles.field}>
+              <label className="label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={!!project?.canvasSettings.canvasBlur}
+                  onChange={(e) => updateCanvasSettings({ canvasBlur: e.target.checked })}
+                  style={{ width: "16px", height: "16px", accentColor: "var(--color-primary)" }}
+                />
+                Apply Backdrop Blur (glass effect)
+              </label>
             </div>
             <div className={styles.field}>
               <label className="label">Columns (Grid)</label>

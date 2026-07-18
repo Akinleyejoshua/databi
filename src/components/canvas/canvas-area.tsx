@@ -253,7 +253,14 @@ export default function CanvasArea({ isSharePage }: Props) {
         <div
           className={`${styles.canvas} ${cursorMode === "pan" ? styles["canvas--panning"] : ""}`}
           style={{ 
-            backgroundColor: project.canvasSettings.backgroundColor,
+            backgroundColor: project.canvasSettings.backgroundType === "gradient"
+              ? undefined
+              : project.canvasSettings.backgroundColor,
+            backgroundImage: project.canvasSettings.backgroundType === "gradient"
+              ? project.canvasSettings.backgroundGradient
+              : undefined,
+            backdropFilter: project.canvasSettings.canvasBlur ? "blur(20px)" : undefined,
+            WebkitBackdropFilter: project.canvasSettings.canvasBlur ? "blur(20px)" : undefined,
             minHeight: canvasHeight,
             width: canvasWidth,
             position: "relative",

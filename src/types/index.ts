@@ -189,6 +189,9 @@ export interface Widget {
 
 export interface CanvasSettings {
   backgroundColor: string;
+  backgroundType?: "solid" | "gradient";
+  backgroundGradient?: string;
+  canvasBlur?: boolean;
   width: number;
   cols: number;
   rowHeight: number;
