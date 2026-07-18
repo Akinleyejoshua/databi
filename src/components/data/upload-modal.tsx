@@ -133,26 +133,13 @@ export default function UploadModal() {
 
         {/* Tab Navigation */}
         {parsedTables.length === 0 && (
-          <div style={{ display: "flex", gap: "4px", padding: "12px 16px", background: "var(--color-bg-secondary)", borderRadius: "var(--radius-md)" }}>
+          <div className={styles["tab-nav"]}>
             <button
               onClick={() => {
                 setActiveTab("file");
                 setUrlInput("");
               }}
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                padding: "10px",
-                border: "none",
-                background: activeTab === "file" ? "var(--color-bg)" : "transparent",
-                cursor: "pointer",
-                borderRadius: "var(--radius-sm)",
-                color: activeTab === "file" ? "var(--color-primary)" : "var(--color-text-secondary)",
-                fontWeight: activeTab === "file" ? "600" : "500",
-              }}
+              className={`${styles["tab-btn"]} ${activeTab === "file" ? styles["tab-btn--active"] : ""}`}
             >
               <Folder size={16} />
               File Upload
@@ -161,20 +148,7 @@ export default function UploadModal() {
               onClick={() => {
                 setActiveTab("url");
               }}
-              style={{
-                flex: 1,
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                gap: "8px",
-                padding: "10px",
-                border: "none",
-                background: activeTab === "url" ? "var(--color-bg)" : "transparent",
-                cursor: "pointer",
-                borderRadius: "var(--radius-sm)",
-                color: activeTab === "url" ? "var(--color-primary)" : "var(--color-text-secondary)",
-                fontWeight: activeTab === "url" ? "600" : "500",
-              }}
+              className={`${styles["tab-btn"]} ${activeTab === "url" ? styles["tab-btn--active"] : ""}`}
             >
               <LinkIcon size={16} />
               URL Import
@@ -200,11 +174,13 @@ export default function UploadModal() {
                   </div>
                 ) : (
                   <>
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="var(--color-primary)" strokeWidth="1.5">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
+                    <div className={styles["drop-icon"]}>
+                      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                        <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+                        <polyline points="17 8 12 3 7 8" />
+                        <line x1="12" y1="3" x2="12" y2="15" />
+                      </svg>
+                    </div>
                     <h3>Drop your file here</h3>
                     <p>or click to browse</p>
                     <span className={styles["file-types"]}>Supports .xlsx, .xls, .csv</span>
@@ -220,87 +196,53 @@ export default function UploadModal() {
               </div>
             ) : (
               // URL Import Tab
-              <div style={{ padding: "20px" }}>
-                <div style={{ marginBottom: "16px" }}>
-                  <label style={{ display: "block", marginBottom: "8px", fontWeight: "500" }}>
+              <div className={styles["url-panel"]}>
+                <div>
+                  <label className={styles["url-field-label"]}>
                     Dataset URL
                   </label>
                   <input
                     type="text"
+                    className={styles["url-input"]}
                     placeholder="https://example.com/data.csv"
                     value={urlInput}
                     onChange={(e) => setUrlInput(e.target.value)}
                     onKeyPress={(e) => e.key === "Enter" && handleUrlImport()}
-                    style={{
-                      width: "100%",
-                      padding: "10px",
-                      border: "none",
-                      background: "var(--color-bg-secondary)",
-                      borderRadius: "6px",
-                      fontSize: "14px",
-                      fontFamily: "inherit",
-                      color: "var(--color-text)",
-                      outline: "none",
-                    }}
                   />
-                  <small style={{ display: "block", marginTop: "6px", color: "var(--color-text-secondary)" }}>
+                  <small className={styles["url-hint"]}>
                     Supported: CSV, Excel, JSON, GitHub Raw, Dropbox, Google Drive, OneDrive, SharePoint, Excel Online (Microsoft 365), 1drv.ms URLs, or API endpoints
                   </small>
                 </div>
 
-                <div style={{ marginBottom: "16px", padding: "12px", backgroundColor: "var(--color-bg-secondary)", borderRadius: "6px" }}>
-                  <label style={{ display: "flex", alignItems: "center", cursor: "pointer", marginBottom: "12px" }}>
+                <div className={styles["refresh-card"]}>
+                  <label className={styles["refresh-toggle"]}>
                     <input
                       type="checkbox"
                       checked={isAutoRefresh}
                       onChange={(e) => setIsAutoRefresh(e.target.checked)}
-                      style={{ marginRight: "8px" }}
                     />
-                    <span style={{ fontWeight: "500" }}>Auto-refresh data</span>
+                    <span>Auto-refresh data</span>
                   </label>
 
                   {isAutoRefresh && (
-                    <div>
-                      <label style={{ display: "block", marginBottom: "6px", fontSize: "14px" }}>
-                        Refresh interval:
-                      </label>
-                      <select
-                        value={refreshInterval}
-                        onChange={(e) => setRefreshInterval(Number(e.target.value))}
-                        style={{
-                          width: "100%",
-                          padding: "8px",
-                          border: "none",
-                          background: "var(--color-bg-secondary)",
-                          borderRadius: "4px",
-                          fontSize: "14px",
-                          color: "var(--color-text)",
-                          outline: "none",
-                        }}
-                      >
-                        <option value={300}>Every 5 minutes</option>
-                        <option value={900}>Every 15 minutes</option>
-                        <option value={1800}>Every 30 minutes</option>
-                        <option value={3600}>Every 1 hour</option>
-                        <option value={86400}>Every 24 hours</option>
-                      </select>
-                    </div>
+                    <select
+                      className="select"
+                      value={refreshInterval}
+                      onChange={(e) => setRefreshInterval(Number(e.target.value))}
+                    >
+                      <option value={300}>Every 5 minutes</option>
+                      <option value={900}>Every 15 minutes</option>
+                      <option value={1800}>Every 30 minutes</option>
+                      <option value={3600}>Every 1 hour</option>
+                      <option value={86400}>Every 24 hours</option>
+                    </select>
                   )}
                 </div>
 
                 <button
+                  className={styles["import-btn"]}
                   onClick={handleUrlImport}
                   disabled={isUploading || !urlInput.trim()}
-                  style={{
-                    width: "100%",
-                    padding: "10px",
-                    backgroundColor: urlInput.trim() && !isUploading ? "var(--color-primary)" : "var(--color-bg-tertiary)",
-                    color: "white",
-                    border: "none",
-                    borderRadius: "6px",
-                    cursor: urlInput.trim() && !isUploading ? "pointer" : "not-allowed",
-                    fontWeight: "500",
-                  }}
                 >
                   {isUploading ? "Loading..." : "Import from URL"}
                 </button>

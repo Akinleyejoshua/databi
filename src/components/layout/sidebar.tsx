@@ -28,7 +28,8 @@ import {
   Link2,
   Wand2,
   Calculator,
-  Map
+  Map,
+  Copy
 } from "lucide-react";
 import styles from "./sidebar.module.css";
 import AiFormattedText from "../shared/ai-formatted-text";
@@ -228,7 +229,7 @@ export default function Sidebar() {
                   <p>Choose a table from the Tables panel first</p>
                 </div>
               ) : (
-                <div style={{ display: "flex", flexDirection: "column", gap: "16px", padding: "16px" }}>
+                <div className={styles["transform-card"]}>
                   <div className={styles.field}>
                     <label className="label">Target Column</label>
                     <select className="select" id="transform-column-select" defaultValue="">
@@ -238,54 +239,54 @@ export default function Sidebar() {
                       ))}
                     </select>
                   </div>
-                  
-                  <div className="divider" />
 
-                  <span className={styles["section-label"]}>Data Cleaning</span>
-                  <button className="btn btn-secondary btn-sm" onClick={async () => {
-                    const col = (document.getElementById('transform-column-select') as HTMLSelectElement)?.value;
-                    const table = project.tables.find(t => t.id === selectedTableId);
-                    if (!table) return;
-                    useUiStore.getState().addToast("Transforming...", "info");
-                    const res = await fetch("/api/data/transform", {
-                      method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ table, transform: { tableId: table.id, action: "remove-nulls", column: col || undefined } })
-                    });
-                    if (res.ok) {
-                      const data = await res.json();
-                      useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
-                      useUiStore.getState().addToast("Nulls removed successfully", "success");
-                      await useProjectStore.getState().saveProject();
-                    }
-                  }}>
-                    Remove Nulls
-                  </button>
+                  <span className={styles["transform-section-label"]}>Data Cleaning</span>
+                  <div className={styles["transform-actions"]}>
+                    <button className={styles["transform-action"]} onClick={async () => {
+                      const col = (document.getElementById('transform-column-select') as HTMLSelectElement)?.value;
+                      const table = project.tables.find(t => t.id === selectedTableId);
+                      if (!table) return;
+                      useUiStore.getState().addToast("Transforming...", "info");
+                      const res = await fetch("/api/data/transform", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ table, transform: { tableId: table.id, action: "remove-nulls", column: col || undefined } })
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
+                        useUiStore.getState().addToast("Nulls removed successfully", "success");
+                        await useProjectStore.getState().saveProject();
+                      }
+                    }}>
+                      <Trash2 size={16} strokeWidth={2} />
+                      Remove Nulls
+                    </button>
 
-                  <button className="btn btn-secondary btn-sm" onClick={async () => {
-                    const col = (document.getElementById('transform-column-select') as HTMLSelectElement)?.value;
-                    const table = project.tables.find(t => t.id === selectedTableId);
-                    if (!table) return;
-                    useUiStore.getState().addToast("Transforming...", "info");
-                    const res = await fetch("/api/data/transform", {
-                      method: "POST", headers: { "Content-Type": "application/json" },
-                      body: JSON.stringify({ table, transform: { tableId: table.id, action: "remove-duplicates", column: col || undefined } })
-                    });
-                    if (res.ok) {
-                      const data = await res.json();
-                      useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
-                      useUiStore.getState().addToast("Duplicates removed successfully", "success");
-                      await useProjectStore.getState().saveProject();
-                    }
-                  }}>
-                    Remove Duplicates
-                  </button>
+                    <button className={styles["transform-action"]} onClick={async () => {
+                      const col = (document.getElementById('transform-column-select') as HTMLSelectElement)?.value;
+                      const table = project.tables.find(t => t.id === selectedTableId);
+                      if (!table) return;
+                      useUiStore.getState().addToast("Transforming...", "info");
+                      const res = await fetch("/api/data/transform", {
+                        method: "POST", headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ table, transform: { tableId: table.id, action: "remove-duplicates", column: col || undefined } })
+                      });
+                      if (res.ok) {
+                        const data = await res.json();
+                        useProjectStore.getState().updateTable(table.id, { rows: data.table.rows, rowCount: data.table.rowCount, columns: data.table.columns });
+                        useUiStore.getState().addToast("Duplicates removed successfully", "success");
+                        await useProjectStore.getState().saveProject();
+                      }
+                    }}>
+                      <Copy size={16} strokeWidth={2} />
+                      Remove Duplicates
+                    </button>
+                  </div>
 
-                  <div className="divider" />
-
-                  <span className={styles["section-label"]}>Data Types</span>
-                  <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "8px" }}>
+                  <span className={styles["transform-section-label"]}>Cast Data Type</span>
+                  <div className={styles["transform-grid"]}>
                     {(["string", "number", "boolean", "date"] as const).map(type => (
-                      <button key={type} className="btn btn-secondary btn-sm" onClick={async () => {
+                      <button key={type} className={styles["transform-action"]} onClick={async () => {
                         const col = (document.getElementById('transform-column-select') as HTMLSelectElement)?.value;
                         if (!col) return useUiStore.getState().addToast("Select a column to cast type", "error");
                         const table = project.tables.find(t => t.id === selectedTableId);

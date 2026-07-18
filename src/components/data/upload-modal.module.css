@@ -6,6 +6,7 @@
   gap: var(--space-3);
   padding: var(--space-12);
   background: var(--color-bg-secondary);
+  border: 2px dashed var(--color-border);
   border-radius: var(--radius-lg);
   cursor: pointer;
   transition: all var(--transition-fast);
@@ -15,6 +16,26 @@
 .drop-zone:hover,
 .drop-zone--active {
   background: var(--color-primary-glow);
+  border-color: var(--color-primary);
+}
+
+.drop-icon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  background: var(--color-primary-glow);
+  color: var(--color-primary);
+  transition: all var(--transition-fast);
+}
+
+.drop-zone:hover .drop-icon,
+.drop-zone--active .drop-icon {
+  transform: scale(1.05);
+  background: var(--color-primary);
+  color: #fff;
 }
 
 .drop-zone h3 {
@@ -30,7 +51,7 @@
 .file-types {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
-  background: var(--color-bg-secondary);
+  background: var(--color-bg-tertiary);
   padding: var(--space-1) var(--space-3);
   border-radius: var(--radius-full);
 }
@@ -75,10 +96,32 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
+  position: relative;
+  overflow: hidden;
+}
+
+.sheet-item::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: var(--color-primary);
+  opacity: 0;
+  transition: opacity var(--transition-fast);
 }
 
 .sheet-item:hover {
   background: var(--color-bg-tertiary);
+}
+
+.sheet-item:hover::before {
+  opacity: 0.5;
+}
+
+.sheet-item input[type="checkbox"]:checked ~ .sheet-details {
+  color: var(--color-primary);
 }
 
 .sheet-item input[type="checkbox"] {
@@ -100,4 +143,132 @@
 .sheet-meta {
   font-size: var(--font-size-xs);
   color: var(--color-text-tertiary);
+}
+
+/* Tab navigation (pill) */
+.tab-nav {
+  display: flex;
+  gap: var(--space-1);
+  padding: var(--space-1);
+  margin: var(--space-4) var(--space-4) 0;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+}
+
+.tab-btn {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: none;
+  background: transparent;
+  border-radius: var(--radius-md);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.tab-btn:hover {
+  color: var(--color-text);
+  background: var(--color-bg-tertiary);
+}
+
+.tab-btn--active {
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-weight: 600;
+  box-shadow: var(--shadow-sm);
+}
+
+/* URL import */
+.url-panel {
+  padding: var(--space-5) var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.url-field-label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.url-input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: none;
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  color: var(--color-text);
+  outline: none;
+  transition: background var(--transition-fast);
+}
+
+.url-input:focus {
+  background: var(--color-bg-tertiary);
+}
+
+.url-hint {
+  display: block;
+  margin-top: var(--space-2);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-tertiary);
+  line-height: 1.5;
+}
+
+.refresh-card {
+  padding: var(--space-4);
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.refresh-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text-secondary);
+}
+
+.refresh-toggle input {
+  accent-color: var(--color-primary);
+  width: 18px;
+  height: 18px;
+}
+
+.import-btn {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  background: var(--color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.import-btn:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+
+.import-btn:disabled {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-tertiary);
+  cursor: not-allowed;
 }

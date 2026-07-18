@@ -3,12 +3,17 @@
    ============================================================ */
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import { useTableTransform } from "@/hooks/use-table-transform";
 import type { DataTable as DataTableType, TransformAction, DataType } from "@/types";
 import styles from "./data-table.module.css";
+
+// A value is considered "empty" if it is null, undefined, or a blank string.
+function isEmptyValue(v: unknown): boolean {
+  return v === null || v === undefined || (typeof v === "string" && v.trim() === "");
+}
 
 export default function DataTableView() {
   const { project, updateTable, removeTable } = useProjectStore();
@@ -18,6 +23,12 @@ export default function DataTableView() {
   const [searchTerm, setSearchTerm] = useState("");
   const [transformColumn, setTransformColumn] = useState("");
   const [isTransforming, setIsTransforming] = useState(false);
+  // Highlight mode applied to the selected column: "none" | "null" | "empty" | "duplicate" | "all"
+  type HighlightMode = "none" | "null" | "empty" | "duplicate" | "all";
+  const [highlightMode, setHighlightMode] = useState<HighlightMode>("none");
+  const [editing, setEditing] = useState<{ row: number; col: string } | null>(null);
+  const [draft, setDraft] = useState<string>("");
+  const saveTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const pageSize = 50;
 
@@ -42,6 +53,44 @@ export default function DataTableView() {
     );
   }
 
+  const filteredRows = useMemo(() => {
+    if (!table) return [];
+    return searchTerm
+      ? table.rows.filter((row) =>
+          Object.values(row).some((val) =>
+            String(val).toLowerCase().includes(searchTerm.toLowerCase())
+          )
+        )
+      : table.rows;
+  }, [table, searchTerm]);
+
+  const totalPages = Math.ceil(filteredRows.length / pageSize);
+  const pageRows = filteredRows.slice(page * pageSize, (page + 1) * pageSize);
+
+  // Compute duplicate value flags across the FULL filtered dataset (per column),
+  // so a value highlighted as duplicate stays consistent across pages.
+  const duplicateFlags = useMemo(() => {
+    const flags: Record<string, Set<number>> = {};
+    if (!table) return flags;
+    for (const col of table.columns) {
+      const seen = new Map<string, number>();
+      const dupRows = new Set<number>();
+      filteredRows.forEach((row, idx) => {
+        const raw = row[col.name];
+        if (isEmptyValue(raw)) return;
+        const key = String(raw);
+        if (seen.has(key)) {
+          dupRows.add(seen.get(key)!);
+          dupRows.add(idx);
+        } else {
+          seen.set(key, idx);
+        }
+      });
+      flags[col.name] = dupRows;
+    }
+    return flags;
+  }, [filteredRows, table]);
+
   if (!table) {
     return (
       <div className={styles["no-data"]}>
@@ -53,16 +102,44 @@ export default function DataTableView() {
     );
   }
 
-  const filteredRows = searchTerm
-    ? table.rows.filter((row) =>
-        Object.values(row).some((val) =>
-          String(val).toLowerCase().includes(searchTerm.toLowerCase())
-        )
-      )
-    : table.rows;
+  // Persist a single cell edit immediately (on blur / Enter).
+  const commitCellEdit = (rowIndex: number, colName: string, value: string) => {
+    const targetRow = filteredRows[rowIndex];
+    if (!targetRow) return;
+    const rowId = targetRow.__id as number | undefined;
+    const globalIndex = rowId ?? table.rows.indexOf(targetRow);
+    if (globalIndex < 0) return;
 
-  const totalPages = Math.ceil(filteredRows.length / pageSize);
-  const pageRows = filteredRows.slice(page * pageSize, (page + 1) * pageSize);
+    const updatedRows = table.rows.map((r, i) => {
+      if (i !== globalIndex) return r;
+      const next = { ...r };
+      const col = table.columns.find((c) => c.name === colName);
+      if (col?.type === "number") {
+        const n = Number(value);
+        next[colName] = value.trim() === "" ? null : (Number.isNaN(n) ? value : n);
+      } else if (col?.type === "boolean") {
+        next[colName] = value === "true" || value === "1";
+      } else {
+        next[colName] = value;
+      }
+      return next;
+    });
+
+    updateTable(table.id, { rows: updatedRows, rowCount: updatedRows.length });
+    addToast("Cell updated", "success");
+  };
+
+  const startEdit = (rowIndex: number, colName: string, current: unknown) => {
+    setEditing({ row: rowIndex, col: colName });
+    setDraft(current === null || current === undefined ? "" : String(current));
+  };
+
+  const finishEdit = (save: boolean) => {
+    if (!editing) return;
+    if (save) commitCellEdit(editing.row, editing.col, draft);
+    setEditing(null);
+    setDraft("");
+  };
 
   // Build a compact page list with ellipsis for large tables
   const buildPageItems = (): (number | "...")[] => {
@@ -160,6 +237,20 @@ export default function DataTableView() {
               <option key={col.name} value={col.name}>{col.name}</option>
             ))}
           </select>
+
+          <select
+            className="select"
+            style={{ width: "150px" }}
+            value={highlightMode}
+            onChange={(e) => setHighlightMode(e.target.value as HighlightMode)}
+            title="Highlight data-quality issues in the selected column"
+          >
+            <option value="none">No highlight</option>
+            <option value="null">Highlight nulls</option>
+            <option value="empty">Highlight empty</option>
+            <option value="duplicate">Highlight duplicates</option>
+            <option value="all">Highlight all issues</option>
+          </select>
         </div>
 
         <div className={styles["toolbar-right"]}>
@@ -202,20 +293,62 @@ export default function DataTableView() {
                 </td>
               </tr>
             ) : (
-              pageRows.map((row, idx) => (
-                <tr key={idx}>
-                  <td className={styles["row-num"]}>{page * pageSize + idx + 1}</td>
-                  {table.columns.map((col) => (
-                    <td key={col.name}>
-                      {row[col.name] === null || row[col.name] === undefined ? (
-                        <span className={styles["null-cell"]}>null</span>
-                      ) : (
-                        String(row[col.name])
-                      )}
-                    </td>
-                  ))}
-                </tr>
-              ))
+              pageRows.map((row, idx) => {
+                const isEditingRow = editing?.row === idx;
+                return (
+                  <tr key={idx}>
+                    <td className={styles["row-num"]}>{page * pageSize + idx + 1}</td>
+                    {table.columns.map((col) => {
+                      const value = row[col.name];
+                      const empty = isEmptyValue(value);
+                      const isDuplicate = !empty && duplicateFlags[col.name]?.has(idx);
+                      const isEditingCell = isEditingRow && editing?.col === col.name;
+                      const colMatches = !transformColumn || transformColumn === col.name;
+                      const hlEmpty = colMatches && (highlightMode === "empty" || highlightMode === "all");
+                      const hlNull = colMatches && (highlightMode === "null" || highlightMode === "all");
+                      const hlDup = colMatches && (highlightMode === "duplicate" || highlightMode === "all");
+                      const cellClass = [
+                        hlEmpty && empty ? styles["cell-empty"] : "",
+                        hlNull && empty ? styles["cell-empty"] : "",
+                        hlDup && isDuplicate ? styles["cell-duplicate"] : "",
+                      ].filter(Boolean).join(" ");
+
+                      if (isEditingCell) {
+                        return (
+                          <td key={col.name} className={cellClass}>
+                            <input
+                              className={styles["cell-input"]}
+                              autoFocus
+                              value={draft}
+                              onChange={(e) => setDraft(e.target.value)}
+                              onBlur={() => finishEdit(true)}
+                              onKeyDown={(e) => {
+                                if (e.key === "Enter") { e.preventDefault(); finishEdit(true); }
+                                else if (e.key === "Escape") { e.preventDefault(); finishEdit(false); }
+                              }}
+                            />
+                          </td>
+                        );
+                      }
+
+                      return (
+                        <td
+                          key={col.name}
+                          className={`${styles["cell-editable"]} ${cellClass}`}
+                          title="Click to edit"
+                          onClick={() => startEdit(idx, col.name, value)}
+                        >
+                          {empty ? (
+                            <span className={styles["null-cell"]}>null</span>
+                          ) : (
+                            String(value)
+                          )}
+                        </td>
+                      );
+                    })}
+                  </tr>
+                );
+              })
             )}
           </tbody>
         </table>
