@@ -208,6 +208,7 @@ export interface CanvasSettings {
   containerBgColor?: string;
   containerBlur?: boolean;
   containerBlurAmount?: number; // container backdrop blur in px (0 = none)
+  canvasTextColor?: string; // preset text color applied to all chart widgets
 }
 
 export interface Sheet {

@@ -103,6 +103,32 @@ export default function SettingsModal() {
             </div>
 
             <div className={styles.field}>
+              <label className="label">Canvas Text Color Preset</label>
+              <ColorPicker
+                value={project?.canvasSettings.canvasTextColor || "#1a1a1a"}
+                onChange={(v) => updateCanvasSettings({ canvasTextColor: v })}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <button
+                className="btn btn-secondary"
+                style={{ width: "100%" }}
+                onClick={() => {
+                  const color = project?.canvasSettings.canvasTextColor || "#1a1a1a";
+                  project?.widgets
+                    .filter((w) => w.type === "chart" || w.type === "kpi")
+                    .forEach((w) => updateWidgetStyle(w.id, { textColor: color }));
+                }}
+              >
+                Auto Text Color All Charts & KPIs
+              </button>
+              <p style={{ fontSize: "10px", opacity: 0.7, marginTop: "4px" }}>
+                Applies the canvas text color preset to every chart and KPI widget for a consistent look.
+              </p>
+            </div>
+
+            <div className={styles.field}>
               <label className="label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                 <input
                   type="checkbox"

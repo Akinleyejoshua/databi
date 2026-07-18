@@ -99,12 +99,14 @@ export default function KpiWidget({ widget }: Props) {
     );
   }
 
+  const presetTextColor = widget.style.textColor;
+
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "4px" }}>
-      <span style={{ fontSize: "12px", fontWeight: 600, color: "var(--color-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
+    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", gap: "4px", color: presetTextColor }}>
+      <span style={{ fontSize: "12px", fontWeight: 600, color: presetTextColor || "var(--color-text-tertiary)", textTransform: "uppercase", letterSpacing: "0.05em" }}>
         {displayLabel}
       </span>
-      <span style={{ fontSize: "32px", fontWeight: 800, color: "var(--color-primary)", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
+      <span style={{ fontSize: "32px", fontWeight: 800, color: presetTextColor || "var(--color-primary)", lineHeight: 1.1, letterSpacing: "-0.02em" }}>
         {formatValue(value ?? 0)}
       </span>
       {trendInfo && (
@@ -128,7 +130,7 @@ export default function KpiWidget({ widget }: Props) {
           {trendInfo.isZero ? "" : (trendInfo.isPositive ? "▲" : "▼")} {trendInfo.formatted}
         </span>
       )}
-      <span style={{ fontSize: "10px", color: "var(--color-text-tertiary)", opacity: 0.8 }}>
+      <span style={{ fontSize: "10px", color: presetTextColor || "var(--color-text-tertiary)", opacity: 0.8 }}>
         {isMeasure(kpi?.valueColumn || "", project?.measures || []) 
           ? "Calculated Measure" 
           : `${kpi?.aggregation} of ${kpi?.valueColumn}`}

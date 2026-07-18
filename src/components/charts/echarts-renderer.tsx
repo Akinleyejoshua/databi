@@ -643,7 +643,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
         animationEasing: "cubicOut"
       }
     };
-  }, [config, tables, filters, measures, relationships]);
+  }, [config, tables, filters, measures, relationships, textColor]);
 
   const [mapLoaded, setMapLoaded] = useState<string | null>(null);
 
