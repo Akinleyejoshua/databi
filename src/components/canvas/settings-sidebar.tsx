@@ -71,6 +71,38 @@ export default function SettingsModal() {
             </div>
 
             <div className={styles.field}>
+              <label className="label">Canvas Blur Intensity: {project?.canvasSettings.canvasBlurAmount ?? 20}px</label>
+              <input
+                className="input"
+                type="range"
+                min={0}
+                max={40}
+                step={1}
+                value={project?.canvasSettings.canvasBlurAmount ?? 20}
+                onChange={(e) => updateCanvasSettings({ canvasBlurAmount: Number(e.target.value) })}
+                style={{ width: "100%", accentColor: "var(--color-primary)" }}
+              />
+            </div>
+
+            <div className={styles.field}>
+              <button
+                className="btn btn-secondary"
+                style={{ width: "100%" }}
+                onClick={() => {
+                  const amount = project?.canvasSettings.canvasBlurAmount ?? 20;
+                  project?.widgets
+                    .filter((w) => w.type === "chart")
+                    .forEach((w) => updateWidgetStyle(w.id, { blur: amount }));
+                }}
+              >
+                Auto Blur All Chart Backgrounds
+              </button>
+              <p style={{ fontSize: "10px", opacity: 0.7, marginTop: "4px" }}>
+                Applies the canvas blur intensity to every chart widget's background.
+              </p>
+            </div>
+
+            <div className={styles.field}>
               <label className="label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
                 <input
                   type="checkbox"
@@ -202,6 +234,20 @@ export default function SettingsModal() {
                       />
                       Apply Backdrop Blur (glass over canvas)
                     </label>
+                  </div>
+
+                  <div className={styles.field}>
+                    <label className="label">Container Blur Intensity: {project?.canvasSettings.containerBlurAmount ?? 20}px</label>
+                    <input
+                      className="input"
+                      type="range"
+                      min={0}
+                      max={40}
+                      step={1}
+                      value={project?.canvasSettings.containerBlurAmount ?? 20}
+                      onChange={(e) => updateCanvasSettings({ containerBlurAmount: Number(e.target.value) })}
+                      style={{ width: "100%", accentColor: "var(--color-primary)" }}
+                    />
                   </div>
                 </>
               )}
@@ -768,6 +814,20 @@ export default function SettingsModal() {
             <div className={styles.field}>
               <label className="label">Padding</label>
               <input className="input" type="number" value={widget.style.padding} onChange={(e) => updateWidgetStyle(widget.id, { padding: Number(e.target.value) })} min={0} max={64} />
+            </div>
+
+            <div className={styles.field}>
+              <label className="label">Blur (backdrop): {widget.style.blur ?? 0}px</label>
+              <input
+                className="input"
+                type="range"
+                min={0}
+                max={40}
+                step={1}
+                value={widget.style.blur ?? 0}
+                onChange={(e) => updateWidgetStyle(widget.id, { blur: Number(e.target.value) })}
+                style={{ width: "100%", accentColor: "var(--color-primary)" }}
+              />
             </div>
           </div>
         </div>

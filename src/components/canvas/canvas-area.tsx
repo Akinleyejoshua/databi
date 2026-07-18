@@ -165,8 +165,8 @@ export default function CanvasArea({ isSharePage }: Props) {
   };
 
   const handleDragStop = (id: string, d: { x: number; y: number }) => {
-    const x = Math.round(d.x / colWidth);
-    const y = Math.round(d.y / rowHeight);
+    const x = Math.max(0, Math.round(d.x / colWidth));
+    const y = Math.max(0, Math.round(d.y / rowHeight));
     const widget = project.widgets.find(w => w.id === id);
     if (!widget) return;
     updateLayouts([{ id, x, y, w: widget.layout.w, h: widget.layout.h }]);
@@ -175,8 +175,8 @@ export default function CanvasArea({ isSharePage }: Props) {
   const handleResizeStop = (id: string, ref: HTMLElement, position: { x: number; y: number }) => {
     const w = Math.round(ref.offsetWidth / colWidth);
     const h = Math.round(ref.offsetHeight / rowHeight);
-    const x = Math.round(position.x / colWidth);
-    const y = Math.round(position.y / rowHeight);
+    const x = Math.max(0, Math.round(position.x / colWidth));
+    const y = Math.max(0, Math.round(position.y / rowHeight));
     updateLayouts([{ id, x, y, w, h }]);
   };
 
@@ -262,8 +262,12 @@ export default function CanvasArea({ isSharePage }: Props) {
             backgroundSize: project.canvasSettings.backgroundType === "gradient"
               ? "100% 100%"
               : undefined,
-            backdropFilter: project.canvasSettings.canvasBlur ? "blur(20px)" : undefined,
-            WebkitBackdropFilter: project.canvasSettings.canvasBlur ? "blur(20px)" : undefined,
+            backdropFilter: project.canvasSettings.canvasBlur && project.canvasSettings.canvasBlurAmount
+              ? `blur(${project.canvasSettings.canvasBlurAmount}px)`
+              : undefined,
+            WebkitBackdropFilter: project.canvasSettings.canvasBlur && project.canvasSettings.canvasBlurAmount
+              ? `blur(${project.canvasSettings.canvasBlurAmount}px)`
+              : undefined,
             minHeight: canvasHeight,
             width: canvasWidth,
             position: "relative",
@@ -311,8 +315,8 @@ export default function CanvasArea({ isSharePage }: Props) {
               } else if (preset === "figma-glass") {
                 presetStyle = {
                   backgroundColor: settings.containerBgColor || (isDarkCanvas ? "rgba(15, 15, 20, 0.65)" : "rgba(255, 255, 255, 0.65)"),
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
+                  backdropFilter: `blur(${settings.containerBlurAmount ?? 20}px)`,
+                  WebkitBackdropFilter: `blur(${settings.containerBlurAmount ?? 20}px)`,
                   borderColor: settings.containerBorderColor || (isDarkCanvas ? "rgba(255,255,255,0.08)" : "rgba(255,255,255,0.4)"),
                   borderWidth: `${settings.containerBorderWidth ?? 1}px`,
                   borderStyle: "solid",
@@ -322,8 +326,8 @@ export default function CanvasArea({ isSharePage }: Props) {
               } else if (preset === "figma-dark-glass") {
                 presetStyle = {
                   backgroundColor: settings.containerBgColor || "rgba(15, 15, 20, 0.75)",
-                  backdropFilter: "blur(20px)",
-                  WebkitBackdropFilter: "blur(20px)",
+                  backdropFilter: `blur(${settings.containerBlurAmount ?? 20}px)`,
+                  WebkitBackdropFilter: `blur(${settings.containerBlurAmount ?? 20}px)`,
                   borderColor: settings.containerBorderColor || "rgba(255,255,255,0.08)",
                   borderWidth: `${settings.containerBorderWidth ?? 1}px`,
                   borderStyle: "solid",
@@ -350,9 +354,9 @@ export default function CanvasArea({ isSharePage }: Props) {
                 };
               }
 
-              if (settings.containerBlur) {
-                presetStyle.backdropFilter = "blur(20px)";
-                presetStyle.WebkitBackdropFilter = "blur(20px)";
+              if (settings.containerBlur && settings.containerBlurAmount) {
+                presetStyle.backdropFilter = `blur(${settings.containerBlurAmount}px)`;
+                presetStyle.WebkitBackdropFilter = `blur(${settings.containerBlurAmount}px)`;
               }
 
               if (settings.containerShadow && settings.containerShadow !== "none" && preset !== "figma-bordered") {
@@ -374,6 +378,10 @@ export default function CanvasArea({ isSharePage }: Props) {
               const bgAlpha = bgAlphaMatch ? parseFloat(bgAlphaMatch[1]) : 1;
               const useGlassBlur = bgAlpha < 1 && !String(resolvedBg).startsWith("var(");
 
+              const widgetBlur = widget.style.blur && widget.style.blur > 0
+                ? `blur(${widget.style.blur}px)`
+                : undefined;
+
               const containerStyle: React.CSSProperties = preset === "default" ? {
                 backgroundColor: settings.removeWidgetBg ? "transparent" : widget.style.backgroundColor,
                 color: widget.style.textColor,
@@ -385,7 +393,11 @@ export default function CanvasArea({ isSharePage }: Props) {
                 height: "100%",
                 display: "flex",
                 flexDirection: "column",
-                ...(useGlassBlur ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } : {}),
+                ...(widgetBlur
+                  ? { backdropFilter: widgetBlur, WebkitBackdropFilter: widgetBlur }
+                  : useGlassBlur
+                    ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }
+                    : {}),
                 ...(settings.removeShadows ? { boxShadow: "none" } : {}),
               } : {
                 color: widget.style.textColor || "var(--color-text)",
@@ -397,7 +409,11 @@ export default function CanvasArea({ isSharePage }: Props) {
                 flexDirection: "column",
                 ...presetStyle,
                 ...(settings.removeWidgetBg ? { backgroundColor: "transparent" } : {}),
-                ...(useGlassBlur && !presetStyle.backdropFilter ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } : {}),
+                ...(widgetBlur
+                  ? { backdropFilter: widgetBlur, WebkitBackdropFilter: widgetBlur }
+                  : useGlassBlur && !presetStyle.backdropFilter
+                    ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" }
+                    : {}),
                 ...(settings.removeShadows ? { boxShadow: "none" } : {}),
               };
 
@@ -406,6 +422,7 @@ export default function CanvasArea({ isSharePage }: Props) {
                   key={widget.id}
                   size={{ width: w, height: h }}
                   position={{ x, y }}
+                  bounds="parent"
                   onDragStart={() => {
                     if (cursorMode === "select") setSelectedWidget(widget.id);
                   }}

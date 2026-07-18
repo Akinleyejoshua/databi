@@ -114,6 +114,7 @@ export interface WidgetStyle {
   borderWidth: number;
   padding: number;
   opacity: number;
+  blur?: number; // backdrop blur amount in px (0 = none)
 }
 
 export interface ChartConfig {
@@ -192,6 +193,7 @@ export interface CanvasSettings {
   backgroundType?: "solid" | "gradient";
   backgroundGradient?: string;
   canvasBlur?: boolean;
+  canvasBlurAmount?: number; // main canvas backdrop blur in px (0 = none)
   removeShadows?: boolean;
   removeWidgetBg?: boolean;
   showGrid?: boolean;
@@ -205,6 +207,7 @@ export interface CanvasSettings {
   containerBorderWidth?: number;
   containerBgColor?: string;
   containerBlur?: boolean;
+  containerBlurAmount?: number; // container backdrop blur in px (0 = none)
 }
 
 export interface Sheet {
