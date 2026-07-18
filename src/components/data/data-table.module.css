@@ -42,6 +42,9 @@
 .toolbar-left { display: flex; align-items: center; gap: var(--space-3); }
 .toolbar-right { display: flex; align-items: center; gap: var(--space-3); flex-wrap: wrap; }
 
+.undo-redo-group { display: flex; align-items: center; gap: var(--space-1); }
+.undo-redo-group .btn { display: inline-flex; align-items: center; gap: var(--space-1); }
+
 .search-box { display: flex; align-items: center; gap: var(--space-2); padding: 0 var(--space-3); background: var(--color-bg-secondary); border-radius: var(--radius-md); height: 36px; }
 .search-box svg { color: var(--color-text-tertiary); flex-shrink: 0; }
 .search-input { border: none; background: transparent; outline: none; font-size: var(--font-size-sm); color: var(--color-text); width: 180px; }

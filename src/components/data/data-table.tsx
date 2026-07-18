@@ -7,6 +7,7 @@ import { useState, useMemo, useRef } from "react";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import { useTableTransform } from "@/hooks/use-table-transform";
+import { useProjectHistory } from "@/store/use-project-history";
 import type { DataTable as DataTableType, TransformAction, DataType } from "@/types";
 import styles from "./data-table.module.css";
 
@@ -19,6 +20,7 @@ export default function DataTableView() {
   const { project, updateTable, removeTable } = useProjectStore();
   const { selectedTableId, setSelectedTableId, addToast } = useUiStore();
   const { applyTransform } = useTableTransform();
+  const { undo, redo, canUndo, canRedo } = useProjectHistory();
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [transformColumn, setTransformColumn] = useState("");
@@ -37,22 +39,9 @@ export default function DataTableView() {
     [project?.tables, selectedTableId]
   );
 
-  if (!project || project.tables.length === 0) {
-    return (
-      <div className={styles["no-data"]}>
-        <div className="empty-state">
-          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
-            <ellipse cx="12" cy="5" rx="9" ry="3" />
-            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
-            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
-          </svg>
-          <h3>No Data Loaded</h3>
-          <p>Upload an Excel or CSV file to begin exploring your data</p>
-        </div>
-      </div>
-    );
-  }
-
+  // All hooks must run unconditionally (before any early return) to keep the
+  // hook call order stable across renders. These memos safely handle a null
+  // `table` so they can live above the early-return branches.
   const filteredRows = useMemo(() => {
     if (!table) return [];
     return searchTerm
@@ -63,9 +52,6 @@ export default function DataTableView() {
         )
       : table.rows;
   }, [table, searchTerm]);
-
-  const totalPages = Math.ceil(filteredRows.length / pageSize);
-  const pageRows = filteredRows.slice(page * pageSize, (page + 1) * pageSize);
 
   // Compute duplicate value flags across the FULL filtered dataset (per column),
   // so a value highlighted as duplicate stays consistent across pages.
@@ -90,6 +76,25 @@ export default function DataTableView() {
     }
     return flags;
   }, [filteredRows, table]);
+
+  const totalPages = Math.ceil(filteredRows.length / pageSize);
+  const pageRows = filteredRows.slice(page * pageSize, (page + 1) * pageSize);
+
+  if (!project || project.tables.length === 0) {
+    return (
+      <div className={styles["no-data"]}>
+        <div className="empty-state">
+          <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
+            <ellipse cx="12" cy="5" rx="9" ry="3" />
+            <path d="M21 12c0 1.66-4 3-9 3s-9-1.34-9-3" />
+            <path d="M3 5v14c0 1.66 4 3 9 3s9-1.34 9-3V5" />
+          </svg>
+          <h3>No Data Loaded</h3>
+          <p>Upload an Excel or CSV file to begin exploring your data</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!table) {
     return (
@@ -219,6 +224,34 @@ export default function DataTableView() {
       {/* Toolbar */}
       <div className={styles.toolbar}>
         <div className={styles["toolbar-left"]}>
+          <div className={styles["undo-redo-group"]}>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={undo}
+              disabled={!canUndo}
+              title="Undo (Ctrl+Z)"
+              aria-label="Undo"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M3 7v6h6" />
+                <path d="M3 13a9 9 0 1 0 3-7.7L3 8" />
+              </svg>
+              Undo
+            </button>
+            <button
+              className="btn btn-ghost btn-sm"
+              onClick={redo}
+              disabled={!canRedo}
+              title="Redo (Ctrl+Shift+Z)"
+              aria-label="Redo"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 7v6h-6" />
+                <path d="M21 13a9 9 0 1 1-3-7.7L21 8" />
+              </svg>
+              Redo
+            </button>
+          </div>
           <div className={styles["search-box"]}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
