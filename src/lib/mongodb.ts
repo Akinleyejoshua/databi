@@ -53,6 +53,15 @@ export async function connectDB(): Promise<typeof mongoose> {
   // the queries stay covered. `createIndexes` is idempotent and cheap if they
   // already exist.
   try {
+    // Ensure models are registered before creating indexes
+    // Import the models to register them with mongoose
+    if (!mongoose.models.Project) {
+      await import("@/lib/models/project");
+    }
+    if (!mongoose.models.User) {
+      await import("@/lib/models/user");
+    }
+    
     await Promise.all([
       cached.conn.model("Project").createIndexes(),
       cached.conn.model("User").createIndexes(),
