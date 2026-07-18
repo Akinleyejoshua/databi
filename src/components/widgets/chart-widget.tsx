@@ -16,8 +16,23 @@ export default function ChartWidget({ widget }: Props) {
 
   if (!project || !widget.chartConfig) return null;
 
+  const { backgroundColor, textColor, fontSize, fontWeight, borderRadius, padding, opacity } = widget.style;
+
   return (
-    <div style={{ width: "100%", height: "100%" }}>
+    <div
+      style={{
+        width: "100%",
+        height: "100%",
+        backgroundColor,
+        color: textColor,
+        fontSize: `${fontSize}px`,
+        fontWeight,
+        borderRadius: `${borderRadius}px`,
+        padding: `${padding}px`,
+        opacity,
+        overflow: "hidden",
+      }}
+    >
       <AdvancedChartsRenderer
         config={widget.chartConfig}
         tables={project.tables}
