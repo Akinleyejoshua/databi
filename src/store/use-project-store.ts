@@ -637,12 +637,21 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       if (!res.ok) throw new Error("Failed to save project");
 
       const saved = await res.json();
-      
-      set({
-        project: sanitizeProjectTables(saved),
+
+      // IMPORTANT: Keep the in-memory project intact. The server has persisted
+      // the data correctly (verified on refresh), but the server response may be
+      // reshaped (e.g. _id added, sheets/widgets recomputed). Replacing the live
+      // project with the server response would (a) clobber the user's current
+      // working state and (b) trigger the history hook to record the pre-save
+      // state as an undoable change — making it look like progress was reverted.
+      // So we only sync the persisted _id (for new projects) and mark clean.
+      set((state) => ({
+        project: state.project
+          ? { ...state.project, _id: state.project._id ?? saved?._id }
+          : state.project,
         isDirty: false,
-        isSaving: false
-      });
+        isSaving: false,
+      }));
     } catch (error) {
       console.error("Save error:", error);
       set({ isSaving: false });
