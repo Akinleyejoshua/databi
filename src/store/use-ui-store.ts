@@ -4,6 +4,7 @@
    ============================================================ */
 
 import { create } from "zustand";
+import { persist, createJSONStorage } from "zustand/middleware";
 import type { EditorTab, DataPanel, SidebarPanel } from "@/types";
 
 interface UiStore {
@@ -74,7 +75,9 @@ interface UiStore {
   setUnsavedChanges: (unsaved: boolean) => void;
 }
 
-export const useUiStore = create<UiStore>((set) => ({
+export const useUiStore = create<UiStore>()(
+  persist(
+    (set) => ({
   /* --- Theme --- */
   theme: "dark",
   toggleTheme: () =>
@@ -160,4 +163,19 @@ export const useUiStore = create<UiStore>((set) => ({
   setAutoSaveEnabled: (enabled) => set({ autoSaveEnabled: enabled }),
   unsavedChanges: false,
   setUnsavedChanges: (unsaved) => set({ unsavedChanges: unsaved }),
-}));
+    }),
+    {
+      name: "databi-ui-state",
+      storage: createJSONStorage(() => localStorage),
+      partialize: (state) => ({
+        theme: state.theme,
+        activeTab: state.activeTab,
+        dataPanel: state.dataPanel,
+        sidebarPanel: state.sidebarPanel,
+        selectedTableId: state.selectedTableId,
+        isPreviewMode: state.isPreviewMode,
+        cursorMode: state.cursorMode,
+      }),
+    }
+  )
+);

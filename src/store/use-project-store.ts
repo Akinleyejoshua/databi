@@ -18,6 +18,27 @@ import type {
 } from "@/types";
 import { generateId, getDefaultWidgetStyle } from "@/lib/utils";
 
+/* --- Per-project UI state persistence (active sheet & selected widget) --- */
+const PROJECT_UI_KEY = "databi-project-ui";
+
+type ProjectUiState = Record<string, { activeSheetId?: string; selectedWidgetId?: string | null }>;
+
+function loadProjectUiState(): ProjectUiState {
+  if (typeof window === "undefined") return {};
+  try {
+    return JSON.parse(window.localStorage.getItem(PROJECT_UI_KEY) || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function saveProjectUiState(id: string, patch: { activeSheetId?: string; selectedWidgetId?: string | null }) {
+  if (typeof window === "undefined") return;
+  const all = loadProjectUiState();
+  all[id] = { ...(all[id] || {}), ...patch };
+  window.localStorage.setItem(PROJECT_UI_KEY, JSON.stringify(all));
+}
+
 interface ProjectStore {
   /* --- State --- */
   project: Project | null;
@@ -438,7 +459,11 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       };
     }),
 
-  setSelectedWidget: (widgetId) => set({ selectedWidgetId: widgetId }),
+  setSelectedWidget: (widgetId) =>
+    set((state) => {
+      if (state.project) saveProjectUiState(state.project.id, { selectedWidgetId: widgetId });
+      return { selectedWidgetId: widgetId };
+    }),
 
   updateLayouts: (layouts) =>
     set((state) => {
@@ -494,6 +519,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       };
 
       const updatedSheets = [...sheets, newSheet];
+      saveProjectUiState(state.project.id, { activeSheetId: newSheetId, selectedWidgetId: null });
 
       return {
         project: {
@@ -543,6 +569,7 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       }
 
       const activeWidgets = updatedSheets.find(s => s.id === nextActiveId)?.widgets || [];
+      saveProjectUiState(state.project.id, { activeSheetId: nextActiveId, selectedWidgetId: null });
 
       return {
         project: {
@@ -564,7 +591,8 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
         : [{ id: "default", name: "Page 1", widgets: state.project.widgets || [] }];
 
       const targetSheet = sheets.find(s => s.id === sheetId) || sheets[0];
-      
+      saveProjectUiState(state.project.id, { activeSheetId: targetSheet.id, selectedWidgetId: null });
+
       return {
         project: {
           ...state.project,
@@ -667,11 +695,20 @@ export const useProjectStore = create<ProjectStore>((set, get) => ({
       if (!res.ok) throw new Error("Failed to load project");
 
       const loaded = await res.json();
+      const sanitized = sanitizeProjectTables(loaded);
+
+      // Restore the user's last active sheet / selected widget for this project.
+      const saved = loadProjectUiState()[id];
+      if (saved?.activeSheetId && sanitized?.sheets?.some((s) => s.id === saved.activeSheetId)) {
+        const target = sanitized.sheets.find((s) => s.id === saved.activeSheetId)!;
+        sanitized.activeSheetId = target.id;
+        sanitized.widgets = target.widgets;
+      }
 
       set({
-        project: sanitizeProjectTables(loaded),
+        project: sanitized,
         activeFilters: [],
-        selectedWidgetId: null,
+        selectedWidgetId: saved?.selectedWidgetId ?? null,
         isDirty: false,
         isLoading: false
       });
