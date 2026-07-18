@@ -7,7 +7,7 @@ import { useState, useMemo, useRef } from "react";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import { useTableTransform } from "@/hooks/use-table-transform";
-import { useProjectHistory } from "@/store/use-project-history";
+import { useHistoryStore } from "@/store/use-history-store";
 import type { DataTable as DataTableType, TransformAction, DataType } from "@/types";
 import styles from "./data-table.module.css";
 
@@ -17,10 +17,26 @@ function isEmptyValue(v: unknown): boolean {
 }
 
 export default function DataTableView() {
-  const { project, updateTable, removeTable } = useProjectStore();
+  const { project, updateTable, removeTable, setProject } = useProjectStore();
   const { selectedTableId, setSelectedTableId, addToast } = useUiStore();
   const { applyTransform } = useTableTransform();
-  const { undo, redo, canUndo, canRedo } = useProjectHistory();
+  // Consume the SINGLE history instance mounted in EditorPage (avoiding a
+  // second useProjectHistory() that would desync the history tracking).
+  const past = useHistoryStore((s) => s.past);
+  const future = useHistoryStore((s) => s.future);
+  const historyUndo = useHistoryStore((s) => s.undo);
+  const historyRedo = useHistoryStore((s) => s.redo);
+
+  const undo = () => {
+    const prev = historyUndo();
+    if (prev) setProject(prev);
+  };
+  const redo = () => {
+    const next = historyRedo();
+    if (next) setProject(next);
+  };
+  const canUndo = past.length > 0;
+  const canRedo = future.length > 0;
   const [page, setPage] = useState(0);
   const [searchTerm, setSearchTerm] = useState("");
   const [transformColumn, setTransformColumn] = useState("");
@@ -80,9 +96,46 @@ export default function DataTableView() {
   const totalPages = Math.ceil(filteredRows.length / pageSize);
   const pageRows = filteredRows.slice(page * pageSize, (page + 1) * pageSize);
 
+  // Persistent undo/redo bar — always visible (even when all tables are deleted)
+  // so a destructive action like table deletion can always be reverted.
+  const undoRedoBar = (
+    <div className={styles["undo-redo-bar"]}>
+      <button
+        className="btn btn-ghost btn-sm"
+        onClick={undo}
+        disabled={!canUndo}
+        title="Undo (Ctrl+Z)"
+        aria-label="Undo"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M3 7v6h6" />
+          <path d="M3 13a9 9 0 1 0 3-7.7L3 8" />
+        </svg>
+        Undo
+      </button>
+      <button
+        className="btn btn-ghost btn-sm"
+        onClick={redo}
+        disabled={!canRedo}
+        title="Redo (Ctrl+Shift+Z)"
+        aria-label="Redo"
+      >
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+          <path d="M21 7v6h-6" />
+          <path d="M21 13a9 9 0 1 1-3-7.7L21 8" />
+        </svg>
+        Redo
+      </button>
+      {!canUndo && !canRedo && (
+        <span className={styles["undo-redo-hint"]}>No recent changes</span>
+      )}
+    </div>
+  );
+
   if (!project || project.tables.length === 0) {
     return (
       <div className={styles["no-data"]}>
+        {undoRedoBar}
         <div className="empty-state">
           <svg width="56" height="56" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">
             <ellipse cx="12" cy="5" rx="9" ry="3" />
@@ -99,6 +152,7 @@ export default function DataTableView() {
   if (!table) {
     return (
       <div className={styles["no-data"]}>
+        {undoRedoBar}
         <div className="empty-state">
           <h3>Select a Table</h3>
           <p>Choose a table from the sidebar to view its data</p>
@@ -207,6 +261,7 @@ export default function DataTableView() {
 
   return (
     <div className={styles["data-view"]}>
+      {undoRedoBar}
       {/* Table Tabs */}
       <div className={styles["table-tabs"]}>
         {project.tables.map((t) => (
@@ -224,34 +279,6 @@ export default function DataTableView() {
       {/* Toolbar */}
       <div className={styles.toolbar}>
         <div className={styles["toolbar-left"]}>
-          <div className={styles["undo-redo-group"]}>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={undo}
-              disabled={!canUndo}
-              title="Undo (Ctrl+Z)"
-              aria-label="Undo"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M3 7v6h6" />
-                <path d="M3 13a9 9 0 1 0 3-7.7L3 8" />
-              </svg>
-              Undo
-            </button>
-            <button
-              className="btn btn-ghost btn-sm"
-              onClick={redo}
-              disabled={!canRedo}
-              title="Redo (Ctrl+Shift+Z)"
-              aria-label="Redo"
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                <path d="M21 7v6h-6" />
-                <path d="M21 13a9 9 0 1 1-3-7.7L21 8" />
-              </svg>
-              Redo
-            </button>
-          </div>
           <div className={styles["search-box"]}>
             <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
               <circle cx="11" cy="11" r="8" /><line x1="21" y1="21" x2="16.65" y2="16.65" />
