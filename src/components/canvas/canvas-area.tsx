@@ -258,6 +258,9 @@ export default function CanvasArea({ isSharePage }: Props) {
               : project.canvasSettings.backgroundColor,
             backgroundImage: project.canvasSettings.backgroundType === "gradient"
               ? project.canvasSettings.backgroundGradient
+              : (project.canvasSettings.showGrid === false ? "none" : undefined),
+            backgroundSize: project.canvasSettings.backgroundType === "gradient"
+              ? "100% 100%"
               : undefined,
             backdropFilter: project.canvasSettings.canvasBlur ? "blur(20px)" : undefined,
             WebkitBackdropFilter: project.canvasSettings.canvasBlur ? "blur(20px)" : undefined,
@@ -378,6 +381,7 @@ export default function CanvasArea({ isSharePage }: Props) {
                 display: "flex",
                 flexDirection: "column",
                 ...(useGlassBlur ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } : {}),
+                ...(settings.removeShadows ? { boxShadow: "none" } : {}),
               } : {
                 color: widget.style.textColor || "var(--color-text)",
                 padding: `${widget.style.padding ?? 16}px`,
@@ -388,6 +392,7 @@ export default function CanvasArea({ isSharePage }: Props) {
                 flexDirection: "column",
                 ...presetStyle,
                 ...(useGlassBlur && !presetStyle.backdropFilter ? { backdropFilter: "blur(20px)", WebkitBackdropFilter: "blur(20px)" } : {}),
+                ...(settings.removeShadows ? { boxShadow: "none" } : {}),
               };
 
               return (

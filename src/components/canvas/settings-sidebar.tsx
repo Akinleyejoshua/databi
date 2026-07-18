@@ -69,6 +69,30 @@ export default function SettingsModal() {
                 Apply Backdrop Blur (glass effect)
               </label>
             </div>
+
+            <div className={styles.field}>
+              <label className="label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={!!project?.canvasSettings.removeShadows}
+                  onChange={(e) => updateCanvasSettings({ removeShadows: e.target.checked })}
+                  style={{ width: "16px", height: "16px", accentColor: "var(--color-primary)" }}
+                />
+                Remove all shadows from widgets
+              </label>
+            </div>
+
+            <div className={styles.field}>
+              <label className="label" style={{ display: "flex", alignItems: "center", gap: "8px", cursor: "pointer" }}>
+                <input
+                  type="checkbox"
+                  checked={project?.canvasSettings.showGrid !== false}
+                  onChange={(e) => updateCanvasSettings({ showGrid: e.target.checked })}
+                  style={{ width: "16px", height: "16px", accentColor: "var(--color-primary)" }}
+                />
+                Show canvas grid
+              </label>
+            </div>
             <div className={styles.field}>
               <label className="label">Columns (Grid)</label>
               <input className="input" type="number" value={project?.canvasSettings.cols || 24} onChange={(e) => updateCanvasSettings({ cols: Number(e.target.value) })} min={6} max={48} />

@@ -192,6 +192,8 @@ export interface CanvasSettings {
   backgroundType?: "solid" | "gradient";
   backgroundGradient?: string;
   canvasBlur?: boolean;
+  removeShadows?: boolean;
+  showGrid?: boolean;
   width: number;
   cols: number;
   rowHeight: number;
