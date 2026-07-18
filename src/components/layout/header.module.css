@@ -18,6 +18,65 @@
   min-width: 0;
 }
 
+.nav-toggle {
+  display: none;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  background: transparent;
+  color: var(--color-text);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+.nav-toggle:hover {
+  background: var(--color-surface-hover);
+}
+
+@media (max-width: 768px) {
+  .nav-toggle {
+    display: flex;
+  }
+
+  .logo-text {
+    display: none;
+  }
+
+  .header {
+    padding: 0 var(--space-2);
+    gap: var(--space-2);
+  }
+
+  .header-tabs {
+    gap: 0;
+  }
+
+  .tab-btn span {
+    display: none;
+  }
+
+  .tab-btn {
+    padding: var(--space-1);
+    width: 36px;
+    justify-content: center;
+  }
+
+  .header-right {
+    gap: var(--space-2);
+  }
+
+  .project-title-input {
+    width: 90px;
+  }
+
+  .project-title-input:focus {
+    width: 120px;
+  }
+}
+
 .logo {
   display: flex;
   align-items: center;

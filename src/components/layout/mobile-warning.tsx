@@ -11,7 +11,7 @@ export default function MobileWarning() {
 
   useEffect(() => {
     const checkMobile = () => {
-      setIsMobile(window.innerWidth < 1024);
+      setIsMobile(window.innerWidth < 640);
     };
 
     checkMobile();

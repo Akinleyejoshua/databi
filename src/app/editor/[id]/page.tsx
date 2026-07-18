@@ -26,7 +26,7 @@ import styles from "./page.module.css";
 export default function EditorPage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = use(params);
   const { loadProject, project, isLoading } = useProjectStore();
-  const { activeTab, isPreviewMode, selectedTableId } = useUiStore();
+  const { activeTab, setActiveTab, isPreviewMode, setPreviewMode, selectedTableId, mobileNavOpen, setMobileNavOpen } = useUiStore();
   const { isAuthenticated, isLoading: authLoading, checkAuth } = useAuthStore();
   const router = useRouter();
 
@@ -68,7 +68,33 @@ export default function EditorPage({ params }: { params: Promise<{ id: string }>
     <div className={styles["editor"]}>
       <Header />
       <div className={styles["editor-body"]}>
-        {!isPreviewMode && <Sidebar />}
+        <div
+          className={`${styles["sidebar-drawer"]} ${mobileNavOpen ? styles["sidebar-drawer--open"] : ""}`}
+        >
+          {/* Mobile-only tab switcher — makes the drawer multi-purpose (always available for navigation) */}
+          <div className={styles["drawer-tabs"]}>
+            {(["data", "canvas", "preview"] as const).map((tab) => (
+              <button
+                key={tab}
+                className={`${styles["drawer-tab"]} ${activeTab === tab ? styles["drawer-tab--active"] : ""}`}
+                onClick={() => {
+                  setActiveTab(tab);
+                  setPreviewMode(tab === "preview");
+                  setMobileNavOpen(false);
+                }}
+              >
+                {tab.charAt(0).toUpperCase() + tab.slice(1)}
+              </button>
+            ))}
+          </div>
+          {!isPreviewMode && <Sidebar />}
+        </div>
+        {mobileNavOpen && (
+          <div
+            className={styles["sidebar-backdrop"]}
+            onClick={() => setMobileNavOpen(false)}
+          />
+        )}
 
         <div className={styles["editor-main"]}>
           {activeTab === "data" && <DataTableView />}

@@ -14,7 +14,7 @@ import { useState, useRef, useEffect } from "react";
 
 export default function Header() {
   const { project, isSaving, updateProjectMeta } = useProjectStore();
-  const { activeTab, setActiveTab, setPreviewMode, isPreviewMode, setShareModalOpen, autoSaveEnabled, setAutoSaveEnabled } = useUiStore();
+  const { activeTab, setActiveTab, setPreviewMode, isPreviewMode, setShareModalOpen, autoSaveEnabled, setAutoSaveEnabled, mobileNavOpen, setMobileNavOpen } = useUiStore();
   const { user, logout } = useAuthStore();
   const { handleSave, isDirty, unsavedChanges } = useSaveManager();
   
@@ -35,6 +35,17 @@ export default function Header() {
   return (
     <header className={styles.header}>
       <div className={styles["header-left"]}>
+        <button
+          className={styles["nav-toggle"]}
+          aria-label="Toggle navigation"
+          onClick={() => setMobileNavOpen(!mobileNavOpen)}
+        >
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+            <line x1="4" y1="7" x2="20" y2="7" />
+            <line x1="4" y1="12" x2="20" y2="12" />
+            <line x1="4" y1="17" x2="20" y2="17" />
+          </svg>
+        </button>
         <Link href="/" className={styles.logo}>
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
             <rect x="2" y="2" width="8" height="8" rx="2" fill="#4169E1" />
@@ -73,6 +84,7 @@ export default function Header() {
               onClick={() => {
                 setActiveTab(tab);
                 setPreviewMode(tab === "preview");
+                setMobileNavOpen(false);
               }}
             >
               {tab === "data" && (
