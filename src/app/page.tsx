@@ -378,7 +378,7 @@ export default function HomePage() {
       </main>
 
       {/* Footer */}
-      <div style={{ padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "13px", color: "var(--color-text-tertiary)", marginTop: "auto", borderTop: "1px solid var(--color-border-light)" }}>
+      <div style={{ padding: "16px", display: "flex", justifyContent: "center", alignItems: "center", fontSize: "13px", color: "var(--color-text-tertiary)", marginTop: "auto" }}>
         Built by <a href="https://joshuapro.netlify.app" target="_blank" rel="noopener noreferrer" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none", marginLeft: "6px" }}>Joshua Akinleye</a>
       </div>
 

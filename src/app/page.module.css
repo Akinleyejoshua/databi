@@ -48,13 +48,11 @@
 .login-card {
   position: relative;
   z-index: 1;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg);
   border-radius: var(--radius-xl);
   padding: 48px 40px;
   width: 100%;
   max-width: 420px;
-  box-shadow: 0 24px 64px var(--color-shadow-strong);
   animation: slide-up 0.5s ease-out;
 }
 
@@ -81,8 +79,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 16px 32px;
-  border-bottom: 1px solid var(--color-border);
-  background: var(--color-surface);
+  background: var(--color-bg);
   position: sticky;
   top: 0;
   z-index: 10;
@@ -109,8 +106,7 @@
   gap: 8px;
   margin-bottom: 24px;
   padding: 16px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
   animation: slide-up 0.2s ease-out;
 }
@@ -124,8 +120,7 @@
 }
 
 .project-card {
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
   padding: 20px;
   display: flex;
@@ -134,7 +129,7 @@
   transition: all 250ms;
 }
 
-.project-card:hover { box-shadow: 0 8px 24px var(--color-shadow); transform: translateY(-2px); }
+.project-card:hover { background: var(--color-bg-tertiary); }
 .project-card-header { display: flex; align-items: center; justify-content: space-between; }
 .project-icon { width: 40px; height: 40px; background: var(--color-primary-glow); border-radius: var(--radius-md); display: flex; align-items: center; justify-content: center; }
 .project-name { font-size: 16px; font-weight: 700; }

@@ -501,19 +501,11 @@ export default function ChartsDemo() {
             style={{
               backgroundColor: "var(--color-bg-secondary)",
               borderRadius: "12px",
-              border: "1px solid var(--color-border)",
               overflow: "hidden",
-              boxShadow: "0 4px 6px rgba(0, 0, 0, 0.07)",
               transition: "all 0.2s ease",
             }}
-            onMouseEnter={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "0 12px 24px rgba(0, 0, 0, 0.15)";
-            }}
-            onMouseLeave={(e) => {
-              (e.currentTarget as HTMLElement).style.boxShadow = "0 4px 6px rgba(0, 0, 0, 0.07)";
-            }}
           >
-            <div style={{ padding: "16px", borderBottom: "1px solid var(--color-border)" }}>
+            <div style={{ padding: "20px 20px 12px" }}>
               <h3 style={{ fontSize: "14px", fontWeight: "600", color: "var(--color-text)", margin: 0 }}>
                 {item.title}
               </h3>

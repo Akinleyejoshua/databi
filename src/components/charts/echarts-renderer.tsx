@@ -580,7 +580,7 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           borderWidth: 1,
           borderRadius: 10,
           padding: [10, 14],
-          extraCssText: "backdrop-filter: blur(8px); box-shadow: 0 10px 30px -10px rgba(0,0,0,0.15); border: 1px solid rgba(0,0,0,0.05);",
+          extraCssText: "backdrop-filter: blur(8px); background: var(--color-bg-secondary);",
           textStyle: { color: "var(--color-text)", fontSize: 11, fontFamily: "inherit" },
           formatter: isMap ? (params: any) => {
             if (Array.isArray(params)) return params[0].name;
@@ -759,12 +759,10 @@ export default function EChartsRenderer({ config, tables, filters, relationships
           position: "absolute",
           top: "12px",
           left: "12px",
-          backgroundColor: "rgba(255, 255, 255, 0.95)",
+          backgroundColor: "var(--color-bg-secondary)",
           backdropFilter: "blur(4px)",
           padding: "12px",
           borderRadius: "10px",
-          border: "1px solid var(--color-border)",
-          boxShadow: "0 8px 16px -4px rgba(0,0,0,0.1)",
           zIndex: 50,
           minWidth: "160px",
           pointerEvents: "none",

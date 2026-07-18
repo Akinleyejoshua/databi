@@ -36,10 +36,8 @@ export default function MobileWarning() {
       <div style={{
         maxWidth: "400px",
         padding: "40px 24px",
-        background: "var(--color-surface)",
-        borderRadius: "24px",
-        border: "1px solid var(--color-border)",
-        boxShadow: "0 20px 50px var(--color-shadow-strong)"
+        background: "var(--color-bg-secondary)",
+        borderRadius: "24px"
       }}>
         <div style={{
           width: "64px",

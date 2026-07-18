@@ -45,7 +45,7 @@ export default function SettingsModal() {
               <input className="input" type="number" value={project?.canvasSettings.rowHeight || 30} onChange={(e) => updateCanvasSettings({ rowHeight: Number(e.target.value) })} min={10} max={100} />
             </div>
 
-            <div style={{ borderTop: "1px solid var(--color-border)", margin: "16px 0", paddingTop: "16px" }}>
+            <div style={{ margin: "16px 0", paddingTop: "16px" }}>
               <h3 style={{ fontSize: "14px", fontWeight: 600, marginBottom: "12px", color: "var(--color-text)" }}>Premium Container Styling Presets</h3>
               
               <div className={styles.field}>

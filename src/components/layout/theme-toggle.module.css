@@ -31,7 +31,6 @@
   justify-content: center;
   color: #ffffff;
   transition: transform var(--transition-fast);
-  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.15);
 }
 
 .toggle-thumb--dark {

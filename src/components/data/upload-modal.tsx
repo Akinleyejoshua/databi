@@ -4,6 +4,7 @@
 "use client";
 
 import { useState, useRef } from "react";
+import { Folder, Link as LinkIcon } from "lucide-react";
 import { useProjectStore } from "@/store/use-project-store";
 import { useUiStore } from "@/store/use-ui-store";
 import type { DataTable } from "@/types";
@@ -132,7 +133,7 @@ export default function UploadModal() {
 
         {/* Tab Navigation */}
         {parsedTables.length === 0 && (
-          <div style={{ display: "flex", borderBottom: "1px solid var(--color-border)", paddingBottom: 0 }}>
+          <div style={{ display: "flex", gap: "4px", padding: "12px 16px", background: "var(--color-bg-secondary)", borderRadius: "var(--radius-md)" }}>
             <button
               onClick={() => {
                 setActiveTab("file");
@@ -140,16 +141,21 @@ export default function UploadModal() {
               }}
               style={{
                 flex: 1,
-                padding: "12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                padding: "10px",
                 border: "none",
-                background: "none",
+                background: activeTab === "file" ? "var(--color-bg)" : "transparent",
                 cursor: "pointer",
-                borderBottom: activeTab === "file" ? "2px solid var(--color-primary)" : "none",
+                borderRadius: "var(--radius-sm)",
                 color: activeTab === "file" ? "var(--color-primary)" : "var(--color-text-secondary)",
                 fontWeight: activeTab === "file" ? "600" : "500",
               }}
             >
-              📁 File Upload
+              <Folder size={16} />
+              File Upload
             </button>
             <button
               onClick={() => {
@@ -157,16 +163,21 @@ export default function UploadModal() {
               }}
               style={{
                 flex: 1,
-                padding: "12px",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                gap: "8px",
+                padding: "10px",
                 border: "none",
-                background: "none",
+                background: activeTab === "url" ? "var(--color-bg)" : "transparent",
                 cursor: "pointer",
-                borderBottom: activeTab === "url" ? "2px solid var(--color-primary)" : "none",
+                borderRadius: "var(--radius-sm)",
                 color: activeTab === "url" ? "var(--color-primary)" : "var(--color-text-secondary)",
                 fontWeight: activeTab === "url" ? "600" : "500",
               }}
             >
-              🔗 URL Import
+              <LinkIcon size={16} />
+              URL Import
             </button>
           </div>
         )}
@@ -223,10 +234,13 @@ export default function UploadModal() {
                     style={{
                       width: "100%",
                       padding: "10px",
-                      border: "1px solid var(--color-border)",
+                      border: "none",
+                      background: "var(--color-bg-secondary)",
                       borderRadius: "6px",
                       fontSize: "14px",
                       fontFamily: "inherit",
+                      color: "var(--color-text)",
+                      outline: "none",
                     }}
                   />
                   <small style={{ display: "block", marginTop: "6px", color: "var(--color-text-secondary)" }}>
@@ -256,9 +270,12 @@ export default function UploadModal() {
                         style={{
                           width: "100%",
                           padding: "8px",
-                          border: "1px solid var(--color-border)",
+                          border: "none",
+                          background: "var(--color-bg-secondary)",
                           borderRadius: "4px",
                           fontSize: "14px",
+                          color: "var(--color-text)",
+                          outline: "none",
                         }}
                       >
                         <option value={300}>Every 5 minutes</option>

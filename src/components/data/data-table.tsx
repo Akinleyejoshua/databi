@@ -64,6 +64,25 @@ export default function DataTableView() {
   const totalPages = Math.ceil(filteredRows.length / pageSize);
   const pageRows = filteredRows.slice(page * pageSize, (page + 1) * pageSize);
 
+  // Build a compact page list with ellipsis for large tables
+  const buildPageItems = (): (number | "...")[] => {
+    const items: (number | "...")[] = [];
+    if (totalPages <= 7) {
+      for (let i = 0; i < totalPages; i++) items.push(i);
+      return items;
+    }
+    const current = page;
+    items.push(0);
+    const start = Math.max(1, current - 1);
+    const end = Math.min(totalPages - 2, current + 1);
+    if (start > 1) items.push("...");
+    for (let i = start; i <= end; i++) items.push(i);
+    if (end < totalPages - 2) items.push("...");
+    items.push(totalPages - 1);
+    return items;
+  };
+  const pageItems = buildPageItems();
+
   const handleTransform = async (action: TransformAction, targetType?: DataType) => {
     setIsTransforming(true);
     try {
@@ -208,8 +227,52 @@ export default function DataTableView() {
           {filteredRows.length} rows · Page {page + 1} of {totalPages || 1}
         </span>
         <div className={styles["page-btns"]}>
-          <button className="btn btn-ghost btn-sm" onClick={() => setPage(Math.max(0, page - 1))} disabled={page === 0}>← Prev</button>
-          <button className="btn btn-ghost btn-sm" onClick={() => setPage(Math.min(totalPages - 1, page + 1))} disabled={page >= totalPages - 1}>Next →</button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setPage(0)}
+            disabled={page === 0}
+            aria-label="First page"
+          >
+            «
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setPage(Math.max(0, page - 1))}
+            disabled={page === 0}
+            aria-label="Previous page"
+          >
+            ‹
+          </button>
+          {pageItems.map((item, i) =>
+            item === "..." ? (
+              <span key={`e${i}`} className={styles["page-ellipsis"]}>…</span>
+            ) : (
+              <button
+                key={item}
+                className={`btn btn-sm ${item === page ? "btn-primary" : "btn-ghost"}`}
+                onClick={() => setPage(item)}
+                aria-current={item === page ? "page" : undefined}
+              >
+                {item + 1}
+              </button>
+            )
+          )}
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setPage(Math.min(totalPages - 1, page + 1))}
+            disabled={page >= totalPages - 1}
+            aria-label="Next page"
+          >
+            ›
+          </button>
+          <button
+            className="btn btn-ghost btn-sm"
+            onClick={() => setPage(totalPages - 1)}
+            disabled={page >= totalPages - 1}
+            aria-label="Last page"
+          >
+            »
+          </button>
         </div>
       </div>
     </div>

@@ -4,8 +4,7 @@
   justify-content: space-between;
   height: var(--header-height);
   padding: 0 var(--space-4);
-  background: var(--color-surface);
-  border-bottom: 1px solid var(--color-border);
+  background: var(--color-bg);
   position: sticky;
   top: 0;
   z-index: var(--z-dropdown);
@@ -45,7 +44,7 @@
 
 .project-title-input {
   background: transparent;
-  border: 1px solid transparent;
+  border: none;
   color: var(--color-text);
   font-size: var(--font-size-sm);
   font-weight: 600;
@@ -59,12 +58,10 @@
 
 .project-title-input:hover {
   background: var(--color-bg-secondary);
-  border-color: var(--color-border);
 }
 
 .project-title-input:focus {
   background: var(--color-bg-secondary);
-  border-color: var(--color-primary);
   width: 250px;
 }
 
@@ -85,8 +82,6 @@
   display: flex;
   align-items: center;
   gap: var(--space-1);
-  background: var(--color-bg-secondary);
-  border-radius: var(--radius-md);
   padding: 3px;
 }
 
@@ -98,20 +93,18 @@
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-weight: 500;
-  color: var(--color-text-secondary);
+  color: var(--color-text-tertiary);
   transition: all var(--transition-fast);
   height: 32px;
 }
 
 .tab-btn:hover {
-  color: var(--color-text);
-  background: var(--color-surface-hover);
+  color: var(--color-text-secondary);
 }
 
 .tab-btn--active {
-  background: var(--color-surface) !important;
   color: var(--color-primary) !important;
-  box-shadow: 0 1px 3px var(--color-shadow);
+  font-weight: 700;
 }
 
 .header-right {
@@ -164,7 +157,6 @@
 .save-main-btn {
   border-top-right-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
-  border-right: 1px solid rgba(255, 255, 255, 0.2) !important;
   display: flex;
   align-items: center;
   gap: var(--space-2);
@@ -187,10 +179,8 @@
   top: calc(100% + 8px);
   right: 0;
   width: 220px;
-  background: var(--color-surface);
-  border: 1px solid var(--color-border);
+  background: var(--color-bg-secondary);
   border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-lg);
   padding: var(--space-1);
   z-index: var(--z-dropdown);
   animation: slide-up 0.2s ease-out;
@@ -225,7 +215,7 @@
 .empty-check {
   width: 14px;
   height: 14px;
-  border: 2px solid var(--color-border);
+  background: var(--color-bg-tertiary);
   border-radius: 3px;
 }
 

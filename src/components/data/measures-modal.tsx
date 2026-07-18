@@ -279,14 +279,11 @@ export default function MeasuresModal() {
                     style={{
                       textAlign: "left",
                       padding: "12px",
-                      background: hoveredSuggestion === i ? "var(--color-surface-hover)" : "var(--color-surface)",
-                      border: "1px solid",
-                      borderColor: hoveredSuggestion === i ? "var(--color-primary)" : "var(--color-border)",
+                      background: hoveredSuggestion === i ? "var(--color-primary-glow)" : "var(--color-bg-secondary)",
                       borderRadius: "10px",
                       cursor: "pointer",
                       transition: "all 0.2s",
-                      transform: hoveredSuggestion === i ? "translateY(-2px)" : "none",
-                      boxShadow: hoveredSuggestion === i ? "0 4px 12px var(--color-shadow)" : "none"
+                      transform: hoveredSuggestion === i ? "translateY(-2px)" : "none"
                     }}
                   >
                     <div style={{ fontWeight: 700, fontSize: "13px", color: hoveredSuggestion === i ? "var(--color-primary)" : "inherit" }}>{s.name}</div>

@@ -73,8 +73,7 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
-            color: "white",
-            boxShadow: "0 4px 12px rgba(65, 105, 225, 0.4)"
+            color: "white"
           }}>
             <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
               <path d="M3 3v18h18" />
@@ -178,24 +177,22 @@ export default function SharePage({ params }: { params: Promise<{ token: string 
           alignItems: "center",
           gap: "8px",
           padding: "10px 18px",
-          backgroundColor: "#ffffff",
-          border: "1px solid rgba(0,0,0,0.08)",
+          backgroundColor: "var(--color-bg-secondary)",
           borderRadius: "100px",
-          boxShadow: "0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)",
           textDecoration: "none",
-          color: "#1e293b",
+          color: "var(--color-text)",
           fontSize: "14px",
           fontWeight: 600,
           zIndex: 1000,
-          transition: "transform 0.2s ease, box-shadow 0.2s ease"
+          transition: "transform 0.2s ease, background-color 0.2s ease"
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.transform = "translateY(-2px)";
-          e.currentTarget.style.boxShadow = "0 8px 24px rgba(0,0,0,0.08), 0 2px 8px rgba(0,0,0,0.04)";
+          e.currentTarget.style.backgroundColor = "var(--color-bg-tertiary)";
         }}
         onMouseLeave={(e) => {
           e.currentTarget.style.transform = "none";
-          e.currentTarget.style.boxShadow = "0 4px 12px rgba(0,0,0,0.05), 0 1px 3px rgba(0,0,0,0.03)";
+          e.currentTarget.style.backgroundColor = "var(--color-bg-secondary)";
         }}
       >
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none">

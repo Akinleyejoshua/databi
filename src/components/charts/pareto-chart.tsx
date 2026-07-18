@@ -65,7 +65,6 @@ export default function ParetoChart({ config, tables, filters, height = 300 }: P
         tooltip: config.showTooltip ? {
           trigger: "axis",
           backgroundColor: "rgba(255, 255, 255, 0.95)",
-          borderColor: "var(--color-border)",
           textStyle: {
             color: "var(--color-text)",
             fontSize: 11
